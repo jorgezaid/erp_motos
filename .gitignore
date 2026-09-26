@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+.env.*.local
+.env.production
+.DS_Store
+*.log
+supabase/.branches
+supabase/.temp
+.claude/settings.local.json

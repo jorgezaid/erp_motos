@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm exec vitest:*)",
+      "Bash(./tests/run.sh:*)",
+      "Bash(supabase status:*)",
+      "Bash(supabase db reset:*)",
+      "Bash(supabase migration new:*)",
+      "Bash(supabase gen types:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Bash(supabase db push:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
