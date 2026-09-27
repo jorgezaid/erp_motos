@@ -1,0 +1,5 @@
+# Normaliza finales de línea: los scripts y el SQL se ejecutan dentro de Linux (Docker/psql)
+* text=auto eol=lf
+*.sh  text eol=lf
+*.sql text eol=lf
+*.ps1 text eol=crlf

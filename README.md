@@ -34,7 +34,7 @@ supabase db push         # remoto
 **Primer administrador:** regístrate en la app y ejecuta
 `update public.profiles set rol = 'admin' where id = '<tu-uuid>';`
 
-**Pruebas:** `./tests/run.sh` (usa la BD local de `supabase start` en el puerto 54322; en otro Postgres: `PGHOST=… PGPORT=… ./tests/run.sh`)
+**Pruebas:** `./tests/run.sh` (usa la BD local de `supabase start` en el puerto 44322; en otro Postgres: `PGHOST=… PGPORT=… ./tests/run.sh`)
 
 ## Flujo que impone la base de datos
 

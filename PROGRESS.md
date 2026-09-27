@@ -5,16 +5,16 @@
 
 ## Estado actual
 - **Fase activa:** 2 — Motor de costeo
-- **Próxima tarea:** 0.1 → 0.5 (preparar el entorno local); luego 2.1
-- **Última actualización:** 2026-09-25
+- **Próxima tarea:** 0.1 (subir a GitHub) y 0.5 (Supabase Cloud); luego 2.1
+- **Última actualización:** 2026-09-26
 
 ---
 
 ## Fase 0 · Preparación del entorno
 - [ ] 0.1 Crear el repositorio git, hacer el primer commit con esta carpeta y subirlo a GitHub
-- [ ] 0.2 Instalar Node 20+, pnpm, Docker y Supabase CLI (ver `docs/GUIA-CLAUDE-CODE.md`)
-- [ ] 0.3 `supabase init` (conservando `supabase/migrations` y `seed.sql`) + `supabase start`
-- [ ] 0.4 `./tests/run.sh` pasa contra la BD local de Supabase
+- [x] 0.2 Instalar Node 20+, pnpm, Docker y Supabase CLI (ver `docs/GUIA-CLAUDE-CODE.md`) — pnpm 10 (la 12 es binaria y la bloqueaba Smart App Control)
+- [x] 0.3 `supabase init` (conservando `supabase/migrations` y `seed.sql`) + `supabase start` — puertos locales 443xx (ver D8)
+- [x] 0.4 `./tests/run.sh` pasa contra la BD local de Supabase — en Windows: `.\tests\run.ps1` (psql dentro del contenedor)
 - [ ] 0.5 Crear el proyecto en Supabase Cloud, `supabase link` y `supabase db push`
 
 ## Fase 1 · Base de datos ✅
@@ -93,6 +93,9 @@
 | D5 | 2026-09-25 | `baterias_esperadas` y `cantidad_baterias_12v` son derivadas | Imposible registrar datos inconsistentes |
 | D6 | 2026-09-25 | Los usuarios nuevos no tienen rol | Evita que un registro público obtenga acceso |
 | D7 | 2026-09-25 | Prorrateo en TypeScript con decimal.js, con validación final en SQL | Así se hizo el plan por pasos, y la doble verificación evita descuadres |
+| D8 | 2026-09-26 | Puertos locales de Supabase 443xx (API 44321, BD 44322, Studio 44323) en vez de 543xx | Windows (Hyper-V/WSL) reserva el rango 54283–54382 y `supabase start` no podía abrir 54322 |
+| D9 | 2026-09-26 | `[analytics] enabled = false` en `supabase/config.toml` | En Windows, vector se reinicia en bucle sin acceso al socket de Docker; los logs de Studio no son necesarios en local |
+| D10 | 2026-09-26 | `tests/run.ps1` ejecuta el propio `run.sh` dentro del contenedor de la BD (vía `docker cp`) | Sin psql en Windows; una sola lógica de pruebas, y se evita que PowerShell 5.1 dañe el UTF-8 |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
@@ -102,3 +105,4 @@
 | Fecha | Sesión | Resultado |
 |---|---|---|
 | 2026-09-25 | Claude (chat) | Fase 1 completa: 3 migraciones, seed y suite SQL. Se corrigió un bug en la transición reservado → vendido. Se crearon SPEC, PROGRESS, CLAUDE.md y los comandos. |
+| 2026-09-26 | Claude Code | Fase 0.2–0.4: pnpm 10, Supabase CLI, `supabase init/start/db reset`, `.gitattributes` (LF), `tests/run.ps1`; suite SQL 10/10 en PG 17. |

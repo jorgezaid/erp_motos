@@ -40,7 +40,7 @@ supabase db reset      # aplica las 3 migraciones + seed
 ./tests/run.sh         # debe terminar en: TODAS LAS PRUEBAS PASARON
 ```
 
-> Si `supabase init` crea un `supabase/config.toml`, está bien. Supabase Studio queda en http://127.0.0.1:54323
+> Si `supabase init` crea un `supabase/config.toml`, está bien. Supabase Studio queda en http://127.0.0.1:44323
 
 ## 4. Trabajar con Claude
 
