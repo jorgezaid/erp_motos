@@ -14,7 +14,7 @@
 
 ## 2. Instalación (una sola vez)
 
-1. **Node.js 22.12 o superior** (https://nodejs.org) y **pnpm**: `npm install -g pnpm`
+1. **Node.js 22.12 o superior** (https://nodejs.org) y **pnpm**: `npm install -g pnpm@10` (la 12 es un binario nativo que Smart App Control puede bloquear)
 2. **Docker Desktop** (lo necesita la BD local de Supabase). Déjalo abierto.
 3. **Supabase CLI**
    - macOS: `brew install supabase/tap/supabase`
