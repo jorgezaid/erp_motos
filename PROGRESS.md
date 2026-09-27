@@ -5,14 +5,14 @@
 
 ## Estado actual
 - **Fase activa:** 2 — Motor de costeo
-- **Próxima tarea:** 0.1 (subir a GitHub) y 0.5 (Supabase Cloud); luego 2.1
+- **Próxima tarea:** 2.2 (prorrateo); pendientes de la Fase 0: 0.1 (subir a GitHub) y 0.5 (Supabase Cloud)
 - **Última actualización:** 2026-09-26
 
 ---
 
 ## Fase 0 · Preparación del entorno
 - [ ] 0.1 Crear el repositorio git, hacer el primer commit con esta carpeta y subirlo a GitHub
-- [x] 0.2 Instalar Node 20+, pnpm, Docker y Supabase CLI (ver `docs/GUIA-CLAUDE-CODE.md`) — pnpm 10 (la 12 es binaria y la bloqueaba Smart App Control)
+- [x] 0.2 Instalar Node 22.12+, pnpm, Docker y Supabase CLI (ver `docs/GUIA-CLAUDE-CODE.md`) — pnpm 10 (la 12 es binaria y la bloqueaba Smart App Control)
 - [x] 0.3 `supabase init` (conservando `supabase/migrations` y `seed.sql`) + `supabase start` — puertos locales 443xx (ver D8)
 - [x] 0.4 `./tests/run.sh` pasa contra la BD local de Supabase — en Windows: `.\tests\run.ps1` (psql dentro del contenedor)
 - [ ] 0.5 Crear el proyecto en Supabase Cloud, `supabase link` y `supabase db push`
@@ -25,14 +25,14 @@
 - [x] 1.5 Suite SQL con 10 escenarios (`tests/test_reglas_negocio.sql`): todos pasan en PostgreSQL 16
 
 ## Fase 2 · Motor de costeo (SPEC §7)
-- [ ] 2.1 Scaffold mínimo de TypeScript: `package.json`, `tsconfig` strict, Vitest y decimal.js
+- [x] 2.1 Scaffold mínimo de TypeScript: `package.json`, `tsconfig` strict, Vitest y decimal.js — más ESLint 9 (flat) y `src/lib/decimal.ts` (clon half-up); TS 5.9, Vitest 5, Node ≥ 22.12 (ver D11)
 - [ ] 2.2 `src/lib/costing/prorrateo.ts`: función pura `calcularProrrateo(lote, items) → FilaCosteo[]`
 - [ ] 2.3 `prorrateo.test.ts`: *golden test* de SPEC §7, 3 invariantes, errores (Σ EXW = 0, sin TC) y prueba de orden de líneas
 - [ ] 2.4 Migración `…_rpc_guardar_costeo.sql`: RPC transaccional que vuelve a validar los invariantes en SQL, con prueba en `tests/`
 - [ ] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`)
 
 ## Fase 3 · App base (Next.js)
-- [ ] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`)
+- [ ] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`)
 - [ ] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware
 - [ ] 3.3 `supabase gen types typescript --local > src/types/database.ts`
 - [ ] 3.4 Login, `/pendiente` y middleware de sesión y rol
@@ -96,6 +96,7 @@
 | D8 | 2026-09-26 | Puertos locales de Supabase 443xx (API 44321, BD 44322, Studio 44323) en vez de 543xx | Windows (Hyper-V/WSL) reserva el rango 54283–54382 y `supabase start` no podía abrir 54322 |
 | D9 | 2026-09-26 | `[analytics] enabled = false` en `supabase/config.toml` | En Windows, vector se reinicia en bucle sin acceso al socket de Docker; los logs de Studio no son necesarios en local |
 | D10 | 2026-09-26 | `tests/run.ps1` ejecuta el propio `run.sh` dentro del contenedor de la BD (vía `docker cp`) | Sin psql en Windows; una sola lógica de pruebas, y se evita que PowerShell 5.1 dañe el UTF-8 |
+| D11 | 2026-09-26 | Node ≥ 22.12 (antes 20+), TypeScript 5.9 y no 7, sin `exactOptionalPropertyTypes` | Vitest 5 exige Node 22.12+ (Node 20 ya no tiene soporte); typescript-eslint solo admite TS < 6.1; `exactOptionalPropertyTypes` choca con los tipos de Supabase y react-hook-form |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
@@ -105,4 +106,4 @@
 | Fecha | Sesión | Resultado |
 |---|---|---|
 | 2026-09-25 | Claude (chat) | Fase 1 completa: 3 migraciones, seed y suite SQL. Se corrigió un bug en la transición reservado → vendido. Se crearon SPEC, PROGRESS, CLAUDE.md y los comandos. |
-| 2026-09-26 | Claude Code | Fase 0.2–0.4: pnpm 10, Supabase CLI, `supabase init/start/db reset`, `.gitattributes` (LF), `tests/run.ps1`; suite SQL 10/10 en PG 17. |
+| 2026-09-26 | Claude Code | Fase 0.2–0.4: pnpm 10, Supabase CLI, `supabase init/start/db reset`, `.gitattributes` (LF), `tests/run.ps1`; suite SQL 10/10 en PG 17. Tarea 2.1: scaffold TS (Vitest, ESLint 9, decimal.js); test, lint y typecheck en verde. |
