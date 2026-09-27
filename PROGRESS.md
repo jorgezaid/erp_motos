@@ -5,13 +5,13 @@
 
 ## Estado actual
 - **Fase activa:** 2 — Motor de costeo
-- **Próxima tarea:** 2.2 (prorrateo); pendientes de la Fase 0: 0.1 (subir a GitHub) y 0.5 (Supabase Cloud)
+- **Próxima tarea:** 2.2 (prorrateo); pendiente de la Fase 0: 0.5 (Supabase Cloud)
 - **Última actualización:** 2026-09-26
 
 ---
 
 ## Fase 0 · Preparación del entorno
-- [ ] 0.1 Crear el repositorio git, hacer el primer commit con esta carpeta y subirlo a GitHub
+- [x] 0.1 Crear el repositorio git, hacer el primer commit con esta carpeta y subirlo a GitHub — privado: `jorgezaid/erp_motos`
 - [x] 0.2 Instalar Node 22.12+, pnpm, Docker y Supabase CLI (ver `docs/GUIA-CLAUDE-CODE.md`) — pnpm 10 (la 12 es binaria y la bloqueaba Smart App Control)
 - [x] 0.3 `supabase init` (conservando `supabase/migrations` y `seed.sql`) + `supabase start` — puertos locales 443xx (ver D8)
 - [x] 0.4 `./tests/run.sh` pasa contra la BD local de Supabase — en Windows: `.\tests\run.ps1` (psql dentro del contenedor)
