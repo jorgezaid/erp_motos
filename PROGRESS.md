@@ -5,8 +5,8 @@
 
 ## Estado actual
 - **Fase activa:** 2 — Motor de costeo
-- **Próxima tarea:** 2.2 (prorrateo); pendiente de la Fase 0: 0.5 (Supabase Cloud)
-- **Última actualización:** 2026-09-26
+- **Próxima tarea:** 2.4 (RPC `guardar_costeo`); pendiente de la Fase 0: 0.5 (Supabase Cloud)
+- **Última actualización:** 2026-09-28
 
 ---
 
@@ -26,8 +26,8 @@
 
 ## Fase 2 · Motor de costeo (SPEC §7)
 - [x] 2.1 Scaffold mínimo de TypeScript: `package.json`, `tsconfig` strict, Vitest y decimal.js — más ESLint 9 (flat) y `src/lib/decimal.ts` (clon half-up); TS 5.9, Vitest 5, Node ≥ 22.12 (ver D11)
-- [ ] 2.2 `src/lib/costing/prorrateo.ts`: función pura `calcularProrrateo(lote, items) → FilaCosteo[]`
-- [ ] 2.3 `prorrateo.test.ts`: *golden test* de SPEC §7, 3 invariantes, errores (Σ EXW = 0, sin TC) y prueba de orden de líneas
+- [x] 2.2 `src/lib/costing/prorrateo.ts`: función pura `calcularProrrateo(lote, items) → FilaCosteo[]` — montos como string de 4 decimales; `ErrorProrrateo` con códigos (también `LOTE_INVALIDO` y `LINEA_INVALIDA`); `calcularCostoTotalPen`/`calcularCostoUnitarioPen` replican las columnas generadas
+- [x] 2.3 `prorrateo.test.ts`: *golden test* de SPEC §7, 3 invariantes, errores (Σ EXW = 0, sin TC) y prueba de orden de líneas — más residuo ±0.0001 y empate, y propiedades con 200 lotes aleatorios (semilla fija)
 - [ ] 2.4 Migración `…_rpc_guardar_costeo.sql`: RPC transaccional que vuelve a validar los invariantes en SQL, con prueba en `tests/`
 - [ ] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`)
 
@@ -107,3 +107,4 @@
 |---|---|---|
 | 2026-09-25 | Claude (chat) | Fase 1 completa: 3 migraciones, seed y suite SQL. Se corrigió un bug en la transición reservado → vendido. Se crearon SPEC, PROGRESS, CLAUDE.md y los comandos. |
 | 2026-09-26 | Claude Code | Fase 0.2–0.4: pnpm 10, Supabase CLI, `supabase init/start/db reset`, `.gitattributes` (LF), `tests/run.ps1`; suite SQL 10/10 en PG 17. Tarea 2.1: scaffold TS (Vitest, ESLint 9, decimal.js); test, lint y typecheck en verde. |
+| 2026-09-28 | Claude Code | Tareas 2.2 y 2.3: `calcularProrrateo` (SPEC §7) con TDD; golden test, invariantes, residuo, errores y 200 lotes aleatorios. 22 pruebas en verde. |
