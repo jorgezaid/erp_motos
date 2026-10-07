@@ -58,7 +58,7 @@
 
 ## Fase 7 · Precios y punto de venta (M5, M6)
 - [x] 7.1 `/precios` con vista de admin y vista de vendedor — admin: `v_price_matrix` con costo, precio y utilidad por escala, edición inline del precio manual (marcado "manual", vacío = sugerido) y márgenes globales en % (RN-09); vendedor: modelo, disponibles y x1/x3/x6 leyendo solo `price_list` y `v_stock` (D25); E2E que revisa la red del vendedor (M5 ✅)
-- [ ] 7.2 `/ventas/nueva`: flujo completo del POS
+- [x] 7.2 `/ventas/nueva`: flujo completo del POS — paso 1 (tipo de venta + cliente con RN-20) crea el borrador (D26); en `/ventas/[id]`: búsqueda por VIN o modelo y color, agregar/quitar (reserva), cambio de escala con re-cotización (RN-13), aviso "Faltan N unidades para precio …", pagos múltiples con saldo siempre visible, confirmar (RN-14/15/16) y eliminar borrador (RN-18); reglas de UX en `lib/ventas.ts` (M6 ✅ x6 con 5 y 2 pestañas)
 - [ ] 7.3 `/ventas` y `/ventas/[id]`: nota de venta imprimible y anulación
 - [ ] 7.4 E2E con Playwright: venta x1 con pago mixto y venta x6
 
@@ -111,6 +111,7 @@
 | D23 | 2026-10-07 | La cantidad del packing list no puede bajar de las unidades ya registradas, y el modelo de una línea no se cambia (se quita y se agrega otra) | RN-04 solo se validaba al registrar unidades; sin esto el lote quedaba inconsistente |
 | D24 | 2026-10-07 | "Guardar costeo" no recibe filas del navegador: la Server Action relee el lote y el packing list, recalcula con `calcularProrrateo` y llama a `guardar_costeo` | El cliente nunca decide montos; la RPC vuelve a validar en SQL (D7) |
 | D25 | 2026-10-07 | En `/precios` del vendedor hay una fila por modelo y lote liquidado (sin mostrar el lote), con su stock disponible; las ramas admin y vendedor son excluyentes en el servidor | Un mismo modelo puede tener precios distintos según el lote; el vendedor no debe ver lotes ni costos |
+| D26 | 2026-10-07 | POS: los datos del cliente se piden en el paso 1 (con el tipo de venta), antes de agregar unidades; el resto del flujo (unidades, pagos, confirmar) ocurre en `/ventas/[id]` sobre la orden en borrador | En la BD una unidad se reserva al agregarla a una orden, y la orden exige cliente con documento válido (CHECK). Así la reserva es inmediata y "dos pestañas, misma unidad" lo resuelve la BD |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.

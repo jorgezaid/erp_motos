@@ -1,0 +1,231 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { exigirRol } from '@/lib/auth';
+import {
+  exito,
+  fallo,
+  falloValidacion,
+  MENSAJE_SIN_FILAS,
+  mensajeDeError,
+  sinFilasAfectadas,
+  type Resultado,
+} from '@/lib/errores';
+import { createClient } from '@/lib/supabase/server';
+import { esquemaCliente, esquemaPago, type EntradaCliente, type EntradaPago } from '@/lib/ventas';
+
+const uuid = z.uuid('Registro no válido.');
+const esquemaTipo = z.enum(['unidad_x1', 'mayorista_x3', 'distribuidor_x6'], 'Elige el tipo de venta.');
+
+function revalidar(orderId?: string) {
+  if (orderId) revalidatePath(`/ventas/${orderId}`);
+  revalidatePath('/ventas');
+  revalidatePath('/inventario');
+  revalidatePath('/precios');
+}
+
+const MENSAJE_ORDEN_AJENA = 'La orden no existe, ya no está en borrador o pertenece a otro vendedor.';
+
+/** Paso 1: tipo de venta y cliente → orden en borrador (el vendedor lo fija la BD). */
+export async function crearOrden(entrada: { tipo_venta: string } & EntradaCliente): Promise<Resultado<{ id: string }>> {
+  await exigirRol('admin', 'vendedor');
+  const tipo = esquemaTipo.safeParse(entrada.tipo_venta);
+  if (!tipo.success) return falloValidacion(tipo.error);
+  const cliente = esquemaCliente.safeParse(entrada);
+  if (!cliente.success) return falloValidacion(cliente.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .insert({ ...cliente.data, tipo_venta: tipo.data })
+    .select('id')
+    .single();
+  if (error) return fallo(mensajeDeError(error));
+  revalidar();
+  return exito({ id: data.id });
+}
+
+/** RN-13: si cambia el tipo de venta en borrador, la BD vuelve a cotizar todos los ítems. */
+export async function cambiarTipoVenta(orderId: string, tipoVenta: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  const tipo = esquemaTipo.safeParse(tipoVenta);
+  if (!uuid.safeParse(orderId).success || !tipo.success) return fallo('Tipo de venta no válido.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .update({ tipo_venta: tipo.data })
+    .eq('id', orderId)
+    .eq('estado', 'borrador')
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  return exito(null);
+}
+
+/** Datos del cliente: en borrador todos; en una orden confirmada solo teléfono y email (RN-17). */
+export async function actualizarCliente(orderId: string, entrada: EntradaCliente): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
+  const d = esquemaCliente.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+  const supabase = await createClient();
+  const { data: orden } = await supabase.from('sales_orders').select('estado').eq('id', orderId).maybeSingle();
+  if (!orden) return fallo(MENSAJE_SIN_FILAS);
+  const cambios =
+    orden.estado === 'borrador' ? d.data : { cliente_telefono: d.data.cliente_telefono, cliente_email: d.data.cliente_email };
+  const { data, error } = await supabase.from('sales_orders').update(cambios).eq('id', orderId).select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  return exito(null);
+}
+
+/**
+ * Paso 2: agregar una unidad reserva la unidad (RN-12) y fija su precio desde la lista (RN-13).
+ * Si otra pestaña ya la reservó, la BD responde "La unidad … no está disponible".
+ */
+export async function agregarUnidad(orderId: string, vehicleId: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success || !uuid.safeParse(vehicleId).success) return fallo('Unidad no válida.');
+  const supabase = await createClient();
+  const { error } = await supabase.from('order_items').insert({ order_id: orderId, vehicle_id: vehicleId });
+  if (error) {
+    if (error.code === '23505') return fallo('La unidad no está disponible: ya está en otra orden.');
+    if (error.code === '42501') return fallo(MENSAJE_ORDEN_AJENA);
+    return fallo(mensajeDeError(error));
+  }
+  revalidar(orderId);
+  return exito(null);
+}
+
+/** Quitar la unidad la devuelve a tienda (solo en borrador). */
+export async function quitarUnidad(orderId: string, itemId: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success || !uuid.safeParse(itemId).success) return fallo('Unidad no válida.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('order_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('order_id', orderId)
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  return exito(null);
+}
+
+/** Paso 4: un pago (efectivo, transferencia o tarjeta). Varios métodos = pago mixto (RN-15). */
+export async function registrarPago(orderId: string, entrada: EntradaPago): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
+  const d = esquemaPago.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('payments')
+    .insert({ order_id: orderId, metodo: d.data.metodo, monto_pen: Number(d.data.monto), referencia: d.data.referencia });
+  if (error) {
+    if (error.code === '42501') return fallo(MENSAJE_ORDEN_AJENA);
+    return fallo(mensajeDeError(error));
+  }
+  revalidar(orderId);
+  return exito(null);
+}
+
+export async function eliminarPago(orderId: string, pagoId: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success || !uuid.safeParse(pagoId).success) return fallo('Pago no válido.');
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('payments').delete().eq('id', pagoId).eq('order_id', orderId).select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  return exito(null);
+}
+
+/** Paso 5: RN-14 (mínimo de la escala y pagos exactos), RN-15 y RN-16 los aplica la BD. */
+export async function confirmarOrden(orderId: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .update({ estado: 'confirmada' })
+    .eq('id', orderId)
+    .eq('estado', 'borrador')
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  revalidatePath('/garantias');
+  return exito(null);
+}
+
+/** RN-18: solo se eliminan borradores (sus unidades vuelven a tienda). */
+export async function eliminarOrden(orderId: string): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .delete()
+    .eq('id', orderId)
+    .eq('estado', 'borrador')
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar();
+  return exito(null);
+}
+
+export type UnidadDisponible = {
+  vehicle_id: string;
+  vin_chasis: string;
+  codigo_modelo: string;
+  colores: string;
+  ubicacion: string;
+  precio: number | null;
+};
+
+/**
+ * Búsqueda de unidades para la orden (SPEC M6): por VIN, o por modelo y color. Solo unidades
+ * listas en tienda con precio (lotes liquidados, RN-12), con el precio de la escala de la orden.
+ */
+export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resultado<UnidadDisponible[]>> {
+  await exigirRol('admin', 'vendedor');
+  const tipo = esquemaTipo.safeParse(tipoVenta);
+  if (!tipo.success) return fallo('Tipo de venta no válido.');
+  const texto = q.replace(/[,()*:"\\%_]/g, ' ').trim().slice(0, 60);
+  const columna = ({ unidad_x1: 'precio_x1', mayorista_x3: 'precio_x3', distribuidor_x6: 'precio_x6' } as const)[tipo.data];
+
+  const supabase = await createClient();
+  let consulta = supabase
+    .from('v_stock')
+    .select('vehicle_id, vin_chasis, codigo_modelo, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6')
+    .eq('estado', 'listo_en_tienda')
+    .not(columna, 'is', null)
+    .order('codigo_modelo')
+    .order('vin_chasis')
+    .limit(30);
+  // Cada palabra debe aparecer en el VIN, el modelo o un color ("DEMO-48 rojo")
+  for (const palabra of texto.split(/\s+/).filter(Boolean)) {
+    consulta = consulta.or(
+      ['vin_chasis', 'codigo_modelo', 'color_primario', 'color_secundario'].map((c) => `${c}.ilike.*${palabra}*`).join(','),
+    );
+  }
+  const { data, error } = await consulta;
+  if (error) return fallo(mensajeDeError(error));
+  return exito(
+    data.map((u) => ({
+      vehicle_id: u.vehicle_id ?? '',
+      vin_chasis: u.vin_chasis ?? '',
+      codigo_modelo: u.codigo_modelo ?? '',
+      colores: [u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || '—',
+      ubicacion: u.ubicacion ?? '—',
+      precio: u[columna],
+    })),
+  );
+}
