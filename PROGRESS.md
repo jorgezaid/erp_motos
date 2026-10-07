@@ -53,7 +53,7 @@
 ## Fase 6 · Inventario y taller (M4)
 - [x] 6.1 `/inventario` sobre `v_stock` — filtros por estado, modelo, ubicación y color, búsqueda por VIN/motor/modelo y CSV; precios solo para admin y vendedor (nunca costos); se corrigió una carrera en `BarraFiltros` al cambiar dos filtros seguidos
 - [x] 6.2 `/inventario/registro`: registro masivo pegando desde Excel o con escáner — parser y validación en `lib/registro.ts` (tab, `;` o `,`; encabezado opcional; RN-03 mayúsculas sin espacios; repetidos); "Faltan X de Y" desde `pendientes_de_registro()`; modo escáner con Enter = siguiente campo; un solo INSERT (todo o nada)
-- [ ] 6.3 `/taller`: cola móvil
+- [x] 6.3 `/taller`: cola móvil — tarjetas de las unidades en caja y en ensamble (baterías x/y e inspección), búsqueda por VIN para el escáner, filtro por estado, CSV; "Iniciar ensamble" (en caja → en ensamble) comprobando filas afectadas
 - [ ] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda"
 
 ## Fase 7 · Precios y punto de venta (M5, M6)

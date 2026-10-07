@@ -1,0 +1,12 @@
+import type { NextRequest } from 'next/server';
+import { exigirRol } from '@/lib/auth';
+import { COLUMNAS_CSV_STOCK, consultarStock } from '@/lib/consultas/stock';
+import { hoyLima } from '@/lib/format';
+import { aCsv, leerParams, respuestaCsv } from '@/lib/tabla';
+
+export async function GET(request: NextRequest) {
+  await exigirRol('admin', 'tecnico');
+  const params = leerParams(Object.fromEntries(request.nextUrl.searchParams));
+  const { filas } = await consultarStock({ ...params, estados: ['en_caja', 'en_ensamble'] }, { todas: true });
+  return respuestaCsv(aCsv(filas, COLUMNAS_CSV_STOCK), `taller-${hoyLima()}.csv`);
+}
