@@ -57,7 +57,7 @@
 - [x] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda" — N casillas según el voltaje con Enter = siguiente (RN-01/RN-02), quitar serial mal escaneado; checklist (baterías contadas, VIN, motor, frenos, luces, claxon, voltaje) con vista previa aprobada/observada (RN-11, `lib/taller.ts`); "Pasar a tienda" con ubicación, habilitado solo si se cumple RN-10 (M4 ✅)
 
 ## Fase 7 · Precios y punto de venta (M5, M6)
-- [ ] 7.1 `/precios` con vista de admin y vista de vendedor
+- [x] 7.1 `/precios` con vista de admin y vista de vendedor — admin: `v_price_matrix` con costo, precio y utilidad por escala, edición inline del precio manual (marcado "manual", vacío = sugerido) y márgenes globales en % (RN-09); vendedor: modelo, disponibles y x1/x3/x6 leyendo solo `price_list` y `v_stock` (D25); E2E que revisa la red del vendedor (M5 ✅)
 - [ ] 7.2 `/ventas/nueva`: flujo completo del POS
 - [ ] 7.3 `/ventas` y `/ventas/[id]`: nota de venta imprimible y anulación
 - [ ] 7.4 E2E con Playwright: venta x1 con pago mixto y venta x6
@@ -110,6 +110,7 @@
 | D22 | 2026-10-07 | En Datos, el estado del lote se elige libremente entre en tránsito, en aduanas y en almacén; "liquidado" solo desde la pestaña Costeo | La BD no impone orden entre esos tres estados; es lo más simple y permite corregir errores |
 | D23 | 2026-10-07 | La cantidad del packing list no puede bajar de las unidades ya registradas, y el modelo de una línea no se cambia (se quita y se agrega otra) | RN-04 solo se validaba al registrar unidades; sin esto el lote quedaba inconsistente |
 | D24 | 2026-10-07 | "Guardar costeo" no recibe filas del navegador: la Server Action relee el lote y el packing list, recalcula con `calcularProrrateo` y llama a `guardar_costeo` | El cliente nunca decide montos; la RPC vuelve a validar en SQL (D7) |
+| D25 | 2026-10-07 | En `/precios` del vendedor hay una fila por modelo y lote liquidado (sin mostrar el lote), con su stock disponible; las ramas admin y vendedor son excluyentes en el servidor | Un mismo modelo puede tener precios distintos según el lote; el vendedor no debe ver lotes ni costos |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
