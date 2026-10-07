@@ -44,7 +44,7 @@
 - [x] 4.3 `/admin/ubicaciones` — alta y edición en un diálogo, filtros por estado y tipo, CSV; no se eliminan (se desactivan) porque las unidades y el historial las referencian
 
 ## Fase 5 · Lotes de importación (M3)
-- [ ] 5.1 Listado y creación de lotes
+- [x] 5.1 Listado y creación de lotes — `/lotes` con búsqueda (código, DAM, proveedor), filtro por estado y CSV; diálogo "Nuevo lote" (solo código y proveedor); `/lotes/[id]` con layout y pestañas como subrutas
 - [ ] 5.2 Pestañas Datos y Costos
 - [ ] 5.3 Pestaña Packing list
 - [ ] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir
