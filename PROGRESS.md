@@ -31,17 +31,17 @@
 - [x] 2.4 Migración `…_rpc_guardar_costeo.sql`: RPC transaccional que vuelve a validar los invariantes en SQL, con prueba en `tests/` — `20260928063742_rpc_guardar_costeo.sql` (security invoker, solo admin, bloquea el lote con `for update`); valida invariantes 1, 2 y el nuevo 4 (proporcionalidad por fila, ver D12); `tests/test_guardar_costeo.sql` (5 bloques); helpers movidos a `tests/01_helpers.sql` y `run.sh` usa una BD limpia por archivo
 - [x] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`) — `calcularPrecioSugerido` y `calcularMatrizPrecios` (precio manual, utilidad y margen real); `ErrorPrecios` con códigos; coincide con Postgres en 300 casos (`precios.postgres.json`, generado con `setseed(0.42)`) y en el golden test
 
-## Fase 3 · App base (Next.js)
+## Fase 3 · App base (Next.js) ✅
 - [x] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`) — Next 15.5, React 19, Tailwind 4, shadcn (radix-nova, 18 componentes); ESLint con `@next/eslint-plugin-next` y react-hooks (D14)
 - [x] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware — `src/lib/supabase/{client,server,middleware,env}.ts` y `src/middleware.ts`; `pnpm env:local` genera `.env.local` solo con valores públicos (D15)
 - [x] 3.3 `supabase gen types typescript --local > src/types/database.ts` — también como `pnpm gen:types`; los tres clientes quedan tipados con `Database`
 - [x] 3.4 Login, `/pendiente` y middleware de sesión y rol — `lib/roles.ts` (acceso por ruta, probado), `lib/auth.ts` (`exigirRol`), `lib/errores.ts` (mensajes de la BD); usuarios demo en `supabase/seeds/` (D16); Playwright con 4 E2E de login
 - [x] 3.5 Layout con sidebar según el rol, `lib/format.ts` (PEN, USD, fechas de Lima) y un toast para los errores de la BD — `components/sidebar.tsx` (menú lateral en móvil), `lib/navegacion.ts`, `lib/etiquetas.ts` (enums en español), `lib/toast.ts` (`avisar`) y sonner en el layout raíz
 
-## Fase 4 · Catálogo y usuarios (M1, M2)
+## Fase 4 · Catálogo y usuarios (M1, M2) ✅
 - [x] 4.1 `/admin/usuarios`: asignar rol y activar o desactivar cuentas — RPC `listar_usuarios()` (migración `20261007220653`) y `tests/test_admin_usuarios.sql`; un admin no se quita su rol ni se desactiva (D19); infraestructura de tablas (`lib/tabla.ts`, `components/tabla/*`: búsqueda, filtros, paginación de 50 y CSV)
 - [x] 4.2 `/admin/modelos`: CRUD con la cantidad de baterías derivada — esquemas zod compartidos (`lib/esquemas/`), componentes de formulario y `BotonConfirmar`; solo se ofrecen 48/60/72V y se muestra "5 baterías de 12V" (M2); un modelo usado en lotes no se elimina (se desactiva)
-- [ ] 4.3 `/admin/ubicaciones`
+- [x] 4.3 `/admin/ubicaciones` — alta y edición en un diálogo, filtros por estado y tipo, CSV; no se eliminan (se desactivan) porque las unidades y el historial las referencian
 
 ## Fase 5 · Lotes de importación (M3)
 - [ ] 5.1 Listado y creación de lotes
