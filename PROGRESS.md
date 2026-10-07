@@ -47,7 +47,7 @@
 - [x] 5.1 Listado y creación de lotes — `/lotes` con búsqueda (código, DAM, proveedor), filtro por estado y CSV; diálogo "Nuevo lote" (solo código y proveedor); `/lotes/[id]` con layout y pestañas como subrutas
 - [x] 5.2 Pestañas Datos y Costos — en un lote liquidado solo se editan las notas y los costos quedan deshabilitados; vista previa de tributos con el interruptor RN-05 (`lib/costing/impuestos.ts`); migración `20261007223650_invalidar_costeo` + `tests/test_invalidar_costeo.sql` (D21)
 - [x] 5.3 Pestaña Packing list — alta, edición y baja de líneas con EXW/CBM precargados del catálogo, totales con decimal.js (`lib/costing/packing.ts`) y alerta packing vs DAM; migración `20261007224356_guard_packing_cantidad` + `tests/test_packing_list.sql` (D23); datos demo en `supabase/seeds/02_datos_demo.sql`
-- [ ] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir
+- [x] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir — tabla de SPEC §7, costo total del lote y precios x1/x3/x6 (con precios manuales); el costeo se recalcula en el servidor al guardar (D24); estado vigente/sin guardar/desactualizado (`lib/costing/estado-costeo.ts`); "Liquidar" exige costeo vigente y confirmación; "Reabrir" también en Costos (M3 ✅)
 - [ ] 5.5 Pestañas Unidades y Auditoría
 
 ## Fase 6 · Inventario y taller (M4)
@@ -109,6 +109,7 @@
 | D21 | 2026-10-07 | Si cambian los montos o el TC de un lote, o su packing list (cantidad, EXW, CBM), un trigger borra el costeo guardado | RN-07 solo compara cantidad y TC: sin esto se podía liquidar con un costeo calculado sobre montos viejos |
 | D22 | 2026-10-07 | En Datos, el estado del lote se elige libremente entre en tránsito, en aduanas y en almacén; "liquidado" solo desde la pestaña Costeo | La BD no impone orden entre esos tres estados; es lo más simple y permite corregir errores |
 | D23 | 2026-10-07 | La cantidad del packing list no puede bajar de las unidades ya registradas, y el modelo de una línea no se cambia (se quita y se agrega otra) | RN-04 solo se validaba al registrar unidades; sin esto el lote quedaba inconsistente |
+| D24 | 2026-10-07 | "Guardar costeo" no recibe filas del navegador: la Server Action relee el lote y el packing list, recalcula con `calcularProrrateo` y llama a `guardar_costeo` | El cliente nunca decide montos; la RPC vuelve a validar en SQL (D7) |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.

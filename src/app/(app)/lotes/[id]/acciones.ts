@@ -21,6 +21,7 @@ import {
   type EntradaLineaPacking,
 } from '@/lib/esquemas/lote';
 import { createClient } from '@/lib/supabase/server';
+import { costeoDelLote } from './costeo/calculo';
 
 function idValido(id: string) {
   return z.uuid().safeParse(id).success;
@@ -92,6 +93,77 @@ export async function guardarCostosLote(id: string, entrada: EntradaCostosLote):
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidarLote(id);
+  return exito(null);
+}
+
+// ---------------------------------------------------------------- costeo y liquidación
+
+/**
+ * Guarda el costeo (RN-06): se recalcula aquí con los datos actuales de la BD y la RPC
+ * guardar_costeo vuelve a validar los invariantes en SQL (D7).
+ */
+export async function guardarCosteo(batchId: string): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId)) return fallo('Lote no válido.');
+  const supabase = await createClient();
+
+  const [{ data: lote }, { data: items, error: errorItems }] = await Promise.all([
+    supabase.from('import_batches').select('*').eq('id', batchId).maybeSingle(),
+    supabase.from('batch_items').select('*, vehicle_models(codigo_modelo)').eq('batch_id', batchId),
+  ]);
+  if (!lote) return fallo(MENSAJE_SIN_FILAS);
+  if (errorItems) return fallo(mensajeDeError(errorItems));
+
+  const costeo = costeoDelLote(
+    lote,
+    items.map((i) => ({ ...i, codigo_modelo: i.vehicle_models?.codigo_modelo ?? '' })),
+  );
+  if (!costeo.ok) return fallo(costeo.error);
+
+  // La RPC recibe el formato FilaCosteo (sin el código de modelo, que solo es para mostrar)
+  const filas = costeo.filas.map((f) => {
+    const fila: Record<string, string | number> = { ...f };
+    delete fila.codigo_modelo;
+    return fila;
+  });
+  const { error } = await supabase.rpc('guardar_costeo', { p_batch_id: batchId, p_filas: filas });
+  if (error) return fallo(mensajeDeError(error));
+  revalidarLote(batchId);
+  return exito(null);
+}
+
+/** RN-07/RN-09: la BD valida el costeo vigente y genera la matriz de precios. */
+export async function liquidarLote(batchId: string): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId)) return fallo('Lote no válido.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('import_batches')
+    .update({ estado: 'liquidado' })
+    .eq('id', batchId)
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidarLote(batchId);
+  revalidatePath('/precios');
+  return exito(null);
+}
+
+/** RN-08: reabrir (vuelve a "en almacén") solo si no hay unidades reservadas ni vendidas. */
+export async function reabrirLote(batchId: string): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId)) return fallo('Lote no válido.');
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('import_batches')
+    .update({ estado: 'en_almacen' })
+    .eq('id', batchId)
+    .eq('estado', 'liquidado')
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo('El lote no está liquidado o no tienes permiso para reabrirlo.');
+  revalidarLote(batchId);
+  revalidatePath('/precios');
   return exito(null);
 }
 

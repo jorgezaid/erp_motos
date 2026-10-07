@@ -1,6 +1,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { EntradaCostosLote } from '@/lib/esquemas/lote';
 import { createClient } from '@/lib/supabase/server';
+import { BotonReabrir } from '../costeo/acciones-costeo';
 import { obtenerLote } from '../datos';
 import { FormularioCostos } from './formulario-costos';
 
@@ -39,9 +40,9 @@ export default async function CostosLote({ params }: { params: Promise<{ id: str
     <>
       {liquidado && (
         <Alert className="mb-6 max-w-4xl">
-          <AlertDescription>
-            El lote está liquidado: sus costos están congelados (RN-08). Para editarlos, reábrelo desde la pestaña
-            Costeo.
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>El lote está liquidado: sus costos están congelados (RN-08). Reábrelo para editarlos.</span>
+            <BotonReabrir batchId={lote.id} codigo={lote.codigo_embarque} />
           </AlertDescription>
         </Alert>
       )}
