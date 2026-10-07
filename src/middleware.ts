@@ -1,9 +1,25 @@
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { decidirRuta, type Rol } from '@/lib/roles';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  const { response } = await updateSession(request);
-  return response;
+  const { response, supabase, user } = await updateSession(request);
+
+  let rol: Rol | null = null;
+  if (user) {
+    // current_app_role() devuelve null si el usuario no tiene rol o está desactivado
+    const { data } = await supabase.rpc('current_app_role');
+    rol = data ?? null;
+  }
+
+  const decision = decidirRuta(request.nextUrl.pathname, !!user, rol);
+  if (decision.tipo === 'seguir') return response;
+
+  const destino = new URL(decision.destino, request.url);
+  const redireccion = NextResponse.redirect(destino);
+  // Conserva las cookies de sesión refrescadas
+  for (const cookie of response.cookies.getAll()) redireccion.cookies.set(cookie);
+  return redireccion;
 }
 
 export const config = {

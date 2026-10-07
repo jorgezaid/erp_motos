@@ -3,6 +3,40 @@
 > **¿Vas a trabajar con Claude Code?** Empieza por `docs/GUIA-CLAUDE-CODE.md`.
 > Documentos del proyecto: `SPEC.md` (qué construir), `PROGRESS.md` (estado) y `CLAUDE.md` (reglas para Claude).
 
+## Arranque rápido (local)
+
+```bash
+pnpm install
+supabase start          # BD local (Docker); puertos 443xx
+supabase db reset       # migraciones + seed + datos demo (supabase/seeds/)
+pnpm env:local          # crea .env.local con la URL y la clave anónima locales
+pnpm dev                # http://localhost:3000
+```
+
+### Usuarios de prueba (solo local)
+
+Los crea `supabase/seeds/01_usuarios_demo.sql` en cada `supabase db reset`. Contraseña de todos: **`Demo1234!`**
+
+| Email | Rol | Para probar |
+|---|---|---|
+| `admin@demo.pe` | admin | Todo: lotes, costeo, precios, anulaciones, usuarios |
+| `tecnico@demo.pe` | tecnico | Registro de unidades, taller e inspecciones (sin costos ni precios) |
+| `vendedor@demo.pe` | vendedor | Stock, precios y punto de venta (sin costos) |
+| `vendedor2@demo.pe` | vendedor | Que un vendedor no pueda editar órdenes de otro |
+| `pendiente@demo.pe` | *(sin rol)* | La pantalla "Tu cuenta espera aprobación" |
+
+Estos usuarios **no** se suben a Supabase Cloud: `supabase db push` no ejecuta los seeds.
+
+### Pruebas
+
+```bash
+pnpm test               # Vitest (unitarias)
+pnpm lint && pnpm typecheck
+pnpm build
+.\tests\run.ps1         # pruebas SQL (Windows; en Linux/macOS: ./tests/run.sh)
+pnpm e2e                # Playwright contra la BD local (requiere `supabase db reset` previo)
+```
+
 ## Fase 1 completada: Base de datos (Supabase / PostgreSQL)
 
 ## Contenido
