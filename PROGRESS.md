@@ -33,7 +33,7 @@
 
 ## Fase 3 · App base (Next.js)
 - [x] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`) — Next 15.5, React 19, Tailwind 4, shadcn (radix-nova, 18 componentes); ESLint con `@next/eslint-plugin-next` y react-hooks (D14)
-- [ ] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware
+- [x] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware — `src/lib/supabase/{client,server,middleware,env}.ts` y `src/middleware.ts`; `pnpm env:local` genera `.env.local` solo con valores públicos (D15)
 - [ ] 3.3 `supabase gen types typescript --local > src/types/database.ts`
 - [ ] 3.4 Login, `/pendiente` y middleware de sesión y rol
 - [ ] 3.5 Layout con sidebar según el rol, `lib/format.ts` (PEN, USD, fechas de Lima) y un toast para los errores de la BD
@@ -100,6 +100,7 @@
 | D12 | 2026-10-07 | `guardar_costeo` valida además un invariante 4 (SPEC §7): cada fila = total × baseᵢ / Σ bases (±0.01) y armado exacto | Los invariantes 1 y 2 solo miran totales: no detectan un reparto con el criterio equivocado ni montos intercambiados entre modelos |
 | D13 | 2026-10-07 | Pruebas SQL: helpers en `tests/01_helpers.sql`; `run.sh` recrea la BD por cada `tests/test_*.sql` | Archivos de prueba independientes entre sí |
 | D14 | 2026-10-07 | Tailwind 4 (sin `tailwind.config`) y shadcn con el paquete `cn` (sustituto oficial de clsx + tailwind-merge); `next build` no ejecuta ESLint (`ignoreDuringBuilds`) | El lint ya corre con `pnpm lint` sobre el flat config; Next no detecta el plugin en flat config y lo duplicaría |
+| D15 | 2026-10-07 | La app no usa la `SUPABASE_SERVICE_ROLE_KEY` en ningún sitio; `.env.local` solo lleva la URL y la clave anónima | CLAUDE.md regla 5: solo si es imprescindible. Lo administrativo (listar usuarios con email) va por RPC `security definer` que exige admin |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
