@@ -50,11 +50,11 @@
 - [x] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir — tabla de SPEC §7, costo total del lote y precios x1/x3/x6 (con precios manuales); el costeo se recalcula en el servidor al guardar (D24); estado vigente/sin guardar/desactualizado (`lib/costing/estado-costeo.ts`); "Liquidar" exige costeo vigente y confirmación; "Reabrir" también en Costos (M3 ✅)
 - [x] 5.5 Pestañas Unidades y Auditoría — Unidades sobre `v_stock` (consulta compartida `lib/consultas/stock.ts`) más el costo landing de `v_vehicle_costs`; Auditoría sobre `v_batch_reconciliation` con filas en rojo y alertas en texto (`lib/auditoria.ts`); ambas con CSV
 
-## Fase 6 · Inventario y taller (M4)
+## Fase 6 · Inventario y taller (M4) ✅
 - [x] 6.1 `/inventario` sobre `v_stock` — filtros por estado, modelo, ubicación y color, búsqueda por VIN/motor/modelo y CSV; precios solo para admin y vendedor (nunca costos); se corrigió una carrera en `BarraFiltros` al cambiar dos filtros seguidos
 - [x] 6.2 `/inventario/registro`: registro masivo pegando desde Excel o con escáner — parser y validación en `lib/registro.ts` (tab, `;` o `,`; encabezado opcional; RN-03 mayúsculas sin espacios; repetidos); "Faltan X de Y" desde `pendientes_de_registro()`; modo escáner con Enter = siguiente campo; un solo INSERT (todo o nada)
 - [x] 6.3 `/taller`: cola móvil — tarjetas de las unidades en caja y en ensamble (baterías x/y e inspección), búsqueda por VIN para el escáner, filtro por estado, CSV; "Iniciar ensamble" (en caja → en ensamble) comprobando filas afectadas
-- [ ] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda"
+- [x] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda" — N casillas según el voltaje con Enter = siguiente (RN-01/RN-02), quitar serial mal escaneado; checklist (baterías contadas, VIN, motor, frenos, luces, claxon, voltaje) con vista previa aprobada/observada (RN-11, `lib/taller.ts`); "Pasar a tienda" con ubicación, habilitado solo si se cumple RN-10 (M4 ✅)
 
 ## Fase 7 · Precios y punto de venta (M5, M6)
 - [ ] 7.1 `/precios` con vista de admin y vista de vendedor

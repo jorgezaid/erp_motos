@@ -22,6 +22,20 @@ export async function crearLoteConPacking(page: Page, lineas: [modelo: string, c
   return codigo;
 }
 
+/** Como admin: crea un lote con 1 unidad del modelo y la registra (queda en caja). Devuelve el VIN. */
+export async function unidadNuevaEnCaja(page: Page, modelo: string, prefijo = 'U'): Promise<string> {
+  const codigo = await crearLoteConPacking(page, [[modelo, 1]]);
+  const vin = `${prefijo}${codigo.slice(-9)}`;
+  await page.goto('/inventario/registro');
+  await page.getByRole('combobox', { name: 'Lote y modelo' }).click();
+  await page.getByRole('option', { name: new RegExp(`${codigo} · ${modelo}`) }).click();
+  await page.getByLabel(/Columnas: VIN, motor/).fill(`${vin}\tM${vin}`);
+  await page.getByRole('button', { name: 'Agregar a la lista' }).click();
+  await page.getByRole('button', { name: 'Registrar 1 unidad(es)' }).click();
+  await expect(page.getByText('1 unidad(es) registradas')).toBeVisible();
+  return vin;
+}
+
 /** Abre una pestaña de /lotes/[id] (sin confundirla con los enlaces del sidebar). */
 export async function pestanaLote(page: Page, nombre: string) {
   await page.getByRole('navigation', { name: 'Secciones del lote' }).getByRole('link', { name: nombre, exact: true }).click();
