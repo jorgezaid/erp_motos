@@ -43,12 +43,12 @@
 - [x] 4.2 `/admin/modelos`: CRUD con la cantidad de baterías derivada — esquemas zod compartidos (`lib/esquemas/`), componentes de formulario y `BotonConfirmar`; solo se ofrecen 48/60/72V y se muestra "5 baterías de 12V" (M2); un modelo usado en lotes no se elimina (se desactiva)
 - [x] 4.3 `/admin/ubicaciones` — alta y edición en un diálogo, filtros por estado y tipo, CSV; no se eliminan (se desactivan) porque las unidades y el historial las referencian
 
-## Fase 5 · Lotes de importación (M3)
+## Fase 5 · Lotes de importación (M3) ✅
 - [x] 5.1 Listado y creación de lotes — `/lotes` con búsqueda (código, DAM, proveedor), filtro por estado y CSV; diálogo "Nuevo lote" (solo código y proveedor); `/lotes/[id]` con layout y pestañas como subrutas
 - [x] 5.2 Pestañas Datos y Costos — en un lote liquidado solo se editan las notas y los costos quedan deshabilitados; vista previa de tributos con el interruptor RN-05 (`lib/costing/impuestos.ts`); migración `20261007223650_invalidar_costeo` + `tests/test_invalidar_costeo.sql` (D21)
 - [x] 5.3 Pestaña Packing list — alta, edición y baja de líneas con EXW/CBM precargados del catálogo, totales con decimal.js (`lib/costing/packing.ts`) y alerta packing vs DAM; migración `20261007224356_guard_packing_cantidad` + `tests/test_packing_list.sql` (D23); datos demo en `supabase/seeds/02_datos_demo.sql`
 - [x] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir — tabla de SPEC §7, costo total del lote y precios x1/x3/x6 (con precios manuales); el costeo se recalcula en el servidor al guardar (D24); estado vigente/sin guardar/desactualizado (`lib/costing/estado-costeo.ts`); "Liquidar" exige costeo vigente y confirmación; "Reabrir" también en Costos (M3 ✅)
-- [ ] 5.5 Pestañas Unidades y Auditoría
+- [x] 5.5 Pestañas Unidades y Auditoría — Unidades sobre `v_stock` (consulta compartida `lib/consultas/stock.ts`) más el costo landing de `v_vehicle_costs`; Auditoría sobre `v_batch_reconciliation` con filas en rojo y alertas en texto (`lib/auditoria.ts`); ambas con CSV
 
 ## Fase 6 · Inventario y taller (M4)
 - [ ] 6.1 `/inventario` sobre `v_stock`

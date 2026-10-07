@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { ingresar, pestanaLote } from './ayudas';
 
 test('M3: packing list — EXW y CBM del catálogo, totales y alerta packing vs DAM', async ({ page }) => {
   await ingresar(page, 'admin@demo.pe', '/lotes');
@@ -8,7 +8,7 @@ test('M3: packing list — EXW y CBM del catálogo, totales y alerta packing vs 
   await page.getByRole('dialog').getByLabel('Código de embarque').fill(codigo);
   await page.getByRole('dialog').getByRole('button', { name: 'Crear lote' }).click();
   await expect(page.getByRole('heading', { name: new RegExp(codigo) })).toBeVisible();
-  await page.getByRole('link', { name: 'Packing list' }).click();
+  await pestanaLote(page, 'Packing list');
   await expect(page.getByText('El packing list está vacío.')).toBeVisible();
 
   // DEMO-48: precarga EXW 300 y CBM 0.5 del catálogo
@@ -55,7 +55,7 @@ test('M3: packing list — EXW y CBM del catálogo, totales y alerta packing vs 
 test('D23/RN-04: no se baja la cantidad por debajo de las unidades registradas', async ({ page }) => {
   await ingresar(page, 'admin@demo.pe', '/lotes?q=DEMO-ALM-002');
   await page.getByRole('link', { name: 'DEMO-ALM-002' }).click();
-  await page.getByRole('link', { name: 'Packing list' }).click();
+  await pestanaLote(page, 'Packing list');
 
   const fila = page.getByRole('row', { name: /DEMO-60/ });
   await expect(fila.getByRole('button', { name: 'Quitar' })).toBeDisabled();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { ingresar, pestanaLote } from './ayudas';
 
 async function crearLote(page: Page): Promise<string> {
   const codigo = `E2E${Date.now()}`;
@@ -38,7 +38,7 @@ test('M3: pestaña Datos — DAM, fechas y estado, con validación', async ({ pa
 test('M3: pestaña Costos — montos del golden test e interruptor RN-05', async ({ page }) => {
   await ingresar(page, 'admin@demo.pe');
   await crearLote(page);
-  await page.getByRole('link', { name: 'Costos' }).click();
+  await pestanaLote(page, 'Costos');
 
   const montos: [string, string][] = [
     ['Tipo de cambio (S/ por US$)', '3.78'],

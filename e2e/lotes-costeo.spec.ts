@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { ingresar, pestanaLote } from './ayudas';
 
 /** Lote con los datos del golden test (SPEC §7); DEMO-48/72 tienen el EXW y el CBM de TEST-48/72. */
 async function crearLoteGolden(page: Page): Promise<string> {
@@ -10,7 +10,7 @@ async function crearLoteGolden(page: Page): Promise<string> {
   await page.getByRole('dialog').getByRole('button', { name: 'Crear lote' }).click();
   await expect(page.getByRole('heading', { name: new RegExp(codigo) })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Costos' }).click();
+  await pestanaLote(page, 'Costos');
   const montos: [string, string][] = [
     ['Tipo de cambio (S/ por US$)', '3.78'],
     ['FOB total (US$)', '7200'],
@@ -29,7 +29,7 @@ async function crearLoteGolden(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Guardar costos' }).click();
   await expect(page.getByText('Costos del lote guardados')).toBeVisible();
 
-  await page.getByRole('link', { name: 'Packing list' }).click();
+  await pestanaLote(page, 'Packing list');
   for (const [modelo, q] of [
     ['DEMO-48', '6'],
     ['DEMO-72', '2'],
@@ -47,7 +47,7 @@ async function crearLoteGolden(page: Page): Promise<string> {
 test('M3: la pestaña Costeo muestra exactamente los valores de SPEC §7; liquidar congela y reabrir', async ({ page }) => {
   await ingresar(page, 'admin@demo.pe');
   const codigo = await crearLoteGolden(page);
-  await page.getByRole('link', { name: 'Costeo' }).click();
+  await pestanaLote(page, 'Costeo');
 
   // Vista previa = tabla de SPEC §7
   const tabla = page.getByTestId('tabla-costeo');
@@ -79,7 +79,7 @@ test('M3: la pestaña Costeo muestra exactamente los valores de SPEC §7; liquid
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Liquidado');
 
   // Tras liquidar, los costos quedan deshabilitados y aparece "Reabrir lote"
-  await page.getByRole('link', { name: 'Costos' }).click();
+  await pestanaLote(page, 'Costos');
   await expect(page.getByLabel('FOB total (US$)')).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Guardar costos' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Reabrir lote' }).click();
@@ -92,7 +92,7 @@ test('M3: la pestaña Costeo muestra exactamente los valores de SPEC §7; liquid
 test('RN-08: un lote con unidades vendidas no se reabre', async ({ page }) => {
   await ingresar(page, 'admin@demo.pe', '/lotes?q=DEMO-LIQ-001');
   await page.getByRole('link', { name: 'DEMO-LIQ-001' }).click();
-  await page.getByRole('link', { name: 'Costeo' }).click();
+  await pestanaLote(page, 'Costeo');
   await page.getByRole('button', { name: 'Reabrir lote' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Reabrir' }).click();
   await expect(page.getByText('No se puede reabrir el lote DEMO-LIQ-001: tiene unidades reservadas o vendidas')).toBeVisible();
