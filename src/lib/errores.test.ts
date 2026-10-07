@@ -29,6 +29,22 @@ describe('mensajeDeError (SPEC §11: los mensajes de la BD se muestran tal cual)
     ).toBe('El VIN "LXYZ123" ya está registrado.');
   });
 
+  it('RN-03: con RLS (sin detalle) deduce el campo del nombre de la restricción', () => {
+    expect(
+      mensajeDeError({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint "vehicle_models_codigo_modelo_key"',
+        details: null,
+      }),
+    ).toBe('El código de modelo ya está registrado.');
+    expect(
+      mensajeDeError({
+        code: '23505',
+        message: 'duplicate key value violates unique constraint "vehicle_batteries_serial_key"',
+      }),
+    ).toBe('El serial de batería ya está registrado.');
+  });
+
   it('RN-20: documento inválido', () => {
     expect(
       mensajeDeError({

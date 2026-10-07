@@ -40,7 +40,7 @@
 
 ## Fase 4 · Catálogo y usuarios (M1, M2)
 - [x] 4.1 `/admin/usuarios`: asignar rol y activar o desactivar cuentas — RPC `listar_usuarios()` (migración `20261007220653`) y `tests/test_admin_usuarios.sql`; un admin no se quita su rol ni se desactiva (D19); infraestructura de tablas (`lib/tabla.ts`, `components/tabla/*`: búsqueda, filtros, paginación de 50 y CSV)
-- [ ] 4.2 `/admin/modelos`: CRUD con la cantidad de baterías derivada
+- [x] 4.2 `/admin/modelos`: CRUD con la cantidad de baterías derivada — esquemas zod compartidos (`lib/esquemas/`), componentes de formulario y `BotonConfirmar`; solo se ofrecen 48/60/72V y se muestra "5 baterías de 12V" (M2); un modelo usado en lotes no se elimina (se desactiva)
 - [ ] 4.3 `/admin/ubicaciones`
 
 ## Fase 5 · Lotes de importación (M3)

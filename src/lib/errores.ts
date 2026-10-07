@@ -63,6 +63,11 @@ export function mensajeDeError(error: ErrorSupabase | null | undefined): string 
     const m = /Key \(([^)]+)\)=\(([^)]*)\)/.exec(details ?? message);
     const campo = m?.[1] ? CAMPOS_UNICOS[m[1]] : undefined;
     if (campo && m?.[2] !== undefined) return `${campo} "${m[2]}" ya está registrado.`;
+    // Con RLS, Postgres omite el detalle "Key (…)=(…)": se deduce la columna del nombre de la
+    // restricción (`tabla_columna_key`)
+    const restriccion = /unique constraint "([^"]+)"/.exec(message)?.[1] ?? '';
+    const columna = Object.keys(CAMPOS_UNICOS).find((c) => restriccion.endsWith(`_${c}_key`));
+    if (columna) return `${CAMPOS_UNICOS[columna]} ya está registrado.`;
     return 'Ya existe un registro con esos datos.';
   }
   if (code === '23514') {
