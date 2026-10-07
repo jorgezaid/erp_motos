@@ -17,7 +17,8 @@
     "typecheck": "node -e \"require('fs').rmSync('.next/types',{recursive:true,force:true})\" && next typegen && tsc --noEmit",
     "env:local": "node scripts/crear-env-local.mjs",
     "gen:types": "supabase gen types typescript --local > src/types/database.ts",
-    "e2e": "next build && playwright test"
+    "e2e": "next build && playwright test",
+    "e2e:limpio": "supabase db reset && pnpm e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

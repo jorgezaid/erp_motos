@@ -56,11 +56,11 @@
 - [x] 6.3 `/taller`: cola móvil — tarjetas de las unidades en caja y en ensamble (baterías x/y e inspección), búsqueda por VIN para el escáner, filtro por estado, CSV; "Iniciar ensamble" (en caja → en ensamble) comprobando filas afectadas
 - [x] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda" — N casillas según el voltaje con Enter = siguiente (RN-01/RN-02), quitar serial mal escaneado; checklist (baterías contadas, VIN, motor, frenos, luces, claxon, voltaje) con vista previa aprobada/observada (RN-11, `lib/taller.ts`); "Pasar a tienda" con ubicación, habilitado solo si se cumple RN-10 (M4 ✅)
 
-## Fase 7 · Precios y punto de venta (M5, M6)
+## Fase 7 · Precios y punto de venta (M5, M6) ✅
 - [x] 7.1 `/precios` con vista de admin y vista de vendedor — admin: `v_price_matrix` con costo, precio y utilidad por escala, edición inline del precio manual (marcado "manual", vacío = sugerido) y márgenes globales en % (RN-09); vendedor: modelo, disponibles y x1/x3/x6 leyendo solo `price_list` y `v_stock` (D25); E2E que revisa la red del vendedor (M5 ✅)
 - [x] 7.2 `/ventas/nueva`: flujo completo del POS — paso 1 (tipo de venta + cliente con RN-20) crea el borrador (D26); en `/ventas/[id]`: búsqueda por VIN o modelo y color, agregar/quitar (reserva), cambio de escala con re-cotización (RN-13), aviso "Faltan N unidades para precio …", pagos múltiples con saldo siempre visible, confirmar (RN-14/15/16) y eliminar borrador (RN-18); reglas de UX en `lib/ventas.ts` (M6 ✅ x6 con 5 y 2 pestañas)
 - [x] 7.3 `/ventas` y `/ventas/[id]`: nota de venta imprimible y anulación — listado con búsqueda (n.º, cliente, documento), filtros por estado y escala, CSV; nota de venta interna (`window.print`, sin sidebar) con unidades, garantías y pagos; editar solo teléfono/email en confirmadas (RN-17); "Anular" solo admin con motivo (unidades a tienda, garantías anuladas)
-- [ ] 7.4 E2E con Playwright: venta x1 con pago mixto y venta x6
+- [x] 7.4 E2E con Playwright: venta x1 con pago mixto y venta x6 — `e2e/venta-completa.spec.ts`; stock demo ampliado (DEMO-48 ×24, DEMO-72 ×8, mismos costos unitarios) y `pnpm e2e:limpio`; suite completa: 38 E2E en verde desde una BD limpia
 
 ## Fase 8 · Garantías, auditoría y dashboard (M7, M8)
 - [ ] 8.1 `/garantias` y reclamos

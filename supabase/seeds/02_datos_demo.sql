@@ -4,8 +4,9 @@
 -- como los usuarios demo, así que los datos son coherentes con lo que haría la app.
 --
 --   Modelos  DEMO-48 (48V, 4 bat.), DEMO-60 (60V, 5 bat.), DEMO-72 (72V, 6 bat.)
---   Lote DEMO-LIQ-001  liquidado · DEMO-48 ×12 y DEMO-72 ×4 · costos del golden test (SPEC §7)
---                      14 unidades listas en Showroom Piérola, 1 en ensamble y 1 vendida (orden #1)
+--   Lote DEMO-LIQ-001  liquidado · DEMO-48 ×24 y DEMO-72 ×8 · costos del golden test (SPEC §7) ×4:
+--                      mismas proporciones, así que el costo unitario es el del golden test
+--                      30 unidades listas en Showroom Piérola, 1 en ensamble y 1 vendida (orden #1)
 --   Lote DEMO-ALM-002  en almacén, sin liquidar · DEMO-60 ×5 · 3 unidades en caja, faltan 2 por registrar
 -- =============================================================================
 
@@ -23,13 +24,13 @@ insert into public.import_batches (codigo_embarque, nro_dam, proveedor, fecha_em
   fob_total_usd, flete_internacional_usd, gastos_agente_usd, ad_valorem_pen, igv_pen, ipm_pen, percepcion_pen,
   flete_nacional_pen, alquiler_periodo_pen, sueldos_periodo_pen, publicidad_inicial_pen, estado)
 values ('DEMO-LIQ-001', '118-2026-10-000001-01-0-00', 'Guangzhou EV Co.', '2026-08-01', '2026-09-10', 3.78,
-        14400, 1600, 400, 1000, 2000, 400, 600, 800, 2000, 4000, 400, 'en_almacen'),
+        28800, 3200, 800, 2000, 4000, 800, 1200, 1600, 4000, 8000, 800, 'en_almacen'),
        ('DEMO-ALM-002', null, 'Guangzhou EV Co.', '2026-09-15', '2026-10-05', 3.75,
         2500, 300, 100, 200, 450, 90, 120, 150, 500, 900, 100, 'en_almacen');
 
 insert into public.batch_items (batch_id, model_id, cantidad_packing_list, cantidad_dam, exw_usd_unitario, volumen_cbm_unitario)
 select b.id, m.id, x.q, x.q, m.exw_usd_unitario, m.volumen_cbm_unitario
-from (values ('DEMO-LIQ-001', 'DEMO-48', 12), ('DEMO-LIQ-001', 'DEMO-72', 4), ('DEMO-ALM-002', 'DEMO-60', 5)) x(lote, modelo, q)
+from (values ('DEMO-LIQ-001', 'DEMO-48', 24), ('DEMO-LIQ-001', 'DEMO-72', 8), ('DEMO-ALM-002', 'DEMO-60', 5)) x(lote, modelo, q)
 join public.import_batches b on b.codigo_embarque = x.lote
 join public.vehicle_models m on m.codigo_modelo = x.modelo;
 
@@ -45,7 +46,7 @@ begin
   for u in
     select b.id as batch_id, m.id as model_id, m.codigo_modelo, m.cantidad_baterias_12v as baterias,
            g.i, x.listas, x.registrar
-    from (values ('DEMO-LIQ-001', 'DEMO-48', 12, 12), ('DEMO-LIQ-001', 'DEMO-72', 3, 4),
+    from (values ('DEMO-LIQ-001', 'DEMO-48', 24, 24), ('DEMO-LIQ-001', 'DEMO-72', 7, 8),
                  ('DEMO-ALM-002', 'DEMO-60', 0, 3)) x(lote, modelo, listas, registrar)
     join public.import_batches b on b.codigo_embarque = x.lote
     join public.vehicle_models m on m.codigo_modelo = x.modelo
