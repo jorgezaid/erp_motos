@@ -1,14 +1,35 @@
-// ESLint 9 (flat config). En la tarea 3.1 se amplía con las reglas de Next.js (@next/eslint-plugin-next)
-// y React, agregando bloques a este arreglo en vez de reemplazarlo.
+// ESLint 9 (flat config): reglas base de TypeScript + Next.js y React Hooks.
 import js from '@eslint/js';
+import nextPlugin from '@next/eslint-plugin-next';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['node_modules/', '.next/', 'out/', 'coverage/', 'src/types/database.ts'] },
+  {
+    ignores: [
+      'node_modules/',
+      '.next/',
+      'out/',
+      'coverage/',
+      'playwright-report/',
+      'test-results/',
+      'next-env.d.ts',
+      'src/types/database.ts',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
-    languageOptions: { globals: globals.node },
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { '@next/next': nextPlugin, 'react-hooks': reactHooks },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs['core-web-vitals'].rules,
+      ...reactHooks.configs.recommended.rules,
+    },
   },
 );

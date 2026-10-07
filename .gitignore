@@ -13,3 +13,5 @@ test-results/
 supabase/.branches
 supabase/.temp
 .claude/settings.local.json
+next-env.d.ts
+*.tsbuildinfo

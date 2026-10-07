@@ -32,7 +32,7 @@
 - [x] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`) — `calcularPrecioSugerido` y `calcularMatrizPrecios` (precio manual, utilidad y margen real); `ErrorPrecios` con códigos; coincide con Postgres en 300 casos (`precios.postgres.json`, generado con `setseed(0.42)`) y en el golden test
 
 ## Fase 3 · App base (Next.js)
-- [ ] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`)
+- [x] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`) — Next 15.5, React 19, Tailwind 4, shadcn (radix-nova, 18 componentes); ESLint con `@next/eslint-plugin-next` y react-hooks (D14)
 - [ ] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware
 - [ ] 3.3 `supabase gen types typescript --local > src/types/database.ts`
 - [ ] 3.4 Login, `/pendiente` y middleware de sesión y rol
@@ -99,6 +99,7 @@
 | D11 | 2026-09-26 | Node ≥ 22.12 (antes 20+), TypeScript 5.9 y no 7, sin `exactOptionalPropertyTypes` | Vitest 5 exige Node 22.12+ (Node 20 ya no tiene soporte); typescript-eslint solo admite TS < 6.1; `exactOptionalPropertyTypes` choca con los tipos de Supabase y react-hook-form |
 | D12 | 2026-10-07 | `guardar_costeo` valida además un invariante 4 (SPEC §7): cada fila = total × baseᵢ / Σ bases (±0.01) y armado exacto | Los invariantes 1 y 2 solo miran totales: no detectan un reparto con el criterio equivocado ni montos intercambiados entre modelos |
 | D13 | 2026-10-07 | Pruebas SQL: helpers en `tests/01_helpers.sql`; `run.sh` recrea la BD por cada `tests/test_*.sql` | Archivos de prueba independientes entre sí |
+| D14 | 2026-10-07 | Tailwind 4 (sin `tailwind.config`) y shadcn con el paquete `cn` (sustituto oficial de clsx + tailwind-merge); `next build` no ejecuta ESLint (`ignoreDuringBuilds`) | El lint ya corre con `pnpm lint` sobre el flat config; Next no detecta el plugin en flat config y lo duplicaría |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
