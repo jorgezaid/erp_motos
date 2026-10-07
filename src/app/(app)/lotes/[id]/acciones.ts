@@ -15,8 +15,10 @@ import {
 import {
   esquemaCostosLote,
   esquemaDatosLote,
+  esquemaLineaPacking,
   type EntradaCostosLote,
   type EntradaDatosLote,
+  type EntradaLineaPacking,
 } from '@/lib/esquemas/lote';
 import { createClient } from '@/lib/supabase/server';
 
@@ -90,5 +92,69 @@ export async function guardarCostosLote(id: string, entrada: EntradaCostosLote):
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidarLote(id);
+  return exito(null);
+}
+
+// ---------------------------------------------------------------- packing list
+
+function filaPacking(l: z.output<typeof esquemaLineaPacking>) {
+  return {
+    cantidad_packing_list: l.cantidad_packing_list,
+    cantidad_dam: l.cantidad_dam,
+    exw_usd_unitario: Number(l.exw_usd_unitario),
+    volumen_cbm_unitario: Number(l.volumen_cbm_unitario),
+  };
+}
+
+/** Agrega un modelo al packing list (cambiarlo borra el costeo guardado, D21). */
+export async function agregarLinea(batchId: string, entrada: EntradaLineaPacking): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId)) return fallo('Lote no válido.');
+  const d = esquemaLineaPacking.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('batch_items')
+    .insert({ batch_id: batchId, model_id: d.data.model_id, ...filaPacking(d.data) });
+  if (error) {
+    if (error.code === '23505') return fallo('Ese modelo ya está en el packing list: edita su línea.');
+    return fallo(mensajeDeError(error));
+  }
+  revalidarLote(batchId);
+  return exito(null);
+}
+
+export async function actualizarLinea(batchId: string, itemId: string, entrada: EntradaLineaPacking): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId) || !idValido(itemId)) return fallo('Línea no válida.');
+  const d = esquemaLineaPacking.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('batch_items')
+    .update(filaPacking(d.data))
+    .eq('id', itemId)
+    .eq('batch_id', batchId)
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidarLote(batchId);
+  return exito(null);
+}
+
+export async function eliminarLinea(batchId: string, itemId: string): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId) || !idValido(itemId)) return fallo('Línea no válida.');
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('batch_items').delete().eq('id', itemId).eq('batch_id', batchId).select('id');
+  if (error) {
+    if (error.code === '23503') return fallo('No se puede quitar el modelo: ya tiene unidades registradas en este lote.');
+    return fallo(mensajeDeError(error));
+  }
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidarLote(batchId);
   return exito(null);
 }

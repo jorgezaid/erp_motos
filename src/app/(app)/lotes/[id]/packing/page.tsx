@@ -1,0 +1,53 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createClient } from '@/lib/supabase/server';
+import { obtenerLote, obtenerPacking } from '../datos';
+import { TablaPacking, type LineaVista } from './tabla-packing';
+
+/** Pestaña Packing list (SPEC M3): modelos con cantidad del packing list y de la DAM, EXW y CBM. */
+export default async function PackingLote({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const lote = await obtenerLote(id);
+  const liquidado = lote.estado === 'liquidado';
+  const supabase = await createClient();
+
+  const [packing, { data: modelos }, { data: unidades }] = await Promise.all([
+    obtenerPacking(lote.id),
+    supabase
+      .from('vehicle_models')
+      .select('id, codigo_modelo, exw_usd_unitario, volumen_cbm_unitario')
+      .eq('activo', true)
+      .order('codigo_modelo'),
+    supabase.from('vehicle_inventory').select('model_id').eq('batch_id', lote.id),
+  ]);
+
+  const registradas = new Map<string, number>();
+  for (const u of unidades ?? []) registradas.set(u.model_id, (registradas.get(u.model_id) ?? 0) + 1);
+
+  const lineas: LineaVista[] = packing.map((i) => ({
+    id: i.id,
+    model_id: i.model_id,
+    codigo_modelo: i.codigo_modelo,
+    cantidad_packing_list: i.cantidad_packing_list,
+    cantidad_dam: i.cantidad_dam,
+    exw_usd_unitario: i.exw_usd_unitario,
+    volumen_cbm_unitario: i.volumen_cbm_unitario,
+    registradas: registradas.get(i.model_id) ?? 0,
+  }));
+  const enLote = new Set(lineas.map((l) => l.model_id));
+
+  return (
+    <>
+      {liquidado && (
+        <Alert className="mb-4">
+          <AlertDescription>El lote está liquidado: el packing list no se puede modificar (RN-08).</AlertDescription>
+        </Alert>
+      )}
+      <TablaPacking
+        batchId={lote.id}
+        lineas={lineas}
+        disponibles={(modelos ?? []).filter((m) => !enLote.has(m.id))}
+        liquidado={liquidado}
+      />
+    </>
+  );
+}

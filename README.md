@@ -27,6 +27,19 @@ Los crea `supabase/seeds/01_usuarios_demo.sql` en cada `supabase db reset`. Cont
 
 Estos usuarios **no** se suben a Supabase Cloud: `supabase db push` no ejecuta los seeds.
 
+### Datos demo (solo local)
+
+`supabase/seeds/02_datos_demo.sql` carga, pasando por todas las reglas de la BD:
+
+- Modelos **DEMO-48** (48V, 4 baterías), **DEMO-60** (60V, 5) y **DEMO-72** (72V, 6).
+- Lote **DEMO-LIQ-001**, liquidado con los costos del *golden test* (SPEC §7): costo unitario DEMO-48 = S/ 3 193.24
+  (x1 S/ 5 805.89, x3 S/ 4 912.68, x6 S/ 4 435.06) y DEMO-72 = S/ 8 958.29. Tiene 14 unidades listas en
+  *Showroom Piérola*, 1 en ensamble y 1 vendida (orden #1, pago mixto, con garantías).
+- Lote **DEMO-ALM-002**, en almacén y sin liquidar: DEMO-60 × 5, con 3 unidades en caja y 2 por registrar.
+
+Las pruebas E2E crean sus propios lotes y modelos, pero las de venta consumen unidades de DEMO-LIQ-001:
+si fallan por falta de stock, ejecuta `supabase db reset`.
+
 ### Pruebas
 
 ```bash
