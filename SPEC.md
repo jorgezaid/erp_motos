@@ -132,7 +132,8 @@ La **fuente de verdad** son las migraciones. Resumen de entidades:
 
 **Vistas** (todas con `security_invoker`, es decir, respetan el RLS de quien consulta): `v_stock`, `v_vehicle_costs`,
 `v_price_matrix`, `v_batch_reconciliation`, `v_sales_margin` y `v_warranties`.
-**Funciones RPC:** `pendientes_de_registro()` y `generar_lista_precios(batch_id)`.
+**Funciones RPC:** `pendientes_de_registro()`, `generar_lista_precios(batch_id)` y `guardar_costeo(batch_id, filas)`
+(solo admin; ver §7 → Persistencia).
 
 ---
 
@@ -200,10 +201,15 @@ y `costo_landing_unitario_pen = round(costo_total_pen / cantidad, 2)`.
 - **Cuadre exacto:** para cada concepto, la suma de las asignaciones debe ser igual al total del lote. El residuo de redondeo se suma a la línea con **mayor base** de ese criterio (en caso de empate, la primera por `codigo_modelo`).
 - Errores: si Σ EXW = 0, Σ CBM = 0 o falta el tipo de cambio, se lanza un error de dominio y no se guarda nada.
 
-### Invariantes (se prueban en Vitest)
+### Invariantes (se prueban en Vitest; la RPC `guardar_costeo` vuelve a validar 1, 2 y 4 en SQL)
 1. Para cada concepto, Σ asignado = total del lote, al centavo de 4 decimales.
 2. Σ `costo_total_pen` = (FOB + flete internacional + agente) × TC + impuestos asignables + flete nacional + alquiler + sueldos + publicidad + Σq × armado.
 3. La función es pura y determinista: la misma entrada da la misma salida, sin importar el orden de las líneas.
+4. **Proporcionalidad por fila:** para cada fila y cada concepto, |asignado − total_concepto × baseᵢ / Σ bases| ≤ 0.01,
+   con la base de su criterio tomada de `batch_items` (EXW para FOB e impuestos; CBM para flete internacional, agente y
+   flete nacional; cantidad para alquiler, sueldos y publicidad). `armado_pen` debe ser **exactamente**
+   qᵢ × `costo_armado_unitario_pen`. Los invariantes 1 y 2 solo miran totales; este impide un reparto con el criterio
+   equivocado o con montos intercambiados entre modelos.
 
 ### Caso de referencia (*golden test*)
 Lote: TC 3.78 · FOB 7 200 · flete internacional 800 · agente 200 (USD) · impuestos asignables 2 000 · flete nacional 400 · alquiler 1 000 · sueldos 2 000 · publicidad 200 · armado 60 (PEN).
@@ -218,8 +224,15 @@ Costo total del lote = **S/ 37 076.00**. Precios esperados para TEST-48: x1 **5 
 ### Persistencia
 Supabase-js no ofrece transacciones, así que la Fase 2 crea la RPC `guardar_costeo(p_batch_id uuid, p_filas jsonb)` en una
 **nueva migración**. Esta RPC (1) exige admin, (2) borra y vuelve a insertar las filas del lote en una sola transacción y
-(3) **vuelve a validar en SQL** los invariantes 1 y 2 (tolerancia de 0.01): si no cuadran, aborta. La liquidación es un
+(3) **vuelve a validar en SQL** los invariantes 1, 2 y 4 (tolerancia de 0.01): si no cuadran, aborta. La liquidación es un
 paso separado: `update import_batches set estado = 'liquidado'`.
+
+- `p_filas` es un array JSON con el formato de `FilaCosteo` (mismos nombres de columna que `batch_model_costs`; los
+  montos pueden ir como string). Devuelve las filas guardadas, con `costo_total_pen` y `costo_landing_unitario_pen`.
+- También rechaza: lote inexistente, sin tipo de cambio o liquidado; filas que no correspondan **exactamente** a los
+  modelos de `batch_items` (faltantes, sobrantes o repetidas); `cantidad` ≠ `cantidad_packing_list`; `tipo_cambio` ≠ el
+  del lote; campos vacíos y montos negativos. Los mensajes están en español y se muestran tal cual.
+- Pruebas: `tests/test_guardar_costeo.sql`.
 
 ---
 
