@@ -1,3 +1,5 @@
+Responde siempre en español.
+
 # CLAUDE.md — ERP Vehículos Eléctricos
 
 Sistema ERP/CRM para una importadora peruana de motos, bicimotos y trimotos eléctricas: importación → costeo →

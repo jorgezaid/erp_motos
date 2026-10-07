@@ -4,8 +4,8 @@
 > Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[!]` bloqueado
 
 ## Estado actual
-- **Fase activa:** 2 — Motor de costeo
-- **Próxima tarea:** 2.5 (vista previa de precios); pendiente de la Fase 0: 0.5 (Supabase Cloud)
+- **Fase activa:** 3 — App base (Next.js)
+- **Próxima tarea:** 3.1 (Next.js + Tailwind + shadcn/ui); pendiente de la Fase 0: 0.5 (Supabase Cloud)
 - **Última actualización:** 2026-10-07
 
 ---
@@ -24,12 +24,12 @@
 - [x] 1.4 Seed: márgenes 45/35/28 y ubicaciones
 - [x] 1.5 Suite SQL con 10 escenarios (`tests/test_reglas_negocio.sql`): todos pasan en PostgreSQL 16
 
-## Fase 2 · Motor de costeo (SPEC §7)
+## Fase 2 · Motor de costeo (SPEC §7) ✅
 - [x] 2.1 Scaffold mínimo de TypeScript: `package.json`, `tsconfig` strict, Vitest y decimal.js — más ESLint 9 (flat) y `src/lib/decimal.ts` (clon half-up); TS 5.9, Vitest 5, Node ≥ 22.12 (ver D11)
 - [x] 2.2 `src/lib/costing/prorrateo.ts`: función pura `calcularProrrateo(lote, items) → FilaCosteo[]` — montos como string de 4 decimales; `ErrorProrrateo` con códigos (también `LOTE_INVALIDO` y `LINEA_INVALIDA`); `calcularCostoTotalPen`/`calcularCostoUnitarioPen` replican las columnas generadas
 - [x] 2.3 `prorrateo.test.ts`: *golden test* de SPEC §7, 3 invariantes, errores (Σ EXW = 0, sin TC) y prueba de orden de líneas — más residuo ±0.0001 y empate, y propiedades con 200 lotes aleatorios (semilla fija)
 - [x] 2.4 Migración `…_rpc_guardar_costeo.sql`: RPC transaccional que vuelve a validar los invariantes en SQL, con prueba en `tests/` — `20260928063742_rpc_guardar_costeo.sql` (security invoker, solo admin, bloquea el lote con `for update`); valida invariantes 1, 2 y el nuevo 4 (proporcionalidad por fila, ver D12); `tests/test_guardar_costeo.sql` (5 bloques); helpers movidos a `tests/01_helpers.sql` y `run.sh` usa una BD limpia por archivo
-- [ ] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`)
+- [x] 2.5 `src/lib/pricing/precios.ts`: vista previa de la matriz x1/x3/x6 (debe coincidir con `generar_lista_precios`) — `calcularPrecioSugerido` y `calcularMatrizPrecios` (precio manual, utilidad y margen real); `ErrorPrecios` con códigos; coincide con Postgres en 300 casos (`precios.postgres.json`, generado con `setseed(0.42)`) y en el golden test
 
 ## Fase 3 · App base (Next.js)
 - [ ] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`)
@@ -111,3 +111,4 @@
 | 2026-09-26 | Claude Code | Fase 0.2–0.4: pnpm 10, Supabase CLI, `supabase init/start/db reset`, `.gitattributes` (LF), `tests/run.ps1`; suite SQL 10/10 en PG 17. Tarea 2.1: scaffold TS (Vitest, ESLint 9, decimal.js); test, lint y typecheck en verde. |
 | 2026-09-28 | Claude Code | Tareas 2.2 y 2.3: `calcularProrrateo` (SPEC §7) con TDD; golden test, invariantes, residuo, errores y 200 lotes aleatorios. 22 pruebas en verde. |
 | 2026-10-07 | Claude Code | Tarea 2.4: RPC `guardar_costeo` con invariantes 1, 2 y 4 en SQL; suites SQL 2/2 archivos en verde (`run.ps1`), Vitest 22/22, lint y typecheck limpios. Tipos de Supabase aún no generados (tarea 3.3). |
+| 2026-10-07 | Claude Code | Tarea 2.5: vista previa de precios x1/x3/x6, verificada contra 300 casos de Postgres. Vitest 33/33, lint y typecheck limpios. Fase 2 completa. |
