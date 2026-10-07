@@ -39,7 +39,7 @@
 - [x] 3.5 Layout con sidebar según el rol, `lib/format.ts` (PEN, USD, fechas de Lima) y un toast para los errores de la BD — `components/sidebar.tsx` (menú lateral en móvil), `lib/navegacion.ts`, `lib/etiquetas.ts` (enums en español), `lib/toast.ts` (`avisar`) y sonner en el layout raíz
 
 ## Fase 4 · Catálogo y usuarios (M1, M2)
-- [ ] 4.1 `/admin/usuarios`: asignar rol y activar o desactivar cuentas
+- [x] 4.1 `/admin/usuarios`: asignar rol y activar o desactivar cuentas — RPC `listar_usuarios()` (migración `20261007220653`) y `tests/test_admin_usuarios.sql`; un admin no se quita su rol ni se desactiva (D19); infraestructura de tablas (`lib/tabla.ts`, `components/tabla/*`: búsqueda, filtros, paginación de 50 y CSV)
 - [ ] 4.2 `/admin/modelos`: CRUD con la cantidad de baterías derivada
 - [ ] 4.3 `/admin/ubicaciones`
 
@@ -104,6 +104,8 @@
 | D16 | 2026-10-07 | Datos y usuarios demo en `supabase/seeds/*.sql` (cargados por `supabase db reset`), no en `seed.sql` | `tests/run.sh` carga `seed.sql` sobre un `auth.users` simulado sin columnas de contraseña; además los seeds no se suben con `db push` |
 | D17 | 2026-10-07 | El acceso por ruta (`lib/roles.ts`) lo aplican el middleware y cada página (`exigirRol`); ruta no permitida → inicio | Defensa en profundidad; la seguridad real sigue siendo el RLS |
 | D18 | 2026-10-07 | Playwright se instaló en la 3.4 (no en la 7.4) | Sirve para verificar cada pantalla desde el inicio; la 7.4 agrega los E2E de venta |
+| D19 | 2026-10-07 | Un admin no puede quitarse su propio rol de admin ni desactivar su cuenta (trigger `guard_self_profile`); otro admin sí puede | Evita quedarse sin administradores por un clic; es la opción más segura y no contradice el SPEC |
+| D20 | 2026-10-07 | Listados: búsqueda, filtros y paginación en el servidor vía la URL (`?q=&estado=&pagina=`); TanStack Table (v8) solo ordena la página visible; CSV por Route Handler `…/csv` con los mismos filtros (máx. 5000 filas, BOM UTF-8, protección contra fórmulas) | SPEC §10/§11; la v9 de TanStack cambió la API |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.

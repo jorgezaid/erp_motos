@@ -693,6 +693,11 @@ isOneToOne: false
 "is_staff":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"listar_usuarios":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "activo": boolean,"created_at": string,"email": string,"id": string,"nombre": string,"rol": Database["public"]['Enums']["app_role"]
+            }[]
+                           },
 "pendientes_de_registro":
 { Args: Record<PropertyKey, never>; Returns: {
               "batch_id": string,"codigo_embarque": string,"codigo_modelo": string,"declaradas": number,"estado_lote": Database["public"]['Enums']["batch_status"],"model_id": string,"registradas": number

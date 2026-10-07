@@ -17,6 +17,16 @@ export function fallo(error: string, campos?: Record<string, string>): { ok: fal
   return campos ? { ok: false, error, campos } : { ok: false, error };
 }
 
+/** Error de validación zod → primer mensaje como error general y el resto por campo. */
+export function falloValidacion(error: { issues: readonly { path: readonly PropertyKey[]; message: string }[] }) {
+  const campos: Record<string, string> = {};
+  for (const i of error.issues) {
+    const k = i.path.map(String).join('.') || '_';
+    campos[k] ??= i.message;
+  }
+  return fallo(error.issues[0]?.message ?? 'Revisa los datos ingresados.', campos);
+}
+
 /** Lo que traen PostgrestError y AuthError. */
 export type ErrorSupabase = { message: string; code?: string | null; details?: string | null };
 
