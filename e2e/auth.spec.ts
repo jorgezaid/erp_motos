@@ -32,3 +32,12 @@ test('M1: el admin entra y vuelve a la ruta pedida; el vendedor no ve /lotes', a
   await page.goto('/lotes');
   await expect(page).toHaveURL(/\/$/);
 });
+
+test('M1: el sidebar muestra solo los módulos del rol', async ({ page }) => {
+  await ingresar(page, 'tecnico@demo.pe');
+  const nav = page.getByRole('navigation', { name: 'Módulos' });
+  await expect(nav.getByRole('link', { name: 'Taller' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Precios' })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'Lotes' })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'Ventas' })).toHaveCount(0);
+});
