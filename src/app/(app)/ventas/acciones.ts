@@ -164,6 +164,30 @@ export async function confirmarOrden(orderId: string): Promise<Resultado> {
   return exito(null);
 }
 
+const esquemaAnulacion = z.object({
+  orderId: uuid,
+  motivo: z.string().trim().min(5, 'Indica el motivo de la anulación (mínimo 5 caracteres).').max(500),
+});
+
+/** RN-17: solo el admin anula una venta confirmada, con motivo; las unidades vuelven a tienda. */
+export async function anularOrden(entrada: z.input<typeof esquemaAnulacion>): Promise<Resultado> {
+  await exigirRol('admin');
+  const d = esquemaAnulacion.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .update({ estado: 'anulada', motivo_anulacion: d.data.motivo })
+    .eq('id', d.data.orderId)
+    .eq('estado', 'confirmada')
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo('La orden no existe o ya no está confirmada.');
+  revalidar(d.data.orderId);
+  revalidatePath('/garantias');
+  return exito(null);
+}
+
 /** RN-18: solo se eliminan borradores (sus unidades vuelven a tienda). */
 export async function eliminarOrden(orderId: string): Promise<Resultado> {
   await exigirRol('admin', 'vendedor');

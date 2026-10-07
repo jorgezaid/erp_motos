@@ -76,7 +76,7 @@ export function FormularioNuevaVenta({ minimos }: { minimos: Record<string, numb
           {/* Los campos del cliente son un subconjunto de los de este formulario */}
           <CamposCliente
             register={register as unknown as UseFormRegister<EntradaCliente>}
-            control={control as unknown as Control<EntradaCliente, unknown, EntradaCliente>}
+            control={control as unknown as Control<EntradaCliente>}
             errors={errors}
           />
         </CardContent>
