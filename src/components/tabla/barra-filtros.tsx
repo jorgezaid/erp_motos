@@ -34,15 +34,22 @@ export function BarraFiltros({
   const [q, setQ] = useState(params.get('q') ?? '');
   const [, startTransition] = useTransition();
   const primera = useRef(true);
+  // Última consulta pedida: si se cambian dos filtros antes de que termine la navegación,
+  // el segundo cambio parte del primero (y no de la URL anterior)
+  const ultima = useRef(params.toString());
+  useEffect(() => {
+    ultima.current = params.toString();
+  }, [params]);
 
   function aplicar(cambios: Record<string, string | null>) {
-    const sp = new URLSearchParams(params.toString());
+    const sp = new URLSearchParams(ultima.current);
     for (const [k, v] of Object.entries(cambios)) {
       if (v) sp.set(k, v);
       else sp.delete(k);
     }
     sp.delete('pagina');
     const s = sp.toString();
+    ultima.current = s;
     startTransition(() => router.replace(s ? `${pathname}?${s}` : pathname));
   }
 

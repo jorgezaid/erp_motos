@@ -51,7 +51,7 @@
 - [x] 5.5 Pestañas Unidades y Auditoría — Unidades sobre `v_stock` (consulta compartida `lib/consultas/stock.ts`) más el costo landing de `v_vehicle_costs`; Auditoría sobre `v_batch_reconciliation` con filas en rojo y alertas en texto (`lib/auditoria.ts`); ambas con CSV
 
 ## Fase 6 · Inventario y taller (M4)
-- [ ] 6.1 `/inventario` sobre `v_stock`
+- [x] 6.1 `/inventario` sobre `v_stock` — filtros por estado, modelo, ubicación y color, búsqueda por VIN/motor/modelo y CSV; precios solo para admin y vendedor (nunca costos); se corrigió una carrera en `BarraFiltros` al cambiar dos filtros seguidos
 - [ ] 6.2 `/inventario/registro`: registro masivo pegando desde Excel o con escáner
 - [ ] 6.3 `/taller`: cola móvil
 - [ ] 6.4 `/taller/[id]`: baterías, inspección y "Pasar a tienda"
