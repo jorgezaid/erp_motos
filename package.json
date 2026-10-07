@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "env:local": "node scripts/crear-env-local.mjs"
+    "env:local": "node scripts/crear-env-local.mjs",
+    "gen:types": "supabase gen types typescript --local > src/types/database.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

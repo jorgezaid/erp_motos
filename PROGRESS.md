@@ -34,7 +34,7 @@
 ## Fase 3 · App base (Next.js)
 - [x] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`) — Next 15.5, React 19, Tailwind 4, shadcn (radix-nova, 18 componentes); ESLint con `@next/eslint-plugin-next` y react-hooks (D14)
 - [x] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware — `src/lib/supabase/{client,server,middleware,env}.ts` y `src/middleware.ts`; `pnpm env:local` genera `.env.local` solo con valores públicos (D15)
-- [ ] 3.3 `supabase gen types typescript --local > src/types/database.ts`
+- [x] 3.3 `supabase gen types typescript --local > src/types/database.ts` — también como `pnpm gen:types`; los tres clientes quedan tipados con `Database`
 - [ ] 3.4 Login, `/pendiente` y middleware de sesión y rol
 - [ ] 3.5 Layout con sidebar según el rol, `lib/format.ts` (PEN, USD, fechas de Lima) y un toast para los errores de la BD
 
