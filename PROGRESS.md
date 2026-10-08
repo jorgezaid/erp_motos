@@ -64,7 +64,7 @@
 
 ## Fase 8 · Garantías, auditoría y dashboard (M7, M8)
 - [x] 8.1 `/garantias` y reclamos — búsqueda por VIN, DNI, RUC o nombre sobre `v_warranties` (cobertura, vigencia y días restantes), filtro vigentes/vencidas/anuladas y CSV; reclamos: registro (todos los roles, RN-19) y seguimiento (admin/técnico) con diagnóstico y costo; migración `20261007235451_reclamos_estados` + `tests/test_reclamos.sql` (D27)
-- [ ] 8.2 `/auditoria` y reporte de márgenes
+- [x] 8.2 `/auditoria` y reporte de márgenes — tres vistas (solo admin): conciliación de todos los lotes (filas en rojo, filtro con/sin alertas), margen real por venta y por modelo sobre `v_sales_margin` con rango de fechas de Lima; agregados con decimal.js (`lib/margenes.ts`); CSV de cada vista
 - [ ] 8.3 Dashboard
 
 ## Fase 9 · Producción
