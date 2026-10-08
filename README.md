@@ -51,7 +51,10 @@ pnpm build
 pnpm e2e                # Playwright contra la BD local (requiere `supabase db reset` previo)
 ```
 
-## Fase 1 completada: Base de datos (Supabase / PostgreSQL)
+> **Estado (2026-10-07):** fases 1 a 8 completas (BD, costeo, app, catálogo, lotes, taller, precios, ventas,
+> garantías, auditoría y dashboard). Resumen, recorrido de prueba y pendientes: `docs/INFORME-FINAL.md`.
+
+## Base de datos (Supabase / PostgreSQL)
 
 ## Contenido
 

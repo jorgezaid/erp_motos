@@ -4,8 +4,8 @@
 > Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[!]` bloqueado
 
 ## Estado actual
-- **Fase activa:** 3 — App base (Next.js)
-- **Próxima tarea:** 3.1 (Next.js + Tailwind + shadcn/ui); pendiente de la Fase 0: 0.5 (Supabase Cloud)
+- **Fase activa:** 9 — Producción (la hace el dueño del repo: 0.5, 9.1–9.4)
+- **Próxima tarea:** 0.5 (Supabase Cloud) y luego 9.1 (Vercel). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
 - **Última actualización:** 2026-10-07
 
 ---
@@ -83,6 +83,20 @@
 5. ¿Se necesitan descuentos a criterio del vendedor? (La v1 no los permite: solo el admin cambia precios.)
 6. Datos reales de cada modelo: voltaje, Ah, W, CBM y EXW.
 
+## Pendiente de confirmar con el cliente
+Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin tocar código, salvo donde se indica):
+
+| Tema | Valor usado en la v1 | Dónde se cambia |
+|---|---|---|
+| IGV, IPM y percepción como costo (pregunta 1) | Se cargan al costo (`impuestos_recuperables_al_costo = true`) | Interruptor por lote en la pestaña Costos |
+| Precios con IGV (pregunta 2) | Sí: los precios de venta incluyen IGV (así se indica en `/precios` y en la nota de venta) | Texto de la UI (no hay cálculo de IGV en ventas) |
+| Meses de garantía (pregunta 3) | 12 meses general y 6 de baterías por defecto | Ficha de cada modelo (`/admin/modelos`) |
+| Escala x3/x6 con modelos mixtos (pregunta 4) | Se permite mezclar modelos para llegar al mínimo | Regla de la BD (requiere migración) |
+| Descuentos del vendedor (pregunta 5) | No hay: solo el admin cambia precios (precio manual) | — |
+| Fichas técnicas reales (pregunta 6) | Solo datos demo (DEMO-48/60/72) | `/admin/modelos` (tarea 9.4) |
+| Orden de los pasos del POS (D26) | El cliente se registra en el paso 1, antes de las unidades | Diseño de `/ventas/nueva` |
+| Reclamos: diagnóstico obligatorio para aprobar/rechazar (D27) | Sí | Trigger `guard_claim_update` |
+
 ## Decisiones (ADR resumido)
 | # | Fecha | Decisión | Motivo |
 |---|---|---|---|
@@ -131,3 +145,4 @@
 | 2026-09-28 | Claude Code | Tareas 2.2 y 2.3: `calcularProrrateo` (SPEC §7) con TDD; golden test, invariantes, residuo, errores y 200 lotes aleatorios. 22 pruebas en verde. |
 | 2026-10-07 | Claude Code | Tarea 2.4: RPC `guardar_costeo` con invariantes 1, 2 y 4 en SQL; suites SQL 2/2 archivos en verde (`run.ps1`), Vitest 22/22, lint y typecheck limpios. Tipos de Supabase aún no generados (tarea 3.3). |
 | 2026-10-07 | Claude Code | Tarea 2.5: vista previa de precios x1/x3/x6, verificada contra 300 casos de Postgres. Vitest 33/33, lint y typecheck limpios. Fase 2 completa. |
+| 2026-10-07 | Claude Code (autónomo) | Fases 3 a 8 (tareas 3.1–8.3), un commit por tarea; 4 migraciones nuevas (listar_usuarios, invalidar_costeo, guard_packing_cantidad, reclamos_estados) con sus pruebas SQL; usuarios y datos demo; revisión del conjunto aplicada. Vitest 148/148, SQL 6/6 archivos, Playwright 45/45, lint, typecheck y build en verde. Informe: `docs/INFORME-FINAL.md`. |
