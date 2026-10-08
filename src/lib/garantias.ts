@@ -22,7 +22,7 @@ export const ACCION_ESTADO: Record<EstadoReclamo, string> = {
   en_revision: 'Pasar a revisión',
   aprobado: 'Aprobar',
   rechazado: 'Rechazar',
-  cerrado: 'Cerrar',
+  cerrado: 'Cerrar reclamo',
 };
 
 /** Estado de la cobertura para mostrar: vigente con días restantes, vencida o anulada. */

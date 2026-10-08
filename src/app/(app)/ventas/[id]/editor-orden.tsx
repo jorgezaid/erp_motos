@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Decimal } from '@/lib/decimal';
 import type { Resultado } from '@/lib/errores';
 import { METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
 import { formatPEN } from '@/lib/format';
@@ -63,6 +64,7 @@ export function EditorOrden({
 
   const minimo = minimos[tipo] ?? 1;
   const saldo = saldoPendiente(total, pagos);
+  const saldoDecimal = new Decimal(saldo);
   const faltan = faltanParaEscala(tipo, items.length, minimo);
   const motivos = motivosNoConfirmable({ tipo, unidades: items.length, minimo, total, pagos });
   const metodo = metodoDerivado(pagos);
@@ -286,7 +288,7 @@ export function EditorOrden({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={Number(saldo) <= 0}
+                  disabled={!saldoDecimal.gt(0)}
                   onClick={() => setPago((p) => ({ ...p, monto: saldo }))}
                 >
                   Saldo
@@ -355,7 +357,7 @@ export function EditorOrden({
                 <dt className="font-medium">Saldo pendiente</dt>
                 <dd
                   data-testid="saldo-pendiente"
-                  className={cn('text-xl font-semibold', Number(saldo) === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400')}
+                  className={cn('text-xl font-semibold', saldoDecimal.isZero() ?'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400')}
                 >
                   {formatPEN(saldo)}
                 </dd>

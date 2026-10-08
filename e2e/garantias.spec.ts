@@ -50,7 +50,7 @@ test('M7: el vendedor registra un reclamo y el técnico le da seguimiento hasta 
   await expect(fila).toContainText('S/ 35.50');
 
   await fila.getByRole('button', { name: 'Atender reclamo de DEMO72-001' }).click();
-  await tec.getByRole('dialog').getByRole('button', { name: 'Cerrar' }).click();
+  await tec.getByRole('dialog').getByRole('button', { name: 'Cerrar reclamo' }).click();
   await expect(fila).toContainText('Cerrado');
   await expect(fila.getByRole('button', { name: /Atender/ })).toHaveCount(0);
 

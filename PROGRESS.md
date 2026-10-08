@@ -118,6 +118,10 @@
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
 - En un trigger BEFORE, las columnas generadas llegan nulas: tenerlo en cuenta en futuros triggers (ya se corrigió en `guard_batch_update`).
+- Guardar los márgenes globales (`/precios`) son 3 UPDATE separados: si uno fallara a mitad, quedarían mezclados. Los valores se validan antes (riesgo bajo); la solución definitiva es una RPC transaccional.
+- Con RLS, Postgres no incluye el valor duplicado en los errores de clave única: los mensajes dicen "El VIN ya está registrado." sin el valor.
+- Los E2E de venta consumen stock demo (7 DEMO-48 por corrida, hay 24): `pnpm e2e:limpio` lo restaura borrando la BD local.
+- Las listas grandes (CSV, precios, márgenes) se cortan en 5000 filas (`MAX_FILAS_CSV`); `/admin/usuarios`, `/precios` y `/auditoria` filtran en el servidor de Next sobre ese tope en vez de paginar en la BD.
 
 ## Bitácora de sesiones
 | Fecha | Sesión | Resultado |
