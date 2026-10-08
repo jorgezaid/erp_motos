@@ -62,10 +62,10 @@
 - [x] 7.3 `/ventas` y `/ventas/[id]`: nota de venta imprimible y anulación — listado con búsqueda (n.º, cliente, documento), filtros por estado y escala, CSV; nota de venta interna (`window.print`, sin sidebar) con unidades, garantías y pagos; editar solo teléfono/email en confirmadas (RN-17); "Anular" solo admin con motivo (unidades a tienda, garantías anuladas)
 - [x] 7.4 E2E con Playwright: venta x1 con pago mixto y venta x6 — `e2e/venta-completa.spec.ts`; stock demo ampliado (DEMO-48 ×24, DEMO-72 ×8, mismos costos unitarios) y `pnpm e2e:limpio`; suite completa: 38 E2E en verde desde una BD limpia
 
-## Fase 8 · Garantías, auditoría y dashboard (M7, M8)
+## Fase 8 · Garantías, auditoría y dashboard (M7, M8) ✅
 - [x] 8.1 `/garantias` y reclamos — búsqueda por VIN, DNI, RUC o nombre sobre `v_warranties` (cobertura, vigencia y días restantes), filtro vigentes/vencidas/anuladas y CSV; reclamos: registro (todos los roles, RN-19) y seguimiento (admin/técnico) con diagnóstico y costo; migración `20261007235451_reclamos_estados` + `tests/test_reclamos.sql` (D27)
 - [x] 8.2 `/auditoria` y reporte de márgenes — tres vistas (solo admin): conciliación de todos los lotes (filas en rojo, filtro con/sin alertas), margen real por venta y por modelo sobre `v_sales_margin` con rango de fechas de Lima; agregados con decimal.js (`lib/margenes.ts`); CSV de cada vista
-- [ ] 8.3 Dashboard
+- [x] 8.3 Dashboard — indicadores: unidades listas en tienda (y en taller), ventas de hoy y del mes (admin y vendedor), margen real del mes (solo admin, D28); unidades por estado en barras de un tono con valores rotulados y enlace al inventario filtrado; alertas de conciliación (solo admin)
 
 ## Fase 9 · Producción
 - [ ] 9.1 Deploy en Vercel con las variables de entorno
@@ -113,6 +113,7 @@
 | D25 | 2026-10-07 | En `/precios` del vendedor hay una fila por modelo y lote liquidado (sin mostrar el lote), con su stock disponible; las ramas admin y vendedor son excluyentes en el servidor | Un mismo modelo puede tener precios distintos según el lote; el vendedor no debe ver lotes ni costos |
 | D26 | 2026-10-07 | POS: los datos del cliente se piden en el paso 1 (con el tipo de venta), antes de agregar unidades; el resto del flujo (unidades, pagos, confirmar) ocurre en `/ventas/[id]` sobre la orden en borrador | En la BD una unidad se reserva al agregarla a una orden, y la orden exige cliente con documento válido (CHECK). Así la reserva es inmediata y "dos pestañas, misma unidad" lo resuelve la BD |
 | D27 | 2026-10-07 | Reclamos: la BD impone abierto → en revisión → aprobado/rechazado (con diagnóstico) → cerrado; un reclamo nuevo siempre empieza abierto; al pasar a revisión se registra el técnico; uno cerrado no se edita | SPEC M7 define el ciclo pero no había regla en la BD (la BD es la autoridad) |
+| D28 | 2026-10-07 | "Margen promedio" del dashboard = margen real ponderado del mes de Lima: Σ utilidad / Σ precio de venta de las unidades vendidas | Coincide con la definición de margen sobre el precio (SPEC §8) y no lo distorsionan las ventas pequeñas |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
