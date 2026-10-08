@@ -26,6 +26,14 @@ La app **no usa la `service_role` key**: todo pasa por el JWT del usuario y por 
 | `20261007223650_invalidar_costeo` | Si cambian los montos, el TC o el packing list de un lote, se borra su costeo guardado | `tests/test_invalidar_costeo.sql` |
 | `20261007224356_guard_packing_cantidad` | La cantidad del packing list no baja de las unidades registradas; el modelo de una línea no se cambia | `tests/test_packing_list.sql` |
 | `20261007235451_reclamos_estados` | Ciclo de los reclamos: abierto → en revisión → aprobado/rechazado (con diagnóstico) → cerrado | `tests/test_reclamos.sql` |
+| `20261008041204_datos_base` | Márgenes 45/35/28 % y ubicaciones iniciales (idempotente), antes en `seed.sql`: así llegan a producción con `db push` (D29) | Las 6 suites SQL dependen de estos datos |
+
+### Datos demo: solo local (D29)
+Los usuarios demo (contraseñas conocidas) y el stock demo están en `supabase/demo/`, que **no** figura en `sql_paths`
+de `supabase/config.toml`: ningún comando de la CLI los carga (ni `db reset`, ni `db push`, ni
+`db push --include-seed`). Solo `pnpm db:demo` (`scripts/db-demo.mjs`) los carga, y únicamente en el contenedor de
+la BD local. Se comprobó que `supabase db reset` a secas deja 0 usuarios y 0 modelos demo, con los márgenes y
+ubicaciones presentes, igual que quedará producción.
 
 ### Estado de las pruebas (última corrida)
 
@@ -47,12 +55,12 @@ precio distribuidor" y dos pestañas vendiendo la misma unidad (M6).
 ```powershell
 pnpm install
 supabase start            # BD local en Docker
-supabase db reset         # migraciones + seed + usuarios y datos demo
+pnpm db:demo              # supabase db reset + usuarios y datos demo (SOLO en la BD local)
 pnpm env:local            # crea .env.local (URL y clave anónima locales)
 pnpm dev                  # abre http://localhost:3000
 ```
 
-### Usuarios de prueba (contraseña de todos: `Demo1234!`)
+### Usuarios de prueba — SOLO LOCAL (contraseña de todos: `Demo1234!`)
 
 | Email | Rol |
 |---|---|
@@ -99,7 +107,7 @@ x1 = S/ 5 805.89), con 30 unidades en tienda y una venta mixta (#1); lote **DEMO
 ```powershell
 pnpm test; pnpm lint; pnpm typecheck; pnpm build
 .\tests\run.ps1           # pruebas SQL (crea una BD aparte, no toca la de desarrollo)
-pnpm e2e:limpio           # ATENCIÓN: reinicia la BD local y corre los 45 E2E
+pnpm e2e:limpio           # ATENCIÓN: pnpm db:demo (reinicia la BD local) y corre los 45 E2E
 ```
 
 ## 3. Decisiones tomadas (detalle en PROGRESS → Decisiones)
@@ -108,7 +116,7 @@ pnpm e2e:limpio           # ATENCIÓN: reinicia la BD local y corre los 45 E2E
 |---|---|
 | D14 | Tailwind 4 y shadcn con el paquete `cn`; `next build` no repite el lint |
 | D15 | La app nunca usa la `service_role` key; `.env.local` solo lleva valores públicos |
-| D16 | Usuarios y datos demo en `supabase/seeds/` (no en `seed.sql`, que usan las pruebas SQL) |
+| D16 | Usuarios y datos demo fuera de `seed.sql` (que usan las pruebas SQL); reemplazada por D29 |
 | D17 | Acceso por ruta en el middleware **y** en cada página (`exigirRol`); el RLS sigue siendo la seguridad real |
 | D18 | Playwright desde la 3.4 para verificar cada pantalla |
 | D19 | Un admin no puede quitarse su rol ni desactivarse (lo hace otro admin) |
@@ -121,6 +129,7 @@ pnpm e2e:limpio           # ATENCIÓN: reinicia la BD local y corre los 45 E2E
 | D26 | POS: el cliente se registra en el paso 1 (la reserva exige una orden con cliente válido) |
 | D27 | Reclamos con máquina de estados en la BD y diagnóstico obligatorio para aprobar o rechazar |
 | D28 | "Margen promedio" = margen ponderado del mes (Σ utilidad / Σ venta) |
+| D29 | Datos base en una migración (llegan a prod); datos demo en `supabase/demo/`, fuera de la CLI, cargados solo con `pnpm db:demo` |
 
 ## 4. Pendiente de confirmar con el cliente
 
@@ -141,11 +150,11 @@ La v1 usa estos valores por defecto (tabla completa en PROGRESS → "Pendiente d
   valores se validan antes; la solución definitiva es una RPC transaccional).
 - **Errores de duplicado**: con RLS, Postgres no incluye el valor repetido; el mensaje dice "El VIN ya está
   registrado." sin el valor.
-- **Stock demo y E2E**: los E2E de venta consumen 7 DEMO-48 por corrida (hay 24); `pnpm e2e:limpio` lo restaura,
-  pero **borra lo que hayas cargado a mano** en la BD local.
+- **Stock demo y E2E**: los E2E de venta consumen 7 DEMO-48 por corrida (hay 24); `pnpm e2e:limpio` lo restaura
+  (vía `pnpm db:demo`), pero **borra lo que hayas cargado a mano** en la BD local.
 - **Tope de 5000 filas** en exportaciones y en `/precios`, `/auditoria` y `/admin/usuarios`, que filtran sobre ese
   tope en el servidor de Next en vez de paginar en la BD. Suficiente para el volumen esperado; revisar si crece.
-- **"Ventas de hoy"** del dashboard depende de la fecha de `supabase db reset`: la venta demo #1 se confirma al
+- **"Ventas de hoy"** del dashboard depende de la fecha de `pnpm db:demo`: la venta demo #1 se confirma al
   cargar los datos.
 - `supabase gen types` escribe `src/types/database.ts` sin formato (la CLI no encontró prettier); es válido.
 - Sin facturación SUNAT (fuera de alcance de la v1): la nota de venta es interna.
@@ -153,7 +162,8 @@ La v1 usa estos valores por defecto (tabla completa en PROGRESS → "Pendiente d
 ## 6. Siguientes pasos (para el dueño del repo)
 
 1. Revisar y hacer `git push` de los commits locales.
-2. 0.5: crear el proyecto en Supabase Cloud, `supabase link` y `supabase db push` (los seeds demo **no** se suben).
+2. 0.5: crear el proyecto en Supabase Cloud, `supabase link` y `supabase db push`. Los márgenes y ubicaciones llegan
+   con la migración `datos_base`: no hay pasos manuales. Lo de `supabase/demo/` nunca se sube.
 3. 9.1–9.3: deploy en Vercel con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (no hace falta
    la `service_role`), desactivar el registro público, crear el primer admin y revisar el *Security Advisor*.
 4. Responder las preguntas de la sección 4.

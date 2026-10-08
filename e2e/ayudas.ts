@@ -41,7 +41,7 @@ export async function pestanaLote(page: Page, nombre: string) {
   await page.getByRole('navigation', { name: 'Secciones del lote' }).getByRole('link', { name: nombre, exact: true }).click();
 }
 
-/** Inicia sesión con un usuario de supabase/seeds/01_usuarios_demo.sql */
+/** Inicia sesión con un usuario de supabase/demo/01_usuarios_demo.sql (cargado con `pnpm db:demo`) */
 export async function ingresar(page: Page, email: string, destino = '/') {
   await page.goto(`/login${destino === '/' ? '' : `?next=${encodeURIComponent(destino)}`}`);
   await page.getByLabel('Email').fill(email);

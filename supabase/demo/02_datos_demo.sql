@@ -1,5 +1,7 @@
+-- ⚠️⚠️⚠️ SOLO LOCAL — contiene contraseñas conocidas ⚠️⚠️⚠️
+-- (actúa como los usuarios demo de 01_usuarios_demo.sql). NUNCA ejecutar en producción.
 -- =============================================================================
--- Datos demo — SOLO PARA DESARROLLO LOCAL (`supabase db reset`), después de 01_usuarios_demo.sql.
+-- Datos demo para desarrollo local, después de 01_usuarios_demo.sql. Los carga `pnpm db:demo`.
 -- Todo pasa por las reglas de la BD (triggers, guardar_costeo, liquidación y venta) actuando
 -- como los usuarios demo, así que los datos son coherentes con lo que haría la app.
 --

@@ -36,11 +36,16 @@ git init && git add . && git commit -m "chore: base de datos y documentación in
 
 supabase init          # si pregunta, NO sobrescribas supabase/migrations ni seed.sql
 supabase start         # levanta Postgres + Auth + Studio en Docker (tarda la primera vez)
-supabase db reset      # aplica las 3 migraciones + seed
-./tests/run.sh         # debe terminar en: TODAS LAS PRUEBAS PASARON
+supabase db reset      # aplica las migraciones (incluidos los datos base: márgenes y ubicaciones)
+./tests/run.sh         # debe terminar en: TODOS LOS ARCHIVOS DE PRUEBAS PASARON (Windows: .\tests\run.ps1)
+pnpm db:demo           # opcional, SOLO LOCAL: reset + usuarios demo (*@demo.pe / Demo1234!) y stock demo
 ```
 
 > Si `supabase init` crea un `supabase/config.toml`, está bien. Supabase Studio queda en http://127.0.0.1:44323
+
+> ⚠️ **Datos demo:** viven en `supabase/demo/` y contienen contraseñas conocidas. No los agregues a `sql_paths`
+> de `config.toml` ni los ejecutes contra Supabase Cloud: así `supabase db push` (incluso con `--include-seed`)
+> nunca los lleva a producción (D29). Los datos que sí necesita producción van en migraciones.
 
 ## 4. Trabajar con Claude
 

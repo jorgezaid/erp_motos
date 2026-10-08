@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E contra la Supabase LOCAL (`supabase start` + `supabase db reset`, que carga los usuarios demo).
+// E2E contra la Supabase LOCAL (`supabase start` + `pnpm db:demo`, que carga los usuarios y datos demo).
 // Uso: pnpm e2e   (compila y levanta `next start` en el puerto 3100)
 const PUERTO = 3100;
 

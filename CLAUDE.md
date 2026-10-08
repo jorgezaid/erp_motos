@@ -23,7 +23,9 @@ pnpm test                   # Vitest (unitarias)
 pnpm lint && pnpm typecheck # antes de dar una tarea por terminada
 ./tests/run.sh              # pruebas SQL de reglas de negocio (requiere `supabase start`)
 supabase start | stop       # BD local (Docker)
-supabase db reset           # re-aplica migraciones + seed en local
+supabase db reset           # re-aplica las migraciones en local (datos base incluidos; sin datos demo)
+pnpm db:demo                # db reset + usuarios y stock demo (supabase/demo/, SOLO LOCAL, contraseñas conocidas)
+pnpm e2e:limpio             # pnpm db:demo + Playwright
 supabase migration new <nombre>
 supabase gen types typescript --local > src/types/database.ts
 ```

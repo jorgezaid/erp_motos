@@ -8,14 +8,17 @@
 ```bash
 pnpm install
 supabase start          # BD local (Docker); puertos 443xx
-supabase db reset       # migraciones + seed + datos demo (supabase/seeds/)
+pnpm db:demo            # supabase db reset + usuarios y datos demo (supabase/demo/) en la BD LOCAL
 pnpm env:local          # crea .env.local con la URL y la clave anónima locales
 pnpm dev                # http://localhost:3000
 ```
 
-### Usuarios de prueba (solo local)
+`supabase db reset` a secas deja la BD como quedará producción: migraciones (incluidos los datos base:
+márgenes 45/35/28 % y ubicaciones) y nada de demo.
 
-Los crea `supabase/seeds/01_usuarios_demo.sql` en cada `supabase db reset`. Contraseña de todos: **`Demo1234!`**
+### Usuarios de prueba (SOLO LOCAL — contraseñas conocidas)
+
+Los crea `supabase/demo/01_usuarios_demo.sql` al ejecutar `pnpm db:demo`. Contraseña de todos: **`Demo1234!`**
 
 | Email | Rol | Para probar |
 |---|---|---|
@@ -25,11 +28,14 @@ Los crea `supabase/seeds/01_usuarios_demo.sql` en cada `supabase db reset`. Cont
 | `vendedor2@demo.pe` | vendedor | Que un vendedor no pueda editar órdenes de otro |
 | `pendiente@demo.pe` | *(sin rol)* | La pantalla "Tu cuenta espera aprobación" |
 
-Estos usuarios **no** se suben a Supabase Cloud: `supabase db push` no ejecuta los seeds.
+Estos usuarios **nunca** llegan a Supabase Cloud: `supabase/demo/` no está en `sql_paths` de
+`supabase/config.toml`, así que ningún comando de la CLI lo ejecuta (ni `db reset`, ni `db push`, ni
+`db push --include-seed`). Solo lo carga `scripts/db-demo.mjs`, que se conecta únicamente al contenedor
+local de `supabase start`.
 
 ### Datos demo (solo local)
 
-`supabase/seeds/02_datos_demo.sql` carga, pasando por todas las reglas de la BD:
+`supabase/demo/02_datos_demo.sql` carga, pasando por todas las reglas de la BD:
 
 - Modelos **DEMO-48** (48V, 4 baterías), **DEMO-60** (60V, 5) y **DEMO-72** (72V, 6).
 - Lote **DEMO-LIQ-001**, liquidado: DEMO-48 × 24 y DEMO-72 × 8, con los montos del *golden test* (SPEC §7) × 4
@@ -39,7 +45,8 @@ Estos usuarios **no** se suben a Supabase Cloud: `supabase db push` no ejecuta l
 - Lote **DEMO-ALM-002**, en almacén y sin liquidar: DEMO-60 × 5, con 3 unidades en caja y 2 por registrar.
 
 Las pruebas E2E crean sus propios lotes y modelos, pero las de venta consumen unidades de DEMO-LIQ-001
-(7 DEMO-48 por corrida). `pnpm e2e:limpio` reinicia la BD local (borra lo que hayas cargado a mano) y corre la suite.
+(7 DEMO-48 por corrida). `pnpm e2e:limpio` ejecuta `pnpm db:demo` (reinicia la BD local: borra lo que hayas
+cargado a mano) y corre la suite.
 
 ### Pruebas
 
@@ -48,7 +55,8 @@ pnpm test               # Vitest (unitarias)
 pnpm lint && pnpm typecheck
 pnpm build
 .\tests\run.ps1         # pruebas SQL (Windows; en Linux/macOS: ./tests/run.sh)
-pnpm e2e                # Playwright contra la BD local (requiere `supabase db reset` previo)
+pnpm e2e                # Playwright contra la BD local (requiere `pnpm db:demo` previo)
+pnpm e2e:limpio         # pnpm db:demo + pnpm e2e
 ```
 
 > **Estado (2026-10-07):** fases 1 a 8 completas (BD, costeo, app, catálogo, lotes, taller, precios, ventas,
@@ -64,7 +72,10 @@ supabase/
     20260925000100_esquema.sql         # tipos, tablas, índices
     20260925000200_reglas_negocio.sql  # triggers, máquina de estados, precios, vistas
     20260925000300_seguridad_rls.sql   # Row Level Security por rol
-  seed.sql                             # márgenes 45/35/28 % y ubicaciones
+    …                                  # RPC, guardas y reglas posteriores (ver PROGRESS)
+    20261008041204_datos_base.sql      # márgenes 45/35/28 % y ubicaciones (llegan a prod con db push)
+  seed.sql                             # vacío a propósito (D29)
+  demo/                                # SOLO LOCAL: usuarios demo y stock demo (pnpm db:demo)
 tests/
   00_supabase_shim.sql                 # emula auth.* para probar fuera de Supabase
   test_reglas_negocio.sql              # 10 escenarios de negocio y seguridad
@@ -77,10 +88,10 @@ tests/
 ```bash
 supabase init            # si el proyecto aún no existe
 # copiar la carpeta supabase/ de este paquete
-supabase db reset        # local: aplica migraciones + seed
-supabase db push         # remoto
+supabase db reset        # local: aplica las migraciones (con los datos base)
+supabase db push         # remoto: las mismas migraciones; no hace falta ningún paso manual
 ```
-**Sin CLI:** pega los 3 archivos de `migrations/` en el SQL Editor, en orden, y luego `seed.sql`.
+**Sin CLI:** pega los archivos de `migrations/` en el SQL Editor, en orden. Nunca ejecutes los de `supabase/demo/` fuera de local.
 
 **Primer administrador:** regístrate en la app y ejecuta
 `update public.profiles set rol = 'admin' where id = '<tu-uuid>';`

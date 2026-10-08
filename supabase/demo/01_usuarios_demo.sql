@@ -1,6 +1,9 @@
+-- ⚠️⚠️⚠️ SOLO LOCAL — contiene contraseñas conocidas ⚠️⚠️⚠️
+-- NUNCA ejecutar en Supabase Cloud ni en producción.
 -- =============================================================================
--- Usuarios de prueba — SOLO PARA DESARROLLO LOCAL (`supabase db reset`).
--- No se aplica con `supabase db push` (los seeds no se suben) ni en tests/run.sh.
+-- Usuarios de prueba para desarrollo local. Los carga `pnpm db:demo` (scripts/db-demo.mjs)
+-- en el contenedor de la BD local. No está en sql_paths de config.toml: ningún comando de la
+-- CLI (db reset, db push, db push --include-seed) lo ejecuta. Tampoco lo usa tests/run.sh.
 -- Contraseña de todos: Demo1234!
 --   admin@demo.pe      → admin
 --   tecnico@demo.pe    → tecnico

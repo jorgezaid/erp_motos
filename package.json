@@ -18,7 +18,8 @@
     "env:local": "node scripts/crear-env-local.mjs",
     "gen:types": "supabase gen types typescript --local > src/types/database.ts",
     "e2e": "next build && playwright test",
-    "e2e:limpio": "supabase db reset && pnpm e2e"
+    "e2e:limpio": "pnpm db:demo && pnpm e2e",
+    "db:demo": "node scripts/db-demo.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ingresar } from './ayudas';
 
 // Ventas confirmadas: consumen unidades de DEMO-LIQ-001 (7 DEMO-48 por corrida; hay 24).
-// Si se agota el stock demo: `pnpm e2e:limpio` (reinicia la BD local).
+// Si se agota el stock demo: `pnpm e2e:limpio` (pnpm db:demo reinicia la BD local).
 
 async function crearOrden(page: Page, tipo: string, cliente: string, doc: { tipo: 'DNI' | 'RUC'; numero: string }) {
   await page.goto('/ventas/nueva');
@@ -81,6 +81,8 @@ test('7.4: venta x1 con pago mixto (efectivo + tarjeta) genera garantías y marc
 });
 
 test('7.4: venta x6 (distribuidor) al precio de la escala, pagada por transferencia', async ({ page }) => {
+  // ~15 acciones de servidor seguidas: en una máquina cargada supera los 30 s por defecto
+  test.setTimeout(60_000);
   await ingresar(page, 'vendedor@demo.pe');
   await crearOrden(page, 'Distribuidor (x6)', 'Motos del Norte SAC', { tipo: 'RUC', numero: '20512345678' });
   const vins = await agregarUnidades(page, 'DEMO-48', 6);

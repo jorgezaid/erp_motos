@@ -35,7 +35,7 @@
 - [x] 3.1 Next.js 15 + Tailwind + shadcn/ui en la raíz del repo (convivir con `supabase/` y `tests/`) — no usar create-next-app sobre la raíz; instalar next/react manualmente e integrar la config existente (`package.json`, `tsconfig.json`, `eslint.config.js`, `vitest.config.ts`) — Next 15.5, React 19, Tailwind 4, shadcn (radix-nova, 18 componentes); ESLint con `@next/eslint-plugin-next` y react-hooks (D14)
 - [x] 3.2 Clientes Supabase (`@supabase/ssr`): browser, server y middleware — `src/lib/supabase/{client,server,middleware,env}.ts` y `src/middleware.ts`; `pnpm env:local` genera `.env.local` solo con valores públicos (D15)
 - [x] 3.3 `supabase gen types typescript --local > src/types/database.ts` — también como `pnpm gen:types`; los tres clientes quedan tipados con `Database`
-- [x] 3.4 Login, `/pendiente` y middleware de sesión y rol — `lib/roles.ts` (acceso por ruta, probado), `lib/auth.ts` (`exigirRol`), `lib/errores.ts` (mensajes de la BD); usuarios demo en `supabase/seeds/` (D16); Playwright con 4 E2E de login
+- [x] 3.4 Login, `/pendiente` y middleware de sesión y rol — `lib/roles.ts` (acceso por ruta, probado), `lib/auth.ts` (`exigirRol`), `lib/errores.ts` (mensajes de la BD); usuarios demo (hoy en `supabase/demo/`, D29); Playwright con 4 E2E de login
 - [x] 3.5 Layout con sidebar según el rol, `lib/format.ts` (PEN, USD, fechas de Lima) y un toast para los errores de la BD — `components/sidebar.tsx` (menú lateral en móvil), `lib/navegacion.ts`, `lib/etiquetas.ts` (enums en español), `lib/toast.ts` (`avisar`) y sonner en el layout raíz
 
 ## Fase 4 · Catálogo y usuarios (M1, M2) ✅
@@ -46,7 +46,7 @@
 ## Fase 5 · Lotes de importación (M3) ✅
 - [x] 5.1 Listado y creación de lotes — `/lotes` con búsqueda (código, DAM, proveedor), filtro por estado y CSV; diálogo "Nuevo lote" (solo código y proveedor); `/lotes/[id]` con layout y pestañas como subrutas
 - [x] 5.2 Pestañas Datos y Costos — en un lote liquidado solo se editan las notas y los costos quedan deshabilitados; vista previa de tributos con el interruptor RN-05 (`lib/costing/impuestos.ts`); migración `20261007223650_invalidar_costeo` + `tests/test_invalidar_costeo.sql` (D21)
-- [x] 5.3 Pestaña Packing list — alta, edición y baja de líneas con EXW/CBM precargados del catálogo, totales con decimal.js (`lib/costing/packing.ts`) y alerta packing vs DAM; migración `20261007224356_guard_packing_cantidad` + `tests/test_packing_list.sql` (D23); datos demo en `supabase/seeds/02_datos_demo.sql`
+- [x] 5.3 Pestaña Packing list — alta, edición y baja de líneas con EXW/CBM precargados del catálogo, totales con decimal.js (`lib/costing/packing.ts`) y alerta packing vs DAM; migración `20261007224356_guard_packing_cantidad` + `tests/test_packing_list.sql` (D23); datos demo (hoy en `supabase/demo/02_datos_demo.sql`, D29)
 - [x] 5.4 Pestaña Costeo: vista previa, guardar (RPC 2.4), liquidar y reabrir — tabla de SPEC §7, costo total del lote y precios x1/x3/x6 (con precios manuales); el costeo se recalcula en el servidor al guardar (D24); estado vigente/sin guardar/desactualizado (`lib/costing/estado-costeo.ts`); "Liquidar" exige costeo vigente y confirmación; "Reabrir" también en Costos (M3 ✅)
 - [x] 5.5 Pestañas Unidades y Auditoría — Unidades sobre `v_stock` (consulta compartida `lib/consultas/stock.ts`) más el costo landing de `v_vehicle_costs`; Auditoría sobre `v_batch_reconciliation` con filas en rojo y alertas en texto (`lib/auditoria.ts`); ambas con CSV
 
@@ -115,7 +115,7 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | D13 | 2026-10-07 | Pruebas SQL: helpers en `tests/01_helpers.sql`; `run.sh` recrea la BD por cada `tests/test_*.sql` | Archivos de prueba independientes entre sí |
 | D14 | 2026-10-07 | Tailwind 4 (sin `tailwind.config`) y shadcn con el paquete `cn` (sustituto oficial de clsx + tailwind-merge); `next build` no ejecuta ESLint (`ignoreDuringBuilds`) | El lint ya corre con `pnpm lint` sobre el flat config; Next no detecta el plugin en flat config y lo duplicaría |
 | D15 | 2026-10-07 | La app no usa la `SUPABASE_SERVICE_ROLE_KEY` en ningún sitio; `.env.local` solo lleva la URL y la clave anónima | CLAUDE.md regla 5: solo si es imprescindible. Lo administrativo (listar usuarios con email) va por RPC `security definer` que exige admin |
-| D16 | 2026-10-07 | Datos y usuarios demo en `supabase/seeds/*.sql` (cargados por `supabase db reset`), no en `seed.sql` | `tests/run.sh` carga `seed.sql` sobre un `auth.users` simulado sin columnas de contraseña; además los seeds no se suben con `db push` |
+| D16 | 2026-10-07 | Datos y usuarios demo fuera de `seed.sql` (reemplazada por D29) | `tests/run.sh` carga `seed.sql` sobre un `auth.users` simulado sin columnas de contraseña |
 | D17 | 2026-10-07 | El acceso por ruta (`lib/roles.ts`) lo aplican el middleware y cada página (`exigirRol`); ruta no permitida → inicio | Defensa en profundidad; la seguridad real sigue siendo el RLS |
 | D18 | 2026-10-07 | Playwright se instaló en la 3.4 (no en la 7.4) | Sirve para verificar cada pantalla desde el inicio; la 7.4 agrega los E2E de venta |
 | D19 | 2026-10-07 | Un admin no puede quitarse su propio rol de admin ni desactivar su cuenta (trigger `guard_self_profile`); otro admin sí puede | Evita quedarse sin administradores por un clic; es la opción más segura y no contradice el SPEC |
@@ -128,13 +128,14 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | D26 | 2026-10-07 | POS: los datos del cliente se piden en el paso 1 (con el tipo de venta), antes de agregar unidades; el resto del flujo (unidades, pagos, confirmar) ocurre en `/ventas/[id]` sobre la orden en borrador | En la BD una unidad se reserva al agregarla a una orden, y la orden exige cliente con documento válido (CHECK). Así la reserva es inmediata y "dos pestañas, misma unidad" lo resuelve la BD |
 | D27 | 2026-10-07 | Reclamos: la BD impone abierto → en revisión → aprobado/rechazado (con diagnóstico) → cerrado; un reclamo nuevo siempre empieza abierto; al pasar a revisión se registra el técnico; uno cerrado no se edita | SPEC M7 define el ciclo pero no había regla en la BD (la BD es la autoridad) |
 | D28 | 2026-10-07 | "Margen promedio" del dashboard = margen real ponderado del mes de Lima: Σ utilidad / Σ precio de venta de las unidades vendidas | Coincide con la definición de margen sobre el precio (SPEC §8) y no lo distorsionan las ventas pequeñas |
+| D29 | 2026-10-08 | Márgenes y ubicaciones en la migración `20261008041204_datos_base` (idempotente); `seed.sql` queda vacío. Usuarios y stock demo en `supabase/demo/`, fuera de `sql_paths`, cargados solo con `pnpm db:demo` (reset + psql del contenedor local) | `db push` no ejecuta seeds: producción quedaba sin márgenes. Y con los demo en `sql_paths`, `db push --include-seed` podía llevar usuarios con contraseña conocida a producción |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
 - En un trigger BEFORE, las columnas generadas llegan nulas: tenerlo en cuenta en futuros triggers (ya se corrigió en `guard_batch_update`).
 - Guardar los márgenes globales (`/precios`) son 3 UPDATE separados: si uno fallara a mitad, quedarían mezclados. Los valores se validan antes (riesgo bajo); la solución definitiva es una RPC transaccional.
 - Con RLS, Postgres no incluye el valor duplicado en los errores de clave única: los mensajes dicen "El VIN ya está registrado." sin el valor.
-- Los E2E de venta consumen stock demo (7 DEMO-48 por corrida, hay 24): `pnpm e2e:limpio` lo restaura borrando la BD local.
+- Los E2E de venta consumen stock demo (7 DEMO-48 por corrida, hay 24): `pnpm e2e:limpio` (vía `pnpm db:demo`) lo restaura borrando la BD local.
 - Las listas grandes (CSV, precios, márgenes) se cortan en 5000 filas (`MAX_FILAS_CSV`); `/admin/usuarios`, `/precios` y `/auditoria` filtran en el servidor de Next sobre ese tope en vez de paginar en la BD.
 
 ## Bitácora de sesiones
