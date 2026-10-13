@@ -6,7 +6,7 @@
 ## Estado actual
 - **Fase activa:** 9 — Producción (la hace el dueño del repo: 0.5, 9.1–9.4)
 - **Próxima tarea:** 0.5 (Supabase Cloud) y luego 9.1 (Vercel). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
-- **Última actualización:** 2026-10-07
+- **Última actualización:** 2026-10-13
 
 ---
 
@@ -129,6 +129,7 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | D27 | 2026-10-07 | Reclamos: la BD impone abierto → en revisión → aprobado/rechazado (con diagnóstico) → cerrado; un reclamo nuevo siempre empieza abierto; al pasar a revisión se registra el técnico; uno cerrado no se edita | SPEC M7 define el ciclo pero no había regla en la BD (la BD es la autoridad) |
 | D28 | 2026-10-07 | "Margen promedio" del dashboard = margen real ponderado del mes de Lima: Σ utilidad / Σ precio de venta de las unidades vendidas | Coincide con la definición de margen sobre el precio (SPEC §8) y no lo distorsionan las ventas pequeñas |
 | D29 | 2026-10-08 | Márgenes y ubicaciones en la migración `20261008041204_datos_base` (idempotente); `seed.sql` queda vacío. Usuarios y stock demo en `supabase/demo/`, fuera de `sql_paths`, cargados solo con `pnpm db:demo` (reset + psql del contenedor local) | `db push` no ejecuta seeds: producción quedaba sin márgenes. Y con los demo en `sql_paths`, `db push --include-seed` podía llevar usuarios con contraseña conocida a producción |
+| D30 | 2026-10-13 | Grants explícitos para `authenticated` (CRUD en tablas) y `service_role` (todo), más sus default privileges (migración `20261013160111_grants_roles_api`); nada para `anon`. Además se revoca EXECUTE a `anon` y `PUBLIC` en todas las funciones de `public` y el default de `anon` (`20261013162221_revocar_execute_anon`). `tests/test_grants.sql` exige RLS en todas las tablas, `anon` sin acceso a tablas, secuencias ni funciones, EXECUTE para `authenticated`/`service_role` y que el alta en Auth cree el perfil | Supabase Cloud no da grants por defecto en proyectos nuevos y la app no leía nada. Postgres da EXECUTE a PUBLIC al crear cada función: las creadas después de `seguridad_rls` (is_staff, can_edit_order, de trigger) quedaban ejecutables por `anon`. Ese default de PUBLIC es global: cada migración que cree funciones debe revocarlo (la prueba lo detecta) |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
