@@ -7,7 +7,8 @@ Crea una migración para: $ARGUMENTS
 Reglas obligatorias:
 - Usa `supabase migration new <nombre>`. **Nunca** edites una migración existente.
 - Toda tabla nueva lleva `enable row level security` y sus políticas en el mismo archivo, siguiendo la matriz de roles de `20260925000300_seguridad_rls.sql`. Usa `(select public.has_role(...))` en las políticas.
-- Las funciones `security definer` llevan `set search_path = ''` y nombres calificados. Revoca `execute` a `anon`.
+- Las funciones `security definer` llevan `set search_path = ''` y nombres calificados.
+- Toda función nueva en `public` debe incluir `revoke execute on function ... from public, anon;` — `test_grants.sql` falla si se olvida.
 - Las vistas se crean `with (security_invoker = true)`.
 - Los mensajes de error de los triggers van en español y redactados para el usuario final.
 - Recuerda que en triggers BEFORE las columnas generadas llegan NULL.

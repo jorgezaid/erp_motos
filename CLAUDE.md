@@ -40,7 +40,7 @@ supabase gen types typescript --local > src/types/database.ts
    - Los costos (`import_batches`, `batch_items`, `batch_model_costs`, `v_vehicle_costs`, `v_price_matrix`, `v_sales_margin`) son **solo para admin**. Nunca los expongas a otros roles, ni siquiera en props serializadas a Client Components.
    - Toda tabla nueva lleva `enable row level security` y sus políticas en la misma migración.
 6. **RLS filtra en silencio**: un UPDATE o DELETE sin permiso devuelve 0 filas, no un error. Comprueba las filas afectadas.
-7. **Triggers**: en un BEFORE, las columnas generadas llegan NULL. Las funciones `security definer` llevan `set search_path = ''` y nombres calificados (`public.tabla`).
+7. **Triggers**: en un BEFORE, las columnas generadas llegan NULL. Las funciones `security definer` llevan `set search_path = ''` y nombres calificados (`public.tabla`). Toda función nueva en `public` debe incluir `revoke execute on function ... from public, anon;` — `test_grants.sql` falla si se olvida.
 8. Estado de las unidades: **nunca** pongas `reservado` o `vendido` a mano; se hace agregando la unidad a una orden o confirmándola.
 9. Server Components por defecto; las mutaciones van en Server Actions con validación zod.
 10. Si algo del SPEC es ambiguo o contradice el código, **pregunta** en vez de suponer, y registra la decisión en PROGRESS.md → Decisiones.
