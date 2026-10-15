@@ -5,7 +5,14 @@ const hrefs = (rol: Parameters<typeof modulosPara>[0]) => modulosPara(rol).map((
 
 describe('modulosPara (SPEC M1: sidebar según el rol)', () => {
   it('admin ve todos los módulos', () => {
-    expect(hrefs('admin')).toHaveLength(12);
+    expect(hrefs('admin')).toHaveLength(13);
+  });
+
+  it('D33: "Importar Excel" solo para admin, en Administración', () => {
+    expect(modulosPara('admin').find((m) => m.href === '/admin/importar')).toMatchObject({
+      etiqueta: 'Importar Excel',
+      grupo: 'administracion',
+    });
   });
 
   it('técnico: inventario, registro, taller y garantías; sin lotes, precios, ventas ni administración', () => {

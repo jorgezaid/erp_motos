@@ -713,6 +713,9 @@ isOneToOne: false
 "has_role":
 { Args: { "roles": (Database["public"]['Enums']["app_role"])[] }; Returns: boolean
                            },
+"importar_plantilla":
+{ Args: { "p_datos": Json }; Returns: Json
+                           },
 "is_privileged":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },

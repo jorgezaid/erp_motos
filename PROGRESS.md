@@ -4,8 +4,9 @@
 > Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[!]` bloqueado
 
 ## Estado actual
-- **Fase activa:** 10 — Gastos (M9). La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
-- **Próxima tarea:** 10.2 (`/gastos`). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
+- **Fase activa:** 10 — Gastos (M9), **en pausa hasta que el cliente confirme**. La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
+- **Próxima tarea:** 10.2 (`/gastos`), cuando el cliente la confirme. Fases 3 a 8 y 11.1 completas; ver `docs/INFORME-FINAL.md`
+- **Pendiente en producción:** `supabase db push` de la migración `20261015175924_rpc_importar_plantilla`
 - **Última actualización:** 2026-10-15
 
 ---
@@ -83,6 +84,9 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 - [ ] 10.5 `/gastos/importar`: hoja "Gastos" (.xlsx o pegada) con la validación del formulario, vista previa por fila y guardado todo o nada; plantilla `docs/plantillas/plantilla-datos-reales-erp-v3.xlsx` con la hoja "Gastos"
 - [ ] 10.6 E2E (`--workers=1`): alta con comprobante, marcar realizado, utilidad neta en el dashboard, vendedor y técnico sin acceso
 
+## Fase 11 · Importador simple (D33)
+- [x] 11.1 `/admin/importar` ("Importar Excel", solo admin, en Administración): sube la plantilla v2 llena (formato exacto), la valida en el servidor (resumen por hoja y errores con hoja y fila) y "Confirmar" la guarda todo o nada — lectura con exceljs (`lib/importar/plantilla.ts`), validación pura (`lib/importar/validar.ts`), RPC `importar_plantilla` (migración `20261015175924_rpc_importar_plantilla` + `tests/test_importar_plantilla.sql`); Usuarios solo se listan; Situación ≠ en_caja es error; reimportar actualiza sin duplicar ni borrar; no costea ni liquida; Vitest con la plantilla real rellenada (`lib/importar/ejemplo.ts`), E2E `e2e/importar.spec.ts`; guía `docs/GUIA-IMPORTAR-EXPORTAR.md`
+
 ---
 
 ## Preguntas abiertas (para el dueño del negocio)
@@ -145,6 +149,7 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 
 | D31 | 2026-10-14 | Escalas activas: `price_margins.activo`; x3 y x6 nacen desactivadas. Trigger `guard_escala_activa` (BEFORE INSERT/UPDATE en `sales_orders`) rechaza crear, cambiar el tipo o confirmar con una escala inactiva, con un mensaje que nombra las activas; no bloquea anular ni editar el contacto. `generar_lista_precios` sigue generando las 3 escalas; `after_margins_changed` pasa a `after update of margen_objetivo, cantidad_minima`. Debe quedar al menos una escala activa | El negocio vende solo por unidad por ahora; al reactivar una escala ya hay precios, y activar o desactivar no regenera los precios de todos los lotes |
 | D32 | 2026-10-15 | Gastos, opción A pura (RN-22): un gasto es siempre del negocio. `gastos` no tiene `batch_id`, ningún trigger de gastos escribe en `import_batches` ni en `batch_model_costs`, y no se invalidan costeos. Utilidad neta del mes = ventas confirmadas − costo landing de lo vendido − **todos** los gastos realizados del mes (RN-23). Se descartó "cargar a lote" | Decisión del cliente. Mantiene el costo landing y los precios independientes de los gastos, y evita contar un gasto dos veces (en el costo de las motos y en la utilidad) |
+| D33 | 2026-10-15 | Importador simple: un lote por archivo, formato exacto de la plantilla v2 (se rechaza si cambian hojas o encabezados). Se ignora la fila 2 solo si es gris (EJEMPLO) y no se leen las celdas verdes. Cada fila se busca por su clave (nombre de ubicación sin distinguir mayúsculas, código de modelo, código de embarque, modelo del lote, VIN, serial); se actualiza solo si cambió; lo ausente no se borra y una celda vacía conserva el valor. EXW de la línea = factura o catálogo, y CBM = catálogo (como las columnas verdes). Las filas de Modelos solo con el código se ignoran. Usuarios no crea cuentas. Al confirmar, la Server Action vuelve a leer y validar el mismo archivo (como D24) y llama a la RPC `importar_plantilla` (security invoker, solo admin), que traduce los errores a "Hoja «X», fila N: …". Body de Server Actions: 6 MB (archivo ≤ 5 MB) | Pedido del cliente ("importador SIMPLE"; se descartó la Fase 11 completa). La BD sigue siendo la autoridad: la RPC respeta todos los triggers |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
@@ -164,3 +169,4 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | 2026-10-07 | Claude Code | Tarea 2.5: vista previa de precios x1/x3/x6, verificada contra 300 casos de Postgres. Vitest 33/33, lint y typecheck limpios. Fase 2 completa. |
 | 2026-10-07 | Claude Code (autónomo) | Fases 3 a 8 (tareas 3.1–8.3), un commit por tarea; 4 migraciones nuevas (listar_usuarios, invalidar_costeo, guard_packing_cantidad, reclamos_estados) con sus pruebas SQL; usuarios y datos demo; revisión del conjunto aplicada. Vitest 148/148, SQL 6/6 archivos, Playwright 45/45, lint, typecheck y build en verde. Informe: `docs/INFORME-FINAL.md`. |
 | 2026-10-15 | Claude Code | Tarea 7.5: escalas activas (D31), migración `escalas_activas` con su prueba SQL; POS y `/precios` solo con escalas activas. Vitest 153/153, SQL 8/8 archivos, Playwright 48/48 (`--workers=1`), lint y typecheck en verde. |
+| 2026-10-15 | Claude Code | Se revisó la migración `gastos`: sin `batch_id` ni triggers sobre lotes (opción A pura, sin cambios). Tarea 11.1: importador simple (D33). Vitest 180/180, SQL 10/10 archivos, Playwright 50/50 (`--workers=1`, BD limpia), lint, typecheck y build en verde. |

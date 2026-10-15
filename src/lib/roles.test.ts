@@ -31,7 +31,7 @@ describe('decidirRuta (SPEC M1)', () => {
 
 describe('puedeVer (SPEC §3)', () => {
   it('costos (lotes, auditoría) y administración: solo admin', () => {
-    for (const ruta of ['/lotes', '/auditoria', '/admin/usuarios']) {
+    for (const ruta of ['/lotes', '/auditoria', '/admin/usuarios', '/admin/importar']) {
       expect(puedeVer(ruta, 'admin')).toBe(true);
       expect(puedeVer(ruta, 'tecnico')).toBe(false);
       expect(puedeVer(ruta, 'vendedor')).toBe(false);

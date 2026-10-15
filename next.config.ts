@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // El lint (con @next/eslint-plugin-next) corre aparte con `pnpm lint` sobre el flat config
   eslint: { ignoreDuringBuilds: true },
+  // /admin/importar sube la plantilla .xlsx (hasta 5 MB) en una Server Action; el límite por
+  // defecto es 1 MB
+  experimental: { serverActions: { bodySizeLimit: '6mb' } },
 };
 
 export default nextConfig;
