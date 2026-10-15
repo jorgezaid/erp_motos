@@ -4,9 +4,9 @@
 > Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[!]` bloqueado
 
 ## Estado actual
-- **Fase activa:** 9 — Producción (la hace el dueño del repo: 0.5, 9.1–9.4)
-- **Próxima tarea:** 0.5 (Supabase Cloud) y luego 9.1 (Vercel). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
-- **Última actualización:** 2026-10-13
+- **Fase activa:** 10 — Gastos (M9). La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
+- **Próxima tarea:** 10.1 (BD de gastos). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
+- **Última actualización:** 2026-10-15
 
 ---
 
@@ -74,6 +74,15 @@
 - [ ] 9.3 Backups y revisión del *Security Advisor* de Supabase
 - [ ] 9.4 Carga de los modelos reales (XSDU-17, 23, 24, 25, 29, 31, 35, 36) con sus fichas técnicas
 
+## Fase 10 · Gastos y utilidad neta (M9)
+Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negocio y nunca tocan lotes, costeos ni precios.
+- [ ] 10.1 BD: enums `categoria_gasto` y `estado_gasto`, tabla `gastos` (sin `batch_id`) con RN-21 en CHECK, RLS y grants solo admin; bucket privado `comprobantes-gastos` con políticas en `storage.objects` (RN-24); vista `v_utilidad_mensual` (RN-23); `tests/test_gastos.sql`: RLS (vendedor, técnico y anon no ven gastos ni comprobantes), RN-21, RN-23 y que crear, editar y borrar gastos no cambia `import_batches`, `batch_model_costs` ni `price_list` (RN-22); tipos regenerados
+- [ ] 10.2 `/gastos`: lista con filtros por mes, categoría y estado, totales con decimal.js y exportación a Excel (.xlsx); formulario con subida del comprobante; "Marcar como realizado" con monto real y fecha; sidebar y `lib/roles.ts` solo admin
+- [ ] 10.3 `/gastos/planificados`: total por mes estimado
+- [ ] 10.4 Utilidad neta del mes en el dashboard (solo admin): ventas − costo landing − gastos realizados
+- [ ] 10.5 `/gastos/importar`: hoja "Gastos" (.xlsx o pegada) con la validación del formulario, vista previa por fila y guardado todo o nada; plantilla `docs/plantillas/plantilla-datos-reales-erp-v3.xlsx` con la hoja "Gastos"
+- [ ] 10.6 E2E (`--workers=1`): alta con comprobante, marcar realizado, utilidad neta en el dashboard, vendedor y técnico sin acceso
+
 ---
 
 ## Preguntas abiertas (para el dueño del negocio)
@@ -135,6 +144,7 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | D30 | 2026-10-13 | Grants explícitos para `authenticated` (CRUD en tablas) y `service_role` (todo), más sus default privileges (migración `20261013160111_grants_roles_api`); nada para `anon`. Además se revoca EXECUTE a `anon` y `PUBLIC` en todas las funciones de `public` y el default de `anon` (`20261013162221_revocar_execute_anon`). `tests/test_grants.sql` exige RLS en todas las tablas, `anon` sin acceso a tablas, secuencias ni funciones, EXECUTE para `authenticated`/`service_role` y que el alta en Auth cree el perfil | Supabase Cloud no da grants por defecto en proyectos nuevos y la app no leía nada. Postgres da EXECUTE a PUBLIC al crear cada función: las creadas después de `seguridad_rls` (is_staff, can_edit_order, de trigger) quedaban ejecutables por `anon`. Ese default de PUBLIC es global: cada migración que cree funciones debe revocarlo (la prueba lo detecta) |
 
 | D31 | 2026-10-14 | Escalas activas: `price_margins.activo`; x3 y x6 nacen desactivadas. Trigger `guard_escala_activa` (BEFORE INSERT/UPDATE en `sales_orders`) rechaza crear, cambiar el tipo o confirmar con una escala inactiva, con un mensaje que nombra las activas; no bloquea anular ni editar el contacto. `generar_lista_precios` sigue generando las 3 escalas; `after_margins_changed` pasa a `after update of margen_objetivo, cantidad_minima`. Debe quedar al menos una escala activa | El negocio vende solo por unidad por ahora; al reactivar una escala ya hay precios, y activar o desactivar no regenera los precios de todos los lotes |
+| D32 | 2026-10-15 | Gastos, opción A pura (RN-22): un gasto es siempre del negocio. `gastos` no tiene `batch_id`, ningún trigger de gastos escribe en `import_batches` ni en `batch_model_costs`, y no se invalidan costeos. Utilidad neta del mes = ventas confirmadas − costo landing de lo vendido − **todos** los gastos realizados del mes (RN-23). Se descartó "cargar a lote" | Decisión del cliente. Mantiene el costo landing y los precios independientes de los gastos, y evita contar un gasto dos veces (en el costo de las motos y en la utilidad) |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.

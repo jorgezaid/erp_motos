@@ -20,10 +20,11 @@ trimotos de carga). Cubre el ciclo de vida completo de cada **lote de importaci�
 5. **Punto de venta**: órdenes, pagos (incluido el mixto) y confirmación.
 6. **Garantías** y reclamos postventa.
 7. **Auditoría**: packing list vs. DAM vs. seriales, y margen real por venta.
+8. **Gastos del negocio** (planificados y realizados) y **utilidad neta del mes**. Los gastos nunca tocan el costo de las motos (RN-22).
 
 ### Fuera de alcance (v1)
 - Facturación electrónica SUNAT (boletas y facturas). El sistema emite solo una **nota de venta interna**; la integración con un OSE/PSE queda para la v2.
-- Contabilidad general, planillas y cuentas por pagar.
+- Contabilidad general, planillas y cuentas por pagar. (El módulo M9 registra gastos del negocio para la utilidad neta; no es contabilidad.)
 - Ventas a crédito o en cuotas: en v1 toda venta se paga completa al confirmarse.
 - Multi-empresa y multi-moneda en ventas: se vende solo en PEN.
 
@@ -93,6 +94,7 @@ La matriz detallada por tabla está en el encabezado de `supabase/migrations/202
     │       ├── ventas/       # M6
     │       ├── garantias/    # M7
     │       ├── auditoria/    # M8
+    │       ├── gastos/       # M9
     │       └── admin/        # M1-M2: usuarios, modelos, ubicaciones
     ├── components/ui/        # shadcn
     ├── components/           # componentes de dominio
@@ -129,9 +131,11 @@ La **fuente de verdad** son las migraciones. Resumen de entidades:
 | `payments` | Pagos: efectivo, transferencia o tarjeta | ídem |
 | `warranties` | Garantía general + garantía de baterías (se generan al confirmar) | staff lee |
 | `warranty_claims` | Reclamos de garantía | staff crea; admin/técnico atienden |
+| `gastos` | Gastos del negocio: fecha, categoría, proveedor, monto, método de pago, estado (planificado/realizado) y comprobante (Storage). Sin vínculo con lotes (RN-22) | **solo admin** |
 
 **Vistas** (todas con `security_invoker`, es decir, respetan el RLS de quien consulta): `v_stock`, `v_vehicle_costs`,
-`v_price_matrix`, `v_batch_reconciliation`, `v_sales_margin` y `v_warranties`.
+`v_price_matrix`, `v_batch_reconciliation`, `v_sales_margin`, `v_warranties` y `v_utilidad_mensual` (RN-23, solo admin).
+**Storage:** bucket privado `comprobantes-gastos`, solo admin (RN-24).
 **Funciones RPC:** `pendientes_de_registro()`, `generar_lista_precios(batch_id)` y `guardar_costeo(batch_id, filas)`
 (solo admin; ver §7 → Persistencia).
 
@@ -163,6 +167,10 @@ Cada regla tiene un ID que se cita en el código y en las pruebas. La columna **
 | RN-18 | Solo se eliminan órdenes en `borrador`. | BD |
 | RN-19 | Solo se aceptan reclamos de garantías vigentes y no anuladas. | BD |
 | RN-20 | Validación de documentos: DNI de 8 dígitos; RUC de 11 dígitos que empiece por 10, 15, 17 o 20; CE alfanumérico de 8 a 12 caracteres. | BD + zod en la UI |
+| RN-21 | Un gasto tiene monto > 0. Si está `planificado` exige `fecha_estimada`; si está `realizado` exige `fecha` (la del pago). "Marcar como realizado" registra el monto real y la fecha. | BD (CHECK) + zod en la UI |
+| RN-22 | **Los gastos son del negocio y nunca afectan el costo de las motos**: no se cargan a un lote, no modifican `import_batches`, `batch_model_costs` ni `price_list`, y no invalidan costeos. Se descuentan solo de la utilidad del mes (RN-23). | BD (sin vínculo con lotes; prueba SQL) |
+| RN-23 | Utilidad neta del mes (de Lima) = ventas confirmadas del mes − costo landing de lo vendido (`v_sales_margin`) − **todos** los gastos realizados con `fecha` en ese mes. | BD (vista `v_utilidad_mensual`) |
+| RN-24 | Los gastos y sus comprobantes son solo para admin (RLS en `gastos` y en `storage.objects` del bucket `comprobantes-gastos`). | BD |
 
 ---
 
@@ -321,6 +329,16 @@ Pestañas de `/lotes/[id]`:
 ### M8 · Auditoría y reportes — `/auditoria`, `/` (dashboard)
 - Dashboard: unidades por estado, ventas del día y del mes, margen promedio (solo admin) y alertas de conciliación.
 - Reporte de margen real por venta y por modelo, exportable a CSV.
+- Dashboard (solo admin): **utilidad neta del mes** con su desglose: ventas − costo landing − gastos (RN-23).
+
+### M9 · Gastos — `/gastos`, `/gastos/planificados`, `/gastos/importar` (solo admin)
+- `/gastos`: lista con filtros por mes, categoría y estado, búsqueda por descripción o proveedor, totales y exportación a Excel (.xlsx).
+- Formulario de alta y edición: fecha o fecha estimada, categoría, descripción, proveedor, monto, método de pago, estado y comprobante (PDF o imagen) subido a Storage. El comprobante se ve con una URL firmada.
+- "Marcar como realizado" en un gasto planificado: pide el monto real y la fecha.
+- `/gastos/planificados`: gastos planificados agrupados por mes estimado, con el total de cada mes.
+- `/gastos/importar`: hoja "Gastos" de la plantilla (`docs/plantillas`) con la misma validación del formulario, vista previa con los errores por fila y guardado todo o nada.
+- ✅ Un vendedor o un técnico no entra a `/gastos` ni puede leer gastos o comprobantes por la API.
+- ✅ Crear, editar o borrar un gasto no cambia ningún costo ni precio de las motos (RN-22).
 
 ---
 
