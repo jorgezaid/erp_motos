@@ -7,6 +7,7 @@ import { useForm, useWatch, type Control, type UseFormRegister } from 'react-hoo
 import { RadioOpciones } from '@/components/formulario/radio-opciones';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { mostrarSelectorEscala } from '@/lib/escalas';
 import { TIPO_VENTA } from '@/lib/etiquetas';
 import { avisar } from '@/lib/toast';
 import { esquemaNuevaVenta, type EntradaCliente, type EntradaNuevaVenta } from '@/lib/ventas';
@@ -15,7 +16,7 @@ import { CamposCliente } from '../campos-cliente';
 
 type TipoVenta = EntradaNuevaVenta['tipo_venta'];
 
-export function FormularioNuevaVenta({ minimos }: { minimos: Record<string, number> }) {
+export function FormularioNuevaVenta({ activas, minimos }: { activas: TipoVenta[]; minimos: Record<TipoVenta, number> }) {
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
   const {
@@ -28,7 +29,7 @@ export function FormularioNuevaVenta({ minimos }: { minimos: Record<string, numb
   } = useForm({
     resolver: zodResolver(esquemaNuevaVenta),
     defaultValues: {
-      tipo_venta: 'unidad_x1',
+      tipo_venta: activas[0] ?? 'unidad_x1',
       cliente_nombre: '',
       cliente_tipo_documento: 'DNI',
       cliente_documento: '',
@@ -51,19 +52,29 @@ export function FormularioNuevaVenta({ minimos }: { minimos: Record<string, numb
       <Card>
         <CardHeader>
           <CardTitle>1. Tipo de venta</CardTitle>
-          <CardDescription>Define la escala de precios. Se puede cambiar mientras la orden esté en borrador.</CardDescription>
+          <CardDescription>
+            {mostrarSelectorEscala(activas)
+              ? 'Define la escala de precios. Se puede cambiar mientras la orden esté en borrador.'
+              : 'Es la única escala de venta activa.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioOpciones
-            nombre="tipo_venta"
-            valor={tipo}
-            alCambiar={(v) => setValue('tipo_venta', v as TipoVenta)}
-            opciones={(Object.keys(TIPO_VENTA) as TipoVenta[]).map((t) => ({
-              valor: t,
-              etiqueta: TIPO_VENTA[t],
-              descripcion: `Desde ${minimos[t] ?? 1} unidad(es)`,
-            }))}
-          />
+          {mostrarSelectorEscala(activas) ? (
+            <RadioOpciones
+              nombre="tipo_venta"
+              valor={tipo}
+              alCambiar={(v) => setValue('tipo_venta', v as TipoVenta)}
+              opciones={activas.map((t) => ({
+                valor: t,
+                etiqueta: TIPO_VENTA[t],
+                descripcion: `Desde ${minimos[t]} unidad(es)`,
+              }))}
+            />
+          ) : (
+            <p className="text-sm font-medium" data-testid="escala-unica">
+              {TIPO_VENTA[tipo]}
+            </p>
+          )}
         </CardContent>
       </Card>
 

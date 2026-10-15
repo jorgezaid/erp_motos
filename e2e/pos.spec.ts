@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { ESCALAS_MAYORISTAS, fijarEscalas, ingresar } from './ayudas';
 
 /** Paso 1 del POS: tipo de venta y cliente → orden en borrador. */
 async function nuevaOrden(page: Page, tipo: 'Minorista (x1)' | 'Mayorista (x3)' | 'Distribuidor (x6)', dni = '45678912') {
@@ -62,30 +62,72 @@ test('M6: si 2 pestañas intentan vender la misma unidad, la segunda recibe "La 
   await eliminarBorrador(page);
 });
 
-test('M6: una orden x6 con 5 unidades muestra "Faltan 1 unidad para precio distribuidor" y no se confirma', async ({ page }) => {
-  await ingresar(page, 'vendedor@demo.pe');
-  await nuevaOrden(page, 'Distribuidor (x6)');
-  await buscar(page, 'DEMO-48');
-  for (let i = 0; i < 5; i++) {
-    const agregar = page.getByRole('table', { name: 'Unidades disponibles' }).getByRole('button', { name: /^Agregar / }).first();
-    await agregar.click();
-    await expect(page.getByRole('table', { name: 'Unidades de la orden' }).getByRole('row')).toHaveCount(i + 3);
-  }
-  await expect(page.getByTestId('faltan-escala')).toHaveText('Faltan 1 unidad para precio distribuidor');
-  await expect(page.getByTestId('total-orden')).toHaveText('S/ 22 175.30'); // 5 × 4 435.06
+test('D31: con solo x1 activa, el POS no muestra selector de escala ni avisos de x3/x6', async ({ page }) => {
+  await ingresar(page, 'vendedor@demo.pe', '/ventas/nueva');
+  await expect(page.getByTestId('escala-unica')).toHaveText('Minorista (x1)');
+  await expect(page.getByRole('radiogroup')).toHaveCount(0);
+  await expect(page.getByText('Mayorista (x3)')).toHaveCount(0);
+  await expect(page.getByText('Distribuidor (x6)')).toHaveCount(0);
 
-  // Pago exacto: el saldo llega a 0, pero el mínimo de la escala impide confirmar (RN-14)
-  await page.getByRole('button', { name: 'Saldo' }).click();
-  await page.getByRole('button', { name: 'Registrar pago' }).click();
-  await expect(page.getByTestId('saldo-pendiente')).toHaveText('S/ 0.00');
-  await expect(page.getByRole('button', { name: 'Confirmar venta' })).toBeDisabled();
-  await expect(page.getByLabel('Para confirmar')).toContainText('Faltan 1 unidad para precio distribuidor');
-
-  // RN-13: al pasar a x3 se re-cotiza todo y ya se podría confirmar
-  await page.getByText('Mayorista (x3)').click();
-  await expect(page.getByTestId('total-orden')).toHaveText('S/ 24 563.40'); // 5 × 4 912.68
-  await expect(page.getByTestId('faltan-escala')).toHaveCount(0);
-  await expect(page.getByTestId('saldo-pendiente')).toHaveText('S/ 2 388.10');
-
+  await nuevaOrden(page, 'Minorista (x1)');
+  await expect(page.getByTestId('escala-unica')).toHaveText('Minorista (x1)');
+  await expect(page.getByRole('radiogroup')).toHaveCount(0);
   await eliminarBorrador(page);
+});
+
+test.describe('con x3 y x6 activas', () => {
+  test.beforeEach(() => fijarEscalas(ESCALAS_MAYORISTAS, true));
+  test.afterEach(() => fijarEscalas(ESCALAS_MAYORISTAS, false));
+
+  test('M6: una orden x6 con 5 unidades muestra "Faltan 1 unidad para precio distribuidor" y no se confirma', async ({ page }) => {
+    await ingresar(page, 'vendedor@demo.pe');
+    await nuevaOrden(page, 'Distribuidor (x6)');
+    await buscar(page, 'DEMO-48');
+    for (let i = 0; i < 5; i++) {
+      const agregar = page.getByRole('table', { name: 'Unidades disponibles' }).getByRole('button', { name: /^Agregar / }).first();
+      await agregar.click();
+      await expect(page.getByRole('table', { name: 'Unidades de la orden' }).getByRole('row')).toHaveCount(i + 3);
+    }
+    await expect(page.getByTestId('faltan-escala')).toHaveText('Faltan 1 unidad para precio distribuidor');
+    await expect(page.getByTestId('total-orden')).toHaveText('S/ 22 175.30'); // 5 × 4 435.06
+
+    // Pago exacto: el saldo llega a 0, pero el mínimo de la escala impide confirmar (RN-14)
+    await page.getByRole('button', { name: 'Saldo' }).click();
+    await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await expect(page.getByTestId('saldo-pendiente')).toHaveText('S/ 0.00');
+    await expect(page.getByRole('button', { name: 'Confirmar venta' })).toBeDisabled();
+    await expect(page.getByLabel('Para confirmar')).toContainText('Faltan 1 unidad para precio distribuidor');
+
+    // RN-13: al pasar a x3 se re-cotiza todo y ya se podría confirmar
+    await page.getByText('Mayorista (x3)').click();
+    await expect(page.getByTestId('total-orden')).toHaveText('S/ 24 563.40'); // 5 × 4 912.68
+    await expect(page.getByTestId('faltan-escala')).toHaveCount(0);
+    await expect(page.getByTestId('saldo-pendiente')).toHaveText('S/ 2 388.10');
+
+    await eliminarBorrador(page);
+  });
+
+  test('D31: si se desactiva la escala de un borrador, no se confirma hasta cambiarla', async ({ page }) => {
+    await ingresar(page, 'vendedor@demo.pe');
+    await nuevaOrden(page, 'Mayorista (x3)');
+    await buscar(page, 'DEMO-48');
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole('table', { name: 'Unidades disponibles' }).getByRole('button', { name: /^Agregar / }).first().click();
+      await expect(page.getByRole('table', { name: 'Unidades de la orden' }).getByRole('row')).toHaveCount(i + 3);
+    }
+    await page.getByRole('button', { name: 'Saldo' }).click();
+    await page.getByRole('button', { name: 'Registrar pago' }).click();
+    await expect(page.getByRole('button', { name: 'Confirmar venta' })).toBeEnabled();
+
+    await fijarEscalas(['mayorista_x3'], false);
+    await page.reload();
+    await expect(page.getByTestId('escala-desactivada')).toContainText('Mayorista (x3)');
+    await expect(page.getByTestId('faltan-escala')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirmar venta' })).toBeDisabled();
+    await expect(page.getByLabel('Para confirmar')).toContainText('La venta mayorista está desactivada');
+    // Se ofrecen solo las activas (x1 y x6) para cambiarla
+    await expect(page.getByRole('radio')).toHaveCount(2);
+
+    await eliminarBorrador(page);
+  });
 });

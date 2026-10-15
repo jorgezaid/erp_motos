@@ -42,6 +42,14 @@ describe('RN-14: mínimos por escala', () => {
     expect(motivosNoConfirmable({ ...base, pagos: [{ monto_pen: 6000 }] })).toEqual(['Los pagos exceden el total en S/ 194.11']);
     expect(motivosNoConfirmable({ ...base, unidades: 0, total: 0, pagos: [] })).toEqual(['Agrega al menos una unidad']);
   });
+
+  it('D31: con la escala desactivada no se confirma y no se muestra "Faltan N unidades"', () => {
+    const base = { tipo: 'mayorista_x3' as const, minimo: 3, unidades: 1, total: '4912.68', pagos: [{ monto_pen: '4912.68' }] };
+    expect(motivosNoConfirmable({ ...base, activa: false })).toEqual([
+      'La venta mayorista está desactivada: cambia el tipo de venta',
+    ]);
+    expect(motivosNoConfirmable({ ...base, activa: true })).toEqual(['Faltan 2 unidades para precio mayorista']);
+  });
 });
 
 describe('RN-15: método de pago derivado', () => {

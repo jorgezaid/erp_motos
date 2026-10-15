@@ -1,8 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { exigirRol } from '@/lib/auth';
+import { leerEscalas } from '@/lib/consultas/escalas';
+import { tiposActivos } from '@/lib/escalas';
 import { hoyLima } from '@/lib/format';
-import { aCsv, leerParams, respuestaCsv } from '@/lib/tabla';
-import { preciosAdmin, preciosVendedor } from '../datos';
+import { aCsv, leerParams, respuestaCsv, type ColumnaCsv } from '@/lib/tabla';
+import type { TipoVenta } from '@/lib/ventas';
+import { preciosAdmin, preciosVendedor, type FilaPrecioVendedor } from '../datos';
 
 export async function GET(request: NextRequest) {
   const sesion = await exigirRol('admin', 'vendedor');
@@ -10,15 +13,19 @@ export async function GET(request: NextRequest) {
   const nombre = `precios-${hoyLima()}.csv`;
 
   if (sesion.rol !== 'admin') {
-    const filas = await preciosVendedor(q);
+    const [filas, escalas] = await Promise.all([preciosVendedor(q), leerEscalas()]);
+    const precios: Record<TipoVenta, ColumnaCsv<FilaPrecioVendedor>> = {
+      unidad_x1: { encabezado: 'Precio x1', valor: (f) => f.x1 },
+      mayorista_x3: { encabezado: 'Precio x3', valor: (f) => f.x3 },
+      distribuidor_x6: { encabezado: 'Precio x6', valor: (f) => f.x6 },
+    };
     return respuestaCsv(
       aCsv(filas, [
         { encabezado: 'Modelo', valor: (f) => f.codigo_modelo },
         { encabezado: 'Nombre', valor: (f) => f.nombre },
         { encabezado: 'Disponibles', valor: (f) => f.disponibles },
-        { encabezado: 'Precio x1', valor: (f) => f.x1 },
-        { encabezado: 'Precio x3', valor: (f) => f.x3 },
-        { encabezado: 'Precio x6', valor: (f) => f.x6 },
+        // Solo las escalas activas, como en la pantalla (D31)
+        ...tiposActivos(escalas).map((t) => precios[t]),
       ]),
       nombre,
     );

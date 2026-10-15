@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Decimal } from '@/lib/decimal';
+import { TIPOS_VENTA } from '@/lib/escalas';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
+import type { TipoVenta } from '@/lib/ventas';
 import { guardarPrecioManual } from './acciones';
 import type { FilaPrecioAdmin } from './datos';
 
-type TipoVenta = 'unidad_x1' | 'mayorista_x3' | 'distribuidor_x6';
 const CORTO: Record<TipoVenta, string> = { unidad_x1: 'x1', mayorista_x3: 'x3', distribuidor_x6: 'x6' };
 
 /** Precio de una escala con edición inline del precio manual (SPEC M5). */
@@ -89,22 +90,32 @@ function CeldaPrecio({ fila, tipo }: { fila: FilaPrecioAdmin; tipo: TipoVenta })
   );
 }
 
-const columnas: ColumnDef<FilaPrecioAdmin, unknown>[] = [
+const columnasFijas: ColumnDef<FilaPrecioAdmin, unknown>[] = [
   { accessorKey: 'codigo_modelo', header: 'Modelo', cell: ({ row }) => <span className="font-medium">{row.original.codigo_modelo}</span> },
   { accessorKey: 'codigo_embarque', header: 'Lote' },
   { accessorKey: 'disponibles', header: 'Disponibles', meta: { className: 'text-right' } },
   { accessorKey: 'costo', header: 'Costo unitario', meta: { className: 'text-right' }, cell: ({ row }) => formatPEN(row.original.costo) },
-  ...(['unidad_x1', 'mayorista_x3', 'distribuidor_x6'] as const).map(
-    (tipo): ColumnDef<FilaPrecioAdmin, unknown> => ({
-      id: tipo,
-      header: CORTO[tipo],
-      enableSorting: false,
-      meta: { className: 'text-right' },
-      cell: ({ row }) => <CeldaPrecio fila={row.original} tipo={tipo} />,
-    }),
-  ),
 ];
 
-export function TablaPreciosAdmin({ filas }: { filas: FilaPrecioAdmin[] }) {
+/** Escalas desactivadas (D31): la columna se atenúa y se rotula, pero sus precios se siguen editando. */
+function columnaPrecio(tipo: TipoVenta, activa: boolean): ColumnDef<FilaPrecioAdmin, unknown> {
+  return {
+    id: tipo,
+    header: () =>
+      activa ? (
+        CORTO[tipo]
+      ) : (
+        <span className="inline-flex items-center gap-1 text-muted-foreground">
+          {CORTO[tipo]} <Badge variant="outline">Desactivada</Badge>
+        </span>
+      ),
+    enableSorting: false,
+    meta: { className: activa ? 'text-right' : 'text-right opacity-50' },
+    cell: ({ row }) => <CeldaPrecio fila={row.original} tipo={tipo} />,
+  };
+}
+
+export function TablaPreciosAdmin({ filas, activas }: { filas: FilaPrecioAdmin[]; activas: TipoVenta[] }) {
+  const columnas = [...columnasFijas, ...TIPOS_VENTA.map((t) => columnaPrecio(t, activas.includes(t)))];
   return <TablaDatos columnas={columnas} filas={filas} vacio="Aún no hay precios: se generan al liquidar cada lote." />;
 }

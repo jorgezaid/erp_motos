@@ -3,10 +3,13 @@ import { Encabezado } from '@/components/encabezado';
 import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
+import { leerEscalas } from '@/lib/consultas/escalas';
+import { tiposActivos } from '@/lib/escalas';
 import { aPorcentaje } from '@/lib/esquemas/precios';
 import { leerParams } from '@/lib/tabla';
 import { margenesActuales, preciosAdmin, preciosVendedor } from './datos';
 import { FormularioMargenes } from './formulario-margenes';
+import { InterruptoresEscalas } from './interruptores-escalas';
 import { TablaPreciosAdmin } from './tabla-admin';
 import { TablaPreciosVendedor } from './tabla-vendedor';
 
@@ -24,12 +27,12 @@ export default async function PaginaPrecios({ searchParams }: { searchParams: Pr
   const { q } = leerParams(await searchParams);
 
   if (sesion.rol !== 'admin') {
-    const filas = await preciosVendedor(q);
+    const [filas, escalas] = await Promise.all([preciosVendedor(q), leerEscalas()]);
     return (
       <>
         <Encabezado titulo="Precios" descripcion="Precios de venta por escala y unidades disponibles en tienda (incluyen IGV)." />
         <BarraFiltros placeholder="Buscar por modelo" csvHref="/precios/csv" />
-        <TablaPreciosVendedor filas={filas} />
+        <TablaPreciosVendedor filas={filas} activas={tiposActivos(escalas)} />
       </>
     );
   }
@@ -51,14 +54,21 @@ export default async function PaginaPrecios({ searchParams }: { searchParams: Pr
             liquidados (RN-09).
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-6">
           <FormularioMargenes
             inicial={{ unidad_x1: margen('unidad_x1'), mayorista_x3: margen('mayorista_x3'), distribuidor_x6: margen('distribuidor_x6') }}
           />
+          <div className="grid gap-2">
+            <p className="text-sm text-muted-foreground">
+              Solo las escalas activas se ofrecen en el punto de venta. Sus precios se siguen calculando, así al
+              reactivar una ya tiene precio.
+            </p>
+            <InterruptoresEscalas escalas={margenes} />
+          </div>
         </CardContent>
       </Card>
       <BarraFiltros placeholder="Buscar por modelo o lote" csvHref="/precios/csv" />
-      <TablaPreciosAdmin filas={filas} />
+      <TablaPreciosAdmin filas={filas} activas={tiposActivos(margenes)} />
     </>
   );
 }

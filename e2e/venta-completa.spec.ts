@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { fijarEscalas, ingresar } from './ayudas';
 
 // Ventas confirmadas: consumen unidades de DEMO-LIQ-001 (7 DEMO-48 por corrida; hay 24).
 // Si se agota el stock demo: `pnpm e2e:limpio` (pnpm db:demo reinicia la BD local).
@@ -80,25 +80,31 @@ test('7.4: venta x1 con pago mixto (efectivo + tarjeta) genera garantías y marc
   await expect(page.getByRole('row', { name: new RegExp(vin ?? '') })).toContainText('Vendido');
 });
 
-test('7.4: venta x6 (distribuidor) al precio de la escala, pagada por transferencia', async ({ page }) => {
-  // ~15 acciones de servidor seguidas: en una máquina cargada supera los 30 s por defecto
-  test.setTimeout(60_000);
-  await ingresar(page, 'vendedor@demo.pe');
-  await crearOrden(page, 'Distribuidor (x6)', 'Motos del Norte SAC', { tipo: 'RUC', numero: '20512345678' });
-  const vins = await agregarUnidades(page, 'DEMO-48', 6);
-  await expect(page.getByTestId('faltan-escala')).toHaveCount(0);
-  await expect(page.getByTestId('total-orden')).toHaveText('S/ 26 610.36'); // 6 × 4 435.06
+// D31: x6 nace desactivada; se activa solo para esta prueba y se desactiva aunque falle
+test.describe('con x6 activa', () => {
+  test.beforeEach(() => fijarEscalas(['distribuidor_x6'], true));
+  test.afterEach(() => fijarEscalas(['distribuidor_x6'], false));
 
-  await pagar(page, 'Transferencia', 'saldo', 'OP-998877');
-  await confirmar(page);
+  test('7.4: venta x6 (distribuidor) al precio de la escala, pagada por transferencia', async ({ page }) => {
+    // ~15 acciones de servidor seguidas: en una máquina cargada supera los 30 s por defecto
+    test.setTimeout(60_000);
+    await ingresar(page, 'vendedor@demo.pe');
+    await crearOrden(page, 'Distribuidor (x6)', 'Motos del Norte SAC', { tipo: 'RUC', numero: '20512345678' });
+    const vins = await agregarUnidades(page, 'DEMO-48', 6);
+    await expect(page.getByTestId('faltan-escala')).toHaveCount(0);
+    await expect(page.getByTestId('total-orden')).toHaveText('S/ 26 610.36'); // 6 × 4 435.06
 
-  const nota = page.getByRole('article', { name: 'Nota de venta' });
-  await expect(nota).toContainText('Distribuidor (x6)');
-  await expect(nota).toContainText('Pagos · Transferencia');
-  await expect(nota.getByRole('table', { name: 'Detalle de la venta' }).getByRole('row')).toHaveCount(8); // encabezado + 6 + total
-  for (const vin of vins) await expect(nota).toContainText(vin);
+    await pagar(page, 'Transferencia', 'saldo', 'OP-998877');
+    await confirmar(page);
 
-  // En el listado: confirmada, transferencia y total de la escala
-  await page.goto('/ventas?q=20512345678');
-  await expect(page.getByRole('row', { name: /Motos del Norte SAC/ }).first()).toContainText('S/ 26 610.36');
+    const nota = page.getByRole('article', { name: 'Nota de venta' });
+    await expect(nota).toContainText('Distribuidor (x6)');
+    await expect(nota).toContainText('Pagos · Transferencia');
+    await expect(nota.getByRole('table', { name: 'Detalle de la venta' }).getByRole('row')).toHaveCount(8); // encabezado + 6 + total
+    for (const vin of vins) await expect(nota).toContainText(vin);
+
+    // En el listado: confirmada, transferencia y total de la escala
+    await page.goto('/ventas?q=20512345678');
+    await expect(page.getByRole('row', { name: /Motos del Norte SAC/ }).first()).toContainText('S/ 26 610.36');
+  });
 });

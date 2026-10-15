@@ -1,5 +1,6 @@
 import 'server-only';
 import { exigirRol } from '@/lib/auth';
+import { ordenarEscalas } from '@/lib/escalas';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
 import type { Database } from '@/types/database';
@@ -135,7 +136,7 @@ export async function preciosAdmin(q: string): Promise<FilaPrecioAdmin[]> {
 
 export async function margenesActuales() {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('price_margins').select('tipo_venta, cantidad_minima, margen_objetivo');
+  const { data, error } = await supabase.from('price_margins').select('tipo_venta, cantidad_minima, margen_objetivo, activo');
   if (error) throw new Error(error.message);
-  return data;
+  return ordenarEscalas(data);
 }

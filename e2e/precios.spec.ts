@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ingresar } from './ayudas';
+import { ESCALAS_MAYORISTAS, fijarEscalas, ingresar } from './ayudas';
 
 test('M5: si un vendedor inspecciona la respuesta de red, no aparece ningún costo', async ({ page }) => {
   const cuerpos: string[] = [];
@@ -12,9 +12,10 @@ test('M5: si un vendedor inspecciona la respuesta de red, no aparece ningún cos
   await ingresar(page, 'vendedor@demo.pe', '/precios');
   const fila = page.getByRole('row', { name: /DEMO-48/ }).filter({ hasText: 'S/ 5 805.89' }).first();
   await expect(fila).toBeVisible();
-  await expect(fila).toContainText('S/ 4 912.68');
-  await expect(fila).toContainText('S/ 4 435.06');
   await expect(page.getByRole('columnheader', { name: /costo/i })).toHaveCount(0);
+  // D31: x3 y x6 están desactivadas → sus columnas no se muestran al vendedor
+  await expect(page.getByRole('columnheader', { name: 'x1 (minorista)' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: /x3|x6/ })).toHaveCount(0);
 
   // Navegación cliente (RSC) y CSV: tampoco traen costos
   await page.getByRole('searchbox', { name: 'Buscar' }).fill('DEMO-72');
@@ -68,6 +69,35 @@ test('M5: el admin edita un precio manual (marcado) y los márgenes; el vendedor
   await expect(fila).toContainText('S/ 5 805.89');
   await expect(fila).not.toContainText('manual');
   await vendedor.close();
+});
+
+test.describe('interruptor de escalas', () => {
+  // Deja x3 y x6 desactivadas (como en la BD recién creada) aunque la prueba falle
+  test.afterEach(() => fijarEscalas(ESCALAS_MAYORISTAS, false));
+
+  test('D31: el admin activa x3 desde /precios y el vendedor ve su columna; desactivada se atenúa', async ({ page, browser }) => {
+    await ingresar(page, 'admin@demo.pe', '/precios?q=DEMO-LIQ-001');
+    await expect(page.getByRole('columnheader', { name: 'x3 Desactivada' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'x6 Desactivada' })).toBeVisible();
+    // Las escalas desactivadas conservan sus precios
+    await expect(page.getByRole('row', { name: /DEMO-48.*DEMO-LIQ-001/ })).toContainText('S/ 4 912.68');
+
+    await page.getByRole('switch', { name: 'Mayorista (x3) activa' }).click();
+    await expect(page.getByText('Mayorista (x3): activada')).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'x3', exact: true })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Mayorista (x3) activa' })).toBeChecked();
+
+    const vendedor = await browser.newPage();
+    await ingresar(vendedor, 'vendedor@demo.pe', '/precios?q=DEMO-48');
+    await expect(vendedor.getByRole('columnheader', { name: 'x3 (mayorista)' })).toBeVisible();
+    await expect(vendedor.getByRole('columnheader', { name: /x6/ })).toHaveCount(0);
+    await expect(vendedor.getByRole('row', { name: /DEMO-48/ }).filter({ hasText: 'S/ 4 912.68' }).first()).toBeVisible();
+    await vendedor.close();
+
+    await page.getByRole('switch', { name: 'Mayorista (x3) activa' }).click();
+    await expect(page.getByText('Mayorista (x3): desactivada')).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'x3 Desactivada' })).toBeVisible();
+  });
 });
 
 test('M5: el técnico no entra a /precios', async ({ page }) => {

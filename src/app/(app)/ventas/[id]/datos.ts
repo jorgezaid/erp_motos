@@ -2,6 +2,7 @@ import 'server-only';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { z } from 'zod';
+import { minimosPorTipo, tiposActivos } from '@/lib/escalas';
 import { createClient } from '@/lib/supabase/server';
 
 /** Orden con sus ítems activos, pagos y vendedor (sin costos: lo ve cualquier rol con acceso a ventas). */
@@ -18,7 +19,7 @@ export const obtenerOrden = cache(async (id: string) => {
       .eq('order_id', id)
       .order('created_at'),
     supabase.from('payments').select('id, metodo, monto_pen, referencia, created_at').eq('order_id', id).order('created_at'),
-    supabase.from('price_margins').select('tipo_venta, cantidad_minima'),
+    supabase.from('price_margins').select('tipo_venta, cantidad_minima, activo'),
   ]);
   if (error) throw new Error(error.message);
   if (!orden) notFound();
@@ -32,7 +33,8 @@ export const obtenerOrden = cache(async (id: string) => {
     // En una orden anulada los ítems quedan inactivos: se muestran igual (histórico)
     items: (items ?? []).filter((i) => i.activo || orden.estado === 'anulada'),
     pagos: pagos ?? [],
-    minimos: Object.fromEntries((margenes ?? []).map((m) => [m.tipo_venta, m.cantidad_minima])) as Record<string, number>,
+    minimos: minimosPorTipo(margenes ?? []),
+    activas: tiposActivos(margenes ?? []),
     vendedor: vendedor?.nombre ?? '—',
   };
 });

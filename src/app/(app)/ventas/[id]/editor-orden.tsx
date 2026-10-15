@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Decimal } from '@/lib/decimal';
 import type { Resultado } from '@/lib/errores';
+import { mostrarSelectorEscala } from '@/lib/escalas';
 import { METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
@@ -43,6 +44,7 @@ export function EditorOrden({
   items,
   pagos,
   minimos,
+  activas,
 }: {
   orderId: string;
   numero: number;
@@ -50,7 +52,9 @@ export function EditorOrden({
   total: number;
   items: ItemOrden[];
   pagos: PagoOrden[];
-  minimos: Record<string, number>;
+  minimos: Record<TipoVenta, number>;
+  /** Escalas activas (D31): solo esas se ofrecen y solo para ellas se avisa "Faltan N unidades". */
+  activas: TipoVenta[];
 }) {
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
@@ -62,11 +66,12 @@ export function EditorOrden({
     referencia: '',
   });
 
-  const minimo = minimos[tipo] ?? 1;
+  const minimo = minimos[tipo];
+  const activa = activas.includes(tipo);
   const saldo = saldoPendiente(total, pagos);
   const saldoDecimal = new Decimal(saldo);
-  const faltan = faltanParaEscala(tipo, items.length, minimo);
-  const motivos = motivosNoConfirmable({ tipo, unidades: items.length, minimo, total, pagos });
+  const faltan = activa ? faltanParaEscala(tipo, items.length, minimo) : null;
+  const motivos = motivosNoConfirmable({ tipo, unidades: items.length, minimo, total, pagos, activa });
   const metodo = metodoDerivado(pagos);
   const enOrden = new Set(items.map((i) => i.vin));
 
@@ -93,20 +98,37 @@ export function EditorOrden({
         <Card>
           <CardHeader>
             <CardTitle>Tipo de venta</CardTitle>
-            <CardDescription>Si lo cambias, todas las unidades se vuelven a cotizar (RN-13).</CardDescription>
+            <CardDescription>
+              {mostrarSelectorEscala(activas, tipo)
+                ? 'Si lo cambias, todas las unidades se vuelven a cotizar (RN-13).'
+                : 'Es la única escala de venta activa.'}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <RadioOpciones
-              nombre="tipo_venta"
-              valor={tipo}
-              deshabilitado={pendiente}
-              alCambiar={(v) => accion(() => cambiarTipoVenta(orderId, v), `Escala cambiada a ${TIPO_VENTA[v as TipoVenta]}`)}
-              opciones={(Object.keys(TIPO_VENTA) as TipoVenta[]).map((t) => ({
-                valor: t,
-                etiqueta: TIPO_VENTA[t],
-                descripcion: `Desde ${minimos[t] ?? 1} unidad(es)`,
-              }))}
-            />
+          <CardContent className="grid gap-3">
+            {!activa && (
+              <Alert variant="destructive">
+                <AlertDescription data-testid="escala-desactivada">
+                  La escala {TIPO_VENTA[tipo]} está desactivada: elige otra para poder confirmar.
+                </AlertDescription>
+              </Alert>
+            )}
+            {mostrarSelectorEscala(activas, tipo) ? (
+              <RadioOpciones
+                nombre="tipo_venta"
+                valor={tipo}
+                deshabilitado={pendiente}
+                alCambiar={(v) => accion(() => cambiarTipoVenta(orderId, v), `Escala cambiada a ${TIPO_VENTA[v as TipoVenta]}`)}
+                opciones={activas.map((t) => ({
+                  valor: t,
+                  etiqueta: TIPO_VENTA[t],
+                  descripcion: `Desde ${minimos[t]} unidad(es)`,
+                }))}
+              />
+            ) : (
+              <p className="text-sm font-medium" data-testid="escala-unica">
+                {TIPO_VENTA[tipo]}
+              </p>
+            )}
           </CardContent>
         </Card>
 

@@ -272,13 +272,13 @@ isOneToOne: false
                   ]
                 },"price_margins": {
                   Row: {
-                    "cantidad_minima": number,"margen_objetivo": number,"tipo_venta": Database["public"]['Enums']["sale_type"],"updated_at": string
+                    "activo": boolean,"cantidad_minima": number,"margen_objetivo": number,"tipo_venta": Database["public"]['Enums']["sale_type"],"updated_at": string
                   }
                   Insert: {
-                    "cantidad_minima": number,"margen_objetivo": number,"tipo_venta": Database["public"]['Enums']["sale_type"],"updated_at"?: string
+                    "activo"?: boolean,"cantidad_minima": number,"margen_objetivo": number,"tipo_venta": Database["public"]['Enums']["sale_type"],"updated_at"?: string
                   }
                   Update: {
-                    "cantidad_minima"?: number,"margen_objetivo"?: number,"tipo_venta"?: Database["public"]['Enums']["sale_type"],"updated_at"?: string
+                    "activo"?: boolean,"cantidad_minima"?: number,"margen_objetivo"?: number,"tipo_venta"?: Database["public"]['Enums']["sale_type"],"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -697,6 +697,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "activo": boolean,"created_at": string,"email": string,"id": string,"nombre": string,"rol": Database["public"]['Enums']["app_role"]
             }[]
+                           },
+"nombre_escala":
+{ Args: { "p_tipo": Database["public"]['Enums']["sale_type"] }; Returns: string
                            },
 "pendientes_de_registro":
 { Args: Record<PropertyKey, never>; Returns: {

@@ -240,11 +240,14 @@ paso separado: `update import_batches set estado = 'liquidado'`.
 
 `Precio = Costo_Landing_Unitario / (1 − Margen)`, redondeado a 2 decimales.
 
-| Escala | Enum | Mínimo de unidades | Margen |
-|---|---|---|---|
-| Minorista | `unidad_x1` | 1 | 45 % |
-| Mayorista | `mayorista_x3` | 3 | 35 % |
-| Distribuidor | `distribuidor_x6` | 6 | 28 % |
+| Escala | Enum | Mínimo de unidades | Margen | Activa al instalar |
+|---|---|---|---|---|
+| Minorista | `unidad_x1` | 1 | 45 % | Sí |
+| Mayorista | `mayorista_x3` | 3 | 35 % | No |
+| Distribuidor | `distribuidor_x6` | 6 | 28 % | No |
+
+- **Escalas activas** (`price_margins.activo`, D31): el admin activa o desactiva cada escala en `/precios`. Por ahora solo se vende por unidad (x1). La BD rechaza crear una orden, cambiarle el tipo de venta o confirmarla con una escala inactiva; el mensaje nombra las escalas activas ("La venta mayorista (x3) está desactivada; solo se puede vender por unidad (x1)."). Anular una venta o editar el contacto de una confirmada no se bloquea. Debe quedar al menos una escala activa.
+- Las escalas inactivas **siguen teniendo precio**: `generar_lista_precios` genera siempre x1/x3/x6, así al reactivar una escala ya hay precios. Activar o desactivar no regenera precios; cambiar un margen o un mínimo sí (RN-09).
 
 - El margen es **sobre el precio de venta** (no es un *markup*): con un 45 %, la utilidad es el 45 % del precio.
 - `precio_manual_pen` sobrescribe al sugerido (por ejemplo, para redondear a S/ 5 790); la UI debe marcar visualmente los precios manuales.
@@ -301,13 +304,14 @@ Pestañas de `/lotes/[id]`:
 - ✅ Una unidad de 72V muestra 6 casillas de batería. Si la inspección se registra con 5 baterías, queda "Observada" y el botón sigue deshabilitado.
 
 ### M5 · Precios — `/precios`
-- Admin: `v_price_matrix` con costo, precios y utilidad por escala. Edición inline de `precio_manual_pen` y de los márgenes globales.
-- Vendedor: solo modelo, stock disponible y precios x1/x3/x6.
+- Admin: `v_price_matrix` con costo, precios y utilidad por escala. Edición inline de `precio_manual_pen` y de los márgenes globales. Un interruptor por escala la activa o desactiva (§8); las columnas de las escalas desactivadas se atenúan con la etiqueta "Desactivada".
+- Vendedor: solo modelo, stock disponible y los precios de las escalas activas (pantalla y CSV).
 - ✅ Si un vendedor inspecciona la respuesta de red, no aparece ningún costo.
 
 ### M6 · Punto de venta — `/ventas`, `/ventas/nueva`, `/ventas/[id]`
 - Flujo de `/ventas/nueva`: (1) tipo de venta; (2) agregar unidades buscando por VIN o por modelo y color; (3) datos del cliente (DNI/RUC/CE validados); (4) pagos, uno o varios, con el saldo pendiente siempre visible; (5) "Confirmar venta".
 - `/ventas/[id]`: detalle, nota de venta imprimible (PDF o `window.print`) y botón "Anular" (solo admin, con motivo).
+- Solo se ofrecen las escalas activas (§8); con una sola activa no hay selector. El aviso "Faltan N unidades…" solo aparece para escalas activas. Si la escala de un borrador se desactiva, se avisa y hay que cambiarla para confirmar.
 - ✅ Una orden x6 con 5 unidades muestra "Faltan 1 unidad para precio distribuidor" y no se puede confirmar.
 - ✅ Si hay 2 pestañas intentando vender la misma unidad, la segunda recibe "La unidad no está disponible".
 

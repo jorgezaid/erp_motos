@@ -16,7 +16,7 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
   const sesion = await exigirRol('admin', 'vendedor');
   const { id } = await params;
   const datos = await obtenerOrden(id);
-  const { orden, items, pagos, minimos, vendedor } = datos;
+  const { orden, items, pagos, minimos, activas, vendedor } = datos;
   const puedeEditar = sesion.rol === 'admin' || orden.vendedor_id === sesion.userId;
 
   const encabezado = (
@@ -88,6 +88,7 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
           // payments.metodo nunca es 'mixto' (CHECK de la tabla): eso solo existe en la orden
           pagos={pagos.map((p) => ({ ...p, metodo: p.metodo as Exclude<typeof p.metodo, 'mixto'> }))}
           minimos={minimos}
+          activas={activas}
         />
       </>
     );

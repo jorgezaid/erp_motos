@@ -193,6 +193,9 @@ end $$;
 select test.expect_error($$update public.import_batches set fob_total_usd = 1 where id = test.id('lote')$$, 'congelados');
 select test.expect_error($$update public.batch_model_costs set armado_pen = 0 where batch_id = test.id('lote')$$, 'liquidado');
 update public.import_batches set notas = 'Llegó completo' where id = test.id('lote');
+
+-- x3 y x6 nacen desactivadas (D31); esta suite prueba las tres escalas
+update public.price_margins set activo = true where tipo_venta in ('mayorista_x3', 'distribuidor_x6');
 \echo '✔ 5. Auditoría packing/DAM, liquidación y matriz de precios automática'
 
 -- ---------------------------------------------------------------- precios según rol

@@ -12,6 +12,7 @@ import {
   sinFilasAfectadas,
   type Resultado,
 } from '@/lib/errores';
+import { esquemaEscalaActiva } from '@/lib/escalas';
 import { esquemaMargenes, precioManual, type EntradaMargenes } from '@/lib/esquemas/precios';
 import { createClient } from '@/lib/supabase/server';
 
@@ -40,6 +41,25 @@ export async function guardarPrecioManual(entrada: z.input<typeof esquemaPrecio>
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidatePath('/precios');
   revalidatePath('/inventario');
+  return exito(null);
+}
+
+/** D31: activa o desactiva una escala de venta. No regenera precios; la BD exige que quede una activa. */
+export async function cambiarEscalaActiva(entrada: z.input<typeof esquemaEscalaActiva>): Promise<Resultado> {
+  await exigirRol('admin');
+  const d = esquemaEscalaActiva.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('price_margins')
+    .update({ activo: d.data.activo })
+    .eq('tipo_venta', d.data.tipoVenta)
+    .select('tipo_venta');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidatePath('/precios');
+  revalidatePath('/ventas', 'layout');
   return exito(null);
 }
 

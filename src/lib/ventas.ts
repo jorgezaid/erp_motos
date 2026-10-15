@@ -32,17 +32,19 @@ export function faltanParaEscala(tipo: TipoVenta, unidades: number, minimo: numb
   return `Faltan ${faltan} ${faltan === 1 ? 'unidad' : 'unidades'} para precio ${NOMBRE_ESCALA[tipo]}`;
 }
 
-/** RN-14: lo que falta para confirmar (vacío = se puede confirmar). */
+/** RN-14: lo que falta para confirmar (vacío = se puede confirmar). `activa`: la escala está activa (D31). */
 export function motivosNoConfirmable(o: {
   tipo: TipoVenta;
   unidades: number;
   minimo: number;
   total: Valor;
   pagos: readonly { monto_pen: Valor }[];
+  activa?: boolean;
 }): string[] {
   const motivos: string[] = [];
+  if (o.activa === false) motivos.push(`La venta ${NOMBRE_ESCALA[o.tipo]} está desactivada: cambia el tipo de venta`);
   if (o.unidades === 0) motivos.push('Agrega al menos una unidad');
-  else {
+  else if (o.activa !== false) {
     const faltan = faltanParaEscala(o.tipo, o.unidades, o.minimo);
     if (faltan) motivos.push(faltan);
   }
