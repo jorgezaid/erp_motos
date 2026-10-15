@@ -5,7 +5,7 @@
 
 ## Estado actual
 - **Fase activa:** 10 — Gastos (M9). La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
-- **Próxima tarea:** 10.1 (BD de gastos). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
+- **Próxima tarea:** 10.2 (`/gastos`). Fases 3 a 8 completas; ver `docs/INFORME-FINAL.md`
 - **Última actualización:** 2026-10-15
 
 ---
@@ -76,7 +76,7 @@
 
 ## Fase 10 · Gastos y utilidad neta (M9)
 Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negocio y nunca tocan lotes, costeos ni precios.
-- [ ] 10.1 BD: enums `categoria_gasto` y `estado_gasto`, tabla `gastos` (sin `batch_id`) con RN-21 en CHECK, RLS y grants solo admin; bucket privado `comprobantes-gastos` con políticas en `storage.objects` (RN-24); vista `v_utilidad_mensual` (RN-23); `tests/test_gastos.sql`: RLS (vendedor, técnico y anon no ven gastos ni comprobantes), RN-21, RN-23 y que crear, editar y borrar gastos no cambia `import_batches`, `batch_model_costs` ni `price_list` (RN-22); tipos regenerados
+- [x] 10.1 BD: enums `categoria_gasto` y `estado_gasto`, tabla `gastos` (sin `batch_id`) con RN-21 en CHECK, RLS y grants solo admin; bucket privado `comprobantes-gastos` con políticas en `storage.objects` (RN-24); vista `v_utilidad_mensual` (RN-23); `tests/test_gastos.sql`: RLS (vendedor, técnico y anon no ven gastos ni comprobantes), RN-21, RN-23 y que crear, editar y borrar gastos no cambia `import_batches`, `batch_model_costs` ni `price_list` (RN-22); tipos regenerados — migración `20261015172541_gastos`; `metodo_pago` reutiliza `payment_method` sin `mixto`; un realizado exige fecha y método, un planificado fecha estimada y sin fecha de pago; `creado_por` lo fija un trigger; `tests/00_supabase_shim.sql` emula `storage.buckets/objects` con RLS
 - [ ] 10.2 `/gastos`: lista con filtros por mes, categoría y estado, totales con decimal.js y exportación a Excel (.xlsx); formulario con subida del comprobante; "Marcar como realizado" con monto real y fecha; sidebar y `lib/roles.ts` solo admin
 - [ ] 10.3 `/gastos/planificados`: total por mes estimado
 - [ ] 10.4 Utilidad neta del mes en el dashboard (solo admin): ventas − costo landing − gastos realizados

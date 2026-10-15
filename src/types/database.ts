@@ -121,6 +121,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"gastos": {
+                  Row: {
+                    "categoria": Database["public"]['Enums']["categoria_gasto"],"comprobante_path": string | null,"creado_por": string | null,"created_at": string,"descripcion": string,"estado": Database["public"]['Enums']["estado_gasto"],"fecha": string | null,"fecha_estimada": string | null,"id": string,"metodo_pago": Database["public"]['Enums']["payment_method"] | null,"monto_pen": number,"proveedor": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "categoria": Database["public"]['Enums']["categoria_gasto"],"comprobante_path"?: string | null,"creado_por"?: string | null,"created_at"?: string,"descripcion": string,"estado"?: Database["public"]['Enums']["estado_gasto"],"fecha"?: string | null,"fecha_estimada"?: string | null,"id"?: string,"metodo_pago"?: Database["public"]['Enums']["payment_method"] | null,"monto_pen": number,"proveedor"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "categoria"?: Database["public"]['Enums']["categoria_gasto"],"comprobante_path"?: string | null,"creado_por"?: string | null,"created_at"?: string,"descripcion"?: string,"estado"?: Database["public"]['Enums']["estado_gasto"],"fecha"?: string | null,"fecha_estimada"?: string | null,"id"?: string,"metodo_pago"?: Database["public"]['Enums']["payment_method"] | null,"monto_pen"?: number,"proveedor"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "gastos_creado_por_fkey"
+      columns: ["creado_por"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"import_batches": {
                   Row: {
                     "ad_valorem_pen": number,"alquiler_periodo_pen": number,"codigo_embarque": string,"costo_armado_unitario_pen": number,"created_at": string,"estado": Database["public"]['Enums']["batch_status"],"fecha_embarque": string | null,"fecha_llegada": string | null,"flete_internacional_usd": number,"flete_nacional_pen": number,"fob_total_usd": number,"gastos_agente_usd": number,"gastos_operativos_fijos_pen": number | null,"id": string,"igv_pen": number,"impuestos_asignables_pen": number | null,"impuestos_recuperables_al_costo": boolean,"impuestos_sunat_pen": number | null,"ipm_pen": number,"liquidado_at": string | null,"liquidado_por": string | null,"notas": string | null,"nro_dam": string | null,"percepcion_pen": number,"proveedor": string | null,"publicidad_inicial_pen": number,"sueldos_periodo_pen": number,"tipo_cambio": number | null,"updated_at": string
@@ -599,6 +618,13 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"v_utilidad_mensual": {
+                  Row: {
+                    "cantidad_gastos": number | null,"costo_landing_pen": number | null,"gastos_pen": number | null,"mes": string | null,"unidades_vendidas": number | null,"utilidad_bruta_pen": number | null,"utilidad_neta_pen": number | null,"ventas_pen": number | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"v_vehicle_costs": {
                   Row: {
                     "codigo_embarque": string | null,"codigo_modelo": string | null,"costo_landing_calculado_pen": number | null,"estado": Database["public"]['Enums']["vehicle_status"] | null,"nro_motor": string | null,"vehicle_id": string | null,"vin_chasis": string | null
@@ -714,7 +740,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
+            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -834,7 +860,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
+            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
           }
         }
 } as const
