@@ -54,6 +54,19 @@ export async function consultarMontos(filtros: FiltrosGastos) {
   return data;
 }
 
+/** Todos los gastos planificados, por fecha estimada (para agruparlos por mes). */
+export async function consultarPlanificados() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('gastos')
+    .select('*')
+    .eq('estado', 'planificado')
+    .order('fecha_estimada')
+    .limit(MAX_FILAS_CSV);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /** Fechas de todos los gastos (para ofrecer en el filtro solo los meses con gastos). */
 export async function consultarFechas(): Promise<(string | null)[]> {
   const supabase = await createClient();
