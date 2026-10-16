@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { anchoRelativo, inicioMesLima, resumirVentas } from './dashboard';
+import { anchoRelativo, inicioMesLima, resumirVentas, utilidadDelMes } from './dashboard';
+
+describe('utilidadDelMes (RN-23)', () => {
+  it('RN-23: utilidad neta = ventas − costo landing − gastos realizados', () => {
+    expect(
+      utilidadDelMes({ ventas_pen: 10000.1, costo_landing_pen: 6000.2, gastos_pen: 1500.3, unidades_vendidas: 3, cantidad_gastos: 2 }),
+    ).toEqual({ ventas: '10000.10', costo: '6000.20', gastos: '1500.30', neta: '2499.60', unidades: 3, cantidadGastos: 2 });
+  });
+  it('RN-23: con gastos y sin ventas la utilidad es negativa', () => {
+    expect(utilidadDelMes({ ventas_pen: 0, costo_landing_pen: 0, gastos_pen: 800, unidades_vendidas: 0, cantidad_gastos: 1 }).neta).toBe('-800.00');
+  });
+  it('un mes sin fila en la vista es todo cero', () => {
+    expect(utilidadDelMes(null)).toEqual({ ventas: '0.00', costo: '0.00', gastos: '0.00', neta: '0.00', unidades: 0, cantidadGastos: 0 });
+  });
+});
 
 describe('dashboard (SPEC M8)', () => {
   it('el mes es el de Lima (UTC−5)', () => {

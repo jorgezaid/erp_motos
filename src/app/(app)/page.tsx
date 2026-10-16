@@ -1,12 +1,14 @@
 import { TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { Encabezado } from '@/components/encabezado';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
 import { alertasConciliacion, tieneAlertas } from '@/lib/auditoria';
-import { anchoRelativo, inicioMesLima, resumirVentas } from '@/lib/dashboard';
+import { anchoRelativo, inicioMesLima, resumirVentas, utilidadDelMes } from '@/lib/dashboard';
 import { ESTADO_UNIDAD } from '@/lib/etiquetas';
 import { formatPEN, formatPorcentaje, hoyLima } from '@/lib/format';
+import { etiquetaMes } from '@/lib/gastos';
+import { cn } from '@/lib/utils';
 import { rangoLima, totalMargen } from '@/lib/margenes';
 import { ETIQUETA_ROL } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
@@ -40,9 +42,10 @@ export default async function Inicio() {
   const esAdmin = sesion.rol === 'admin';
   const veVentas = sesion.rol !== 'tecnico';
   const dia = rangoLima(hoyLima(), null).desde ?? '';
-  const mes = rangoLima(inicioMesLima(), null).desde ?? '';
+  const inicioMes = inicioMesLima();
+  const mes = rangoLima(inicioMes, null).desde ?? '';
 
-  const [conteos, ventasMes, margenes, conciliacion] = await Promise.all([
+  const [conteos, ventasMes, margenes, conciliacion, utilidadMes] = await Promise.all([
     Promise.all(
       ESTADOS.map(async (e) => {
         const { count } = await supabase.from('vehicle_inventory').select('id', { count: 'exact', head: true }).eq('estado', e);
@@ -56,6 +59,7 @@ export default async function Inicio() {
       ? supabase.from('v_sales_margin').select('*').gte('confirmada_at', mes).limit(MAX_FILAS_CSV)
       : Promise.resolve({ data: [] }),
     esAdmin ? supabase.from('v_batch_reconciliation').select('*').limit(MAX_FILAS_CSV) : Promise.resolve({ data: [] }),
+    esAdmin ? supabase.from('v_utilidad_mensual').select('*').eq('mes', inicioMes).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   const porEstado = new Map(conteos);
@@ -65,6 +69,8 @@ export default async function Inicio() {
   const delMes = resumirVentas(ventas, mes);
   const margen = totalMargen(margenes.data ?? []);
   const alertas = (conciliacion.data ?? []).filter(tieneAlertas);
+  const utilidad = utilidadDelMes(utilidadMes.data);
+  const mesTexto = etiquetaMes(inicioMes.slice(0, 7));
 
   return (
     <>
@@ -97,6 +103,51 @@ export default async function Inicio() {
           />
         )}
       </section>
+
+      {esAdmin && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Utilidad neta · {mesTexto}</CardTitle>
+            <CardDescription>
+              Ventas confirmadas del mes menos el costo landing de lo vendido y los gastos realizados. Los gastos no cambian el costo de las
+              motos.
+            </CardDescription>
+            <CardAction>
+              <Link href={`/gastos?mes=${inicioMes.slice(0, 7)}&estado=realizado`} className="text-sm text-muted-foreground hover:underline">
+                Ver gastos del mes
+              </Link>
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid max-w-md gap-2 text-sm" aria-label="Utilidad neta del mes">
+              <div className="flex justify-between gap-4">
+                <dt>Ventas ({utilidad.unidades} unidad(es))</dt>
+                <dd className="tabular-nums" data-testid="utilidad-ventas">
+                  {formatPEN(utilidad.ventas)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt>− Costo de lo vendido</dt>
+                <dd className="tabular-nums" data-testid="utilidad-costo">
+                  {formatPEN(utilidad.costo)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt>− Gastos realizados ({utilidad.cantidadGastos})</dt>
+                <dd className="tabular-nums" data-testid="utilidad-gastos">
+                  {formatPEN(utilidad.gastos)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4 border-t pt-2 text-base font-semibold">
+                <dt>= Utilidad neta</dt>
+                <dd className={cn('tabular-nums', utilidad.neta.startsWith('-') && 'text-destructive')} data-testid="utilidad-neta">
+                  {formatPEN(utilidad.neta)}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
