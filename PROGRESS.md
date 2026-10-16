@@ -4,8 +4,9 @@
 > Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[!]` bloqueado · `[—]` descartado
 
 ## Estado actual
-- **Fase activa:** 10 — Gastos (M9), **en pausa hasta que el cliente confirme**. La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
-- **Próxima tarea:** 10.2 (`/gastos`), cuando el cliente la confirme. Fases 3 a 8 y 11.1 completas; ver `docs/INFORME-FINAL.md`
+- **Fase activa:** 10 — Gastos (M9): 10.1–10.4 hechas, 10.5 descartada. La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
+- **Próxima tarea:** ejecutar la E2E de la 10.6 cuando el cliente lo autorice. Fases 3 a 8 y 11.1 completas; ver `docs/INFORME-FINAL.md`
+- **BD local:** tiene los datos reales del cliente (lote `117GZH2606089`): **no** ejecutar `supabase db reset`, `pnpm db:demo` ni `pnpm e2e:limpio`
 - **Pendiente en producción:** `supabase db push` de la migración `20261015175924_rpc_importar_plantilla`
 - **Última actualización:** 2026-10-15
 
@@ -82,7 +83,7 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 - [x] 10.3 `/gastos/planificados`: total por mes estimado — una tarjeta por mes (del más próximo al más lejano) con su total y la misma tabla y acciones de `/gastos` (marcar como realizado, editar, borrar); total general en el encabezado; aviso en los meses cuya fecha estimada ya pasó (`agruparPorMesEstimado`)
 - [x] 10.4 Utilidad neta del mes en el dashboard (solo admin): ventas − costo landing − gastos realizados — tarjeta con el desglose del mes de Lima sobre `v_utilidad_mensual` (sin fila = todo en cero; la neta se recalcula con decimal.js en `utilidadDelMes`), en rojo si es negativa, y enlace a los gastos realizados del mes; vendedor y técnico no hacen la consulta
 - [—] 10.5 ~~`/gastos/importar`~~ **Descartada** (decisión del cliente, D34): los gastos se registran solo desde la app, no por Excel
-- [ ] 10.6 E2E (`--workers=1`): alta con comprobante, marcar realizado, utilidad neta en el dashboard, vendedor y técnico sin acceso
+- [~] 10.6 E2E (`--workers=1`): alta con comprobante, marcar realizado, utilidad neta en el dashboard, vendedor y técnico sin acceso — **escrita, sin ejecutar** (a pedido del cliente, que prueba en local con sus datos reales): `e2e/gastos.spec.ts` (4 pruebas, también editar/borrar y CSV); cada gasto lleva el prefijo `E2E_GASTO` y se borra en `afterAll` con su comprobante. Ejecutar solo `pnpm exec playwright test e2e/gastos.spec.ts` (necesita los usuarios demo); **no** `pnpm e2e:limpio`
 
 ## Fase 11 · Importador simple (D33)
 - [x] 11.1 `/admin/importar` ("Importar Excel", solo admin, en Administración): sube la plantilla v2 llena (formato exacto), la valida en el servidor (resumen por hoja y errores con hoja y fila) y "Confirmar" la guarda todo o nada — lectura con exceljs (`lib/importar/plantilla.ts`), validación pura (`lib/importar/validar.ts`), RPC `importar_plantilla` (migración `20261015175924_rpc_importar_plantilla` + `tests/test_importar_plantilla.sql`); Usuarios solo se listan; Situación ≠ en_caja es error; reimportar actualiza sin duplicar ni borrar; no costea ni liquida; Vitest con la plantilla real rellenada (`lib/importar/ejemplo.ts`), E2E `e2e/importar.spec.ts`; guía `docs/GUIA-IMPORTAR-EXPORTAR.md`
@@ -171,3 +172,4 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | 2026-10-07 | Claude Code (autónomo) | Fases 3 a 8 (tareas 3.1–8.3), un commit por tarea; 4 migraciones nuevas (listar_usuarios, invalidar_costeo, guard_packing_cantidad, reclamos_estados) con sus pruebas SQL; usuarios y datos demo; revisión del conjunto aplicada. Vitest 148/148, SQL 6/6 archivos, Playwright 45/45, lint, typecheck y build en verde. Informe: `docs/INFORME-FINAL.md`. |
 | 2026-10-15 | Claude Code | Tarea 7.5: escalas activas (D31), migración `escalas_activas` con su prueba SQL; POS y `/precios` solo con escalas activas. Vitest 153/153, SQL 8/8 archivos, Playwright 48/48 (`--workers=1`), lint y typecheck en verde. |
 | 2026-10-15 | Claude Code | Se revisó la migración `gastos`: sin `batch_id` ni triggers sobre lotes (opción A pura, sin cambios). Tarea 11.1: importador simple (D33). Vitest 180/180, SQL 10/10 archivos, Playwright 50/50 (`--workers=1`, BD limpia), lint, typecheck y build en verde. |
+| 2026-10-15 | Claude Code | BD local limpiada de datos demo/E2E (quedan los importados por el cliente). Tareas 10.2–10.4 (un commit cada una), D34 (CSV, 10.5 descartada) y E2E de la 10.6 escrita sin ejecutar. Vitest 205/205, SQL 10/10 archivos, lint, typecheck y build en verde; sin migraciones nuevas. |
