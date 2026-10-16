@@ -8,7 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type OpcionFiltro = { valor: string; etiqueta: string };
-export type FiltroExtra = { param: string; etiqueta: string; opciones: OpcionFiltro[] };
+export type FiltroExtra = {
+  param: string;
+  etiqueta: string;
+  opciones: OpcionFiltro[];
+  /** Valor que aplica la página cuando falta el parámetro (p. ej. el mes actual); sin opción "todos" */
+  predeterminado?: string;
+};
 
 const TODOS = '__todos__';
 
@@ -91,14 +97,14 @@ export function BarraFiltros({
       {filtros.map((f) => (
         <Select
           key={f.param}
-          value={params.get(f.param) ?? TODOS}
+          value={params.get(f.param) ?? f.predeterminado ?? TODOS}
           onValueChange={(v) => aplicar({ [f.param]: v === TODOS ? null : v })}
         >
           <SelectTrigger className="w-48" aria-label={f.etiqueta}>
             <SelectValue placeholder={f.etiqueta} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={TODOS}>{f.etiqueta}: todos</SelectItem>
+            {f.predeterminado === undefined && <SelectItem value={TODOS}>{f.etiqueta}: todos</SelectItem>}
             {f.opciones.map((o) => (
               <SelectItem key={o.valor} value={o.valor}>
                 {o.etiqueta}

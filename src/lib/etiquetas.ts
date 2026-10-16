@@ -68,6 +68,28 @@ export const ESTADO_RECLAMO: Record<Enums['claim_status'], string> = {
   cerrado: 'Cerrado',
 };
 
+export const CATEGORIA_GASTO: Record<Enums['categoria_gasto'], string> = {
+  local_infraestructura: 'Local e infraestructura',
+  publicidad: 'Publicidad',
+  servicios: 'Servicios',
+  transporte: 'Transporte',
+  sueldos: 'Sueldos',
+  alquiler: 'Alquiler',
+  otros: 'Otros',
+};
+
+export const ESTADO_GASTO: Record<Enums['estado_gasto'], string> = {
+  planificado: 'Planificado',
+  realizado: 'Realizado',
+};
+
+/** Métodos de pago de un gasto: los de las ventas sin "mixto" (CHECK de la tabla gastos). */
+export const METODO_PAGO_GASTO: Record<Exclude<Enums['payment_method'], 'mixto'>, string> = {
+  efectivo: 'Efectivo',
+  transferencia: 'Transferencia',
+  tarjeta: 'Tarjeta',
+};
+
 /** Las claves de un Record de etiquetas, tipadas (para selects y zod). */
 export function opciones<K extends string>(etiquetas: Record<K, string>): { valor: K; etiqueta: string }[] {
   return (Object.keys(etiquetas) as K[]).map((valor) => ({ valor, etiqueta: etiquetas[valor] }));

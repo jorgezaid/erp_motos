@@ -27,6 +27,7 @@ const ACCESO: ReadonlyArray<readonly [string, readonly Rol[]]> = [
   ['/ventas', ['admin', 'vendedor']],
   ['/garantias', TODOS],
   ['/auditoria', ['admin']],
+  ['/gastos', ['admin']],
   ['/admin', ['admin']],
 ];
 

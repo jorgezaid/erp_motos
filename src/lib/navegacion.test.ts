@@ -5,7 +5,13 @@ const hrefs = (rol: Parameters<typeof modulosPara>[0]) => modulosPara(rol).map((
 
 describe('modulosPara (SPEC M1: sidebar según el rol)', () => {
   it('admin ve todos los módulos', () => {
-    expect(hrefs('admin')).toHaveLength(13);
+    expect(hrefs('admin')).toHaveLength(14);
+  });
+
+  it('RN-24: "Gastos" solo para admin', () => {
+    expect(hrefs('admin')).toContain('/gastos');
+    expect(hrefs('tecnico')).not.toContain('/gastos');
+    expect(hrefs('vendedor')).not.toContain('/gastos');
   });
 
   it('D33: "Importar Excel" solo para admin, en Administración', () => {

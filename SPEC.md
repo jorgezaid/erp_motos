@@ -331,12 +331,12 @@ Pestañas de `/lotes/[id]`:
 - Reporte de margen real por venta y por modelo, exportable a CSV.
 - Dashboard (solo admin): **utilidad neta del mes** con su desglose: ventas − costo landing − gastos (RN-23).
 
-### M9 · Gastos — `/gastos`, `/gastos/planificados`, `/gastos/importar` (solo admin)
-- `/gastos`: lista con filtros por mes, categoría y estado, búsqueda por descripción o proveedor, totales y exportación a Excel (.xlsx).
+### M9 · Gastos — `/gastos`, `/gastos/planificados` (solo admin)
+- `/gastos`: lista con filtros por mes, categoría y estado, búsqueda por descripción o proveedor, totales y exportación a CSV (D34).
 - Formulario de alta y edición: fecha o fecha estimada, categoría, descripción, proveedor, monto, método de pago, estado y comprobante (PDF o imagen) subido a Storage. El comprobante se ve con una URL firmada.
 - "Marcar como realizado" en un gasto planificado: pide el monto real y la fecha.
 - `/gastos/planificados`: gastos planificados agrupados por mes estimado, con el total de cada mes.
-- `/gastos/importar`: hoja "Gastos" de la plantilla (`docs/plantillas`) con la misma validación del formulario, vista previa con los errores por fila y guardado todo o nada.
+- Los gastos se registran solo desde la app: no hay importación desde Excel (D34).
 - ✅ Un vendedor o un técnico no entra a `/gastos` ni puede leer gastos o comprobantes por la API.
 - ✅ Crear, editar o borrar un gasto no cambia ningún costo ni precio de las motos (RN-22).
 

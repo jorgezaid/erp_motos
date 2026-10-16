@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { ESTADO_LOTE, ESTADO_ORDEN, ESTADO_RECLAMO, ESTADO_UNIDAD } from '@/lib/etiquetas';
+import { ESTADO_GASTO, ESTADO_LOTE, ESTADO_ORDEN, ESTADO_RECLAMO, ESTADO_UNIDAD } from '@/lib/etiquetas';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database';
 
@@ -27,6 +27,9 @@ const COLORES: Record<string, string> = {
   aprobado: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100',
   rechazado: 'bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100',
   cerrado: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100',
+  // gasto
+  planificado: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100',
+  realizado: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100',
 };
 
 function Etiqueta({ valor, texto }: { valor: string; texto: string }) {
@@ -41,3 +44,4 @@ export const EstadoOrden = ({ estado }: { estado: E['order_status'] }) => <Etiqu
 export const EstadoReclamo = ({ estado }: { estado: E['claim_status'] }) => (
   <Etiqueta valor={estado} texto={ESTADO_RECLAMO[estado]} />
 );
+export const EstadoGasto = ({ estado }: { estado: E['estado_gasto'] }) => <Etiqueta valor={estado} texto={ESTADO_GASTO[estado]} />;

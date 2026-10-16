@@ -30,6 +30,14 @@ describe('decidirRuta (SPEC M1)', () => {
 });
 
 describe('puedeVer (SPEC §3)', () => {
+  it('RN-24: gastos (y planificados) solo admin', () => {
+    for (const ruta of ['/gastos', '/gastos/planificados', '/gastos/csv']) {
+      expect(puedeVer(ruta, 'admin')).toBe(true);
+      expect(puedeVer(ruta, 'tecnico')).toBe(false);
+      expect(puedeVer(ruta, 'vendedor')).toBe(false);
+    }
+  });
+
   it('costos (lotes, auditoría) y administración: solo admin', () => {
     for (const ruta of ['/lotes', '/auditoria', '/admin/usuarios', '/admin/importar']) {
       expect(puedeVer(ruta, 'admin')).toBe(true);

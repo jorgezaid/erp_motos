@@ -25,6 +25,7 @@ export function BotonConfirmar({
   confirmar = 'Confirmar',
   variante = 'default',
   deshabilitado,
+  tamano = 'default',
   alConfirmar,
   children,
 }: {
@@ -34,6 +35,7 @@ export function BotonConfirmar({
   confirmar?: string;
   variante?: 'default' | 'destructive' | 'outline';
   deshabilitado?: boolean;
+  tamano?: 'default' | 'sm';
   alConfirmar: () => Promise<boolean>;
   children?: React.ReactNode;
 }) {
@@ -43,7 +45,7 @@ export function BotonConfirmar({
   return (
     <AlertDialog open={abierto} onOpenChange={setAbierto}>
       <AlertDialogTrigger asChild>
-        <Button variant={variante} disabled={deshabilitado}>
+        <Button variant={variante} size={tamano} disabled={deshabilitado}>
           {etiqueta}
         </Button>
       </AlertDialogTrigger>
