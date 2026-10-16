@@ -13,7 +13,8 @@ import {
   type Resultado,
 } from '@/lib/errores';
 import { createClient } from '@/lib/supabase/server';
-import { esquemaCliente, esquemaPago, type EntradaCliente, type EntradaPago } from '@/lib/ventas';
+import { MAX_FILAS_CSV } from '@/lib/tabla';
+import { esquemaCliente, esquemaPago, filtrarUnidades, type EntradaCliente, type EntradaPago } from '@/lib/ventas';
 
 const uuid = z.uuid('Registro no válido.');
 const esquemaTipo = z.enum(['unidad_x1', 'mayorista_x3', 'distribuidor_x6'], 'Elige el tipo de venta.');
@@ -214,36 +215,39 @@ export type UnidadDisponible = {
   precio: number | null;
 };
 
+export type BusquedaUnidades = {
+  unidades: UnidadDisponible[];
+  /** ¿Hay alguna unidad lista en tienda (con o sin precio)? Si no, hay que pasar por el Taller. */
+  hayEnTienda: boolean;
+};
+
+const MAX_RESULTADOS = 30;
+
 /**
- * Búsqueda de unidades para la orden (SPEC M6): por VIN, o por modelo y color. Solo unidades
- * listas en tienda con precio (lotes liquidados, RN-12), con el precio de la escala de la orden.
+ * Búsqueda de unidades para la orden (SPEC M6): por VIN, o por modelo y color, sin distinguir
+ * mayúsculas ni tildes (se filtra aquí: `ilike` sí distingue tildes). Solo unidades listas en
+ * tienda con precio (lotes liquidados, RN-12), con el precio de la escala de la orden.
  */
-export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resultado<UnidadDisponible[]>> {
+export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resultado<BusquedaUnidades>> {
   await exigirRol('admin', 'vendedor');
   const tipo = esquemaTipo.safeParse(tipoVenta);
   if (!tipo.success) return fallo('Tipo de venta no válido.');
-  const texto = q.replace(/[,()*:"\\%_]/g, ' ').trim().slice(0, 60);
   const columna = ({ unidad_x1: 'precio_x1', mayorista_x3: 'precio_x3', distribuidor_x6: 'precio_x6' } as const)[tipo.data];
 
   const supabase = await createClient();
-  let consulta = supabase
+  const { data, error } = await supabase
     .from('v_stock')
     .select('vehicle_id, vin_chasis, codigo_modelo, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6')
     .eq('estado', 'listo_en_tienda')
-    .not(columna, 'is', null)
     .order('codigo_modelo')
     .order('vin_chasis')
-    .limit(30);
-  // Cada palabra debe aparecer en el VIN, el modelo o un color ("DEMO-48 rojo")
-  for (const palabra of texto.split(/\s+/).filter(Boolean)) {
-    consulta = consulta.or(
-      ['vin_chasis', 'codigo_modelo', 'color_primario', 'color_secundario'].map((c) => `${c}.ilike.*${palabra}*`).join(','),
-    );
-  }
-  const { data, error } = await consulta;
+    .limit(MAX_FILAS_CSV);
   if (error) return fallo(mensajeDeError(error));
-  return exito(
-    data.map((u) => ({
+  const conPrecio = data.filter((u) => u[columna] !== null);
+  const encontradas = filtrarUnidades(conPrecio, q.slice(0, 60)).slice(0, MAX_RESULTADOS);
+  return exito({
+    hayEnTienda: data.length > 0,
+    unidades: encontradas.map((u) => ({
       vehicle_id: u.vehicle_id ?? '',
       vin_chasis: u.vin_chasis ?? '',
       codigo_modelo: u.codigo_modelo ?? '',
@@ -251,5 +255,5 @@ export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resu
       ubicacion: u.ubicacion ?? '—',
       precio: u[columna],
     })),
-  );
+  });
 }

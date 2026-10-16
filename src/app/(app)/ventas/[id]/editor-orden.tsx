@@ -1,6 +1,7 @@
 'use client';
 
 import { Search, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { BotonConfirmar } from '@/components/confirmar';
@@ -29,7 +30,7 @@ import {
   eliminarPago,
   quitarUnidad,
   registrarPago,
-  type UnidadDisponible,
+  type BusquedaUnidades,
 } from '../acciones';
 
 export type ItemOrden = { id: string; vin: string; modelo: string; colores: string; precio: number };
@@ -59,7 +60,7 @@ export function EditorOrden({
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
   const [busqueda, setBusqueda] = useState('');
-  const [resultados, setResultados] = useState<UnidadDisponible[] | null>(null);
+  const [resultados, setResultados] = useState<BusquedaUnidades | null>(null);
   const [pago, setPago] = useState<{ metodo: MetodoPago; monto: string; referencia: string }>({
     metodo: 'efectivo',
     monto: '',
@@ -135,7 +136,7 @@ export function EditorOrden({
         <Card>
           <CardHeader>
             <CardTitle>Unidades</CardTitle>
-            <CardDescription>Busca por VIN, o por modelo y color (p. ej. «DEMO-48 rojo»).</CardDescription>
+            <CardDescription>Busca por VIN, o por modelo y color (p. ej. «XSDU-29 gris»).</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <form
@@ -170,14 +171,24 @@ export function EditorOrden({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {resultados.length === 0 && (
+                    {resultados.unidades.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          No hay unidades disponibles con esa búsqueda.
+                        <TableCell colSpan={6} className="text-center whitespace-normal text-muted-foreground" data-testid="sin-resultados">
+                          {resultados.hayEnTienda ? (
+                            'No hay unidades disponibles con esa búsqueda.'
+                          ) : (
+                            <>
+                              No hay motos listas para vender. Las unidades deben pasar por el{' '}
+                              <Link href="/taller" className="font-medium text-foreground underline">
+                                Taller
+                              </Link>{' '}
+                              (baterías, inspección y pasar a tienda).
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     )}
-                    {resultados.map((u) => (
+                    {resultados.unidades.map((u) => (
                       <TableRow key={u.vehicle_id}>
                         <TableCell className="font-mono">{u.vin_chasis}</TableCell>
                         <TableCell>{u.codigo_modelo}</TableCell>
@@ -191,7 +202,7 @@ export function EditorOrden({
                             aria-label={`Agregar ${u.vin_chasis}`}
                             onClick={() =>
                               accion(() => agregarUnidad(orderId, u.vehicle_id), `${u.vin_chasis} agregada (reservada)`, () =>
-                                setResultados((rs) => rs?.filter((x) => x.vehicle_id !== u.vehicle_id) ?? null),
+                                setResultados((rs) => rs && { ...rs, unidades: rs.unidades.filter((x) => x.vehicle_id !== u.vehicle_id) }),
                               )
                             }
                           >

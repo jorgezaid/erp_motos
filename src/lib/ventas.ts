@@ -15,6 +15,25 @@ const NOMBRE_ESCALA: Record<TipoVenta, string> = {
   distribuidor_x6: 'distribuidor',
 };
 
+/** Minúsculas y sin tildes, para buscar sin distinguir "Gris" de "gris" ni "Azúl" de "azul". */
+export function normalizarBusqueda(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+}
+
+/**
+ * Búsqueda del POS (SPEC M6): cada palabra debe aparecer en el VIN, el modelo o un color
+ * («XSDU-29 gris»), sin distinguir mayúsculas ni tildes. Sin palabras, devuelve todo.
+ */
+export function filtrarUnidades<
+  U extends { vin_chasis: string | null; codigo_modelo: string | null; color_primario: string | null; color_secundario: string | null },
+>(unidades: readonly U[], q: string): U[] {
+  const palabras = normalizarBusqueda(q).split(/\s+/).filter(Boolean);
+  return unidades.filter((u) => {
+    const campos = [u.vin_chasis, u.codigo_modelo, u.color_primario, u.color_secundario].map((c) => normalizarBusqueda(c ?? ''));
+    return palabras.every((p) => campos.some((c) => c.includes(p)));
+  });
+}
+
 /** Σ de montos con decimal.js (CLAUDE.md regla 4). */
 export function sumar(montos: readonly Valor[]): string {
   return montos.reduce<Decimal>((s, m) => s.plus(m), new Decimal(0)).toFixed(2);

@@ -3,11 +3,42 @@ import {
   esquemaCliente,
   esquemaPago,
   faltanParaEscala,
+  filtrarUnidades,
   metodoDerivado,
   motivosNoConfirmable,
+  normalizarBusqueda,
   saldoPendiente,
   sumar,
 } from './ventas';
+
+describe('búsqueda de unidades del POS (SPEC M6)', () => {
+  const unidades = [
+    { vin_chasis: 'LXVIN0001', codigo_modelo: 'XSDU-29', color_primario: 'Gris', color_secundario: null },
+    { vin_chasis: 'LXVIN0002', codigo_modelo: 'XSDU-29', color_primario: 'Azul Marino', color_secundario: 'Plateado' },
+    { vin_chasis: 'LXVIN0003', codigo_modelo: 'XSDU-35', color_primario: 'Marrón', color_secundario: null },
+    { vin_chasis: null, codigo_modelo: null, color_primario: null, color_secundario: null },
+  ];
+  const vins = (q: string) => filtrarUnidades(unidades, q).map((u) => u.vin_chasis);
+
+  it('normaliza a minúsculas y sin tildes', () => {
+    expect(normalizarBusqueda('  MARRÓN Ñandú ')).toBe('marron nandu');
+  });
+  it('no distingue mayúsculas: «xsdu-29 GRIS» encuentra la XSDU-29 gris', () => {
+    expect(vins('xsdu-29 GRIS')).toEqual(['LXVIN0001']);
+  });
+  it('no distingue tildes en ningún sentido', () => {
+    expect(vins('marron')).toEqual(['LXVIN0003']);
+    expect(vins('Azúl')).toEqual(['LXVIN0002']);
+  });
+  it('cada palabra puede estar en el VIN, el modelo o cualquiera de los dos colores', () => {
+    expect(vins('plateado 29')).toEqual(['LXVIN0002']);
+    expect(vins('lxvin000')).toEqual(['LXVIN0001', 'LXVIN0002', 'LXVIN0003']);
+    expect(vins('xsdu-29 rojo')).toEqual([]);
+  });
+  it('sin texto devuelve todas las unidades', () => {
+    expect(filtrarUnidades(unidades, '   ')).toHaveLength(4);
+  });
+});
 
 describe('saldo pendiente (SPEC M6: siempre visible)', () => {
   it('total − Σ pagos con decimal.js', () => {
