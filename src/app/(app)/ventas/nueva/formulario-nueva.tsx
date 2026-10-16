@@ -1,17 +1,27 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm, useWatch, type Control, type UseFormRegister } from 'react-hook-form';
 import { RadioOpciones } from '@/components/formulario/radio-opciones';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { mostrarSelectorEscala } from '@/lib/escalas';
 import { TIPO_VENTA } from '@/lib/etiquetas';
 import { avisar } from '@/lib/toast';
-import { esquemaNuevaVenta, type EntradaCliente, type EntradaNuevaVenta } from '@/lib/ventas';
-import { crearOrden } from '../acciones';
+import {
+  documentoValido,
+  esquemaNuevaVenta,
+  motosReservadas,
+  normalizarDocumento,
+  type ClienteConocido,
+  type EntradaCliente,
+  type EntradaNuevaVenta,
+} from '@/lib/ventas';
+import { buscarCliente, crearOrden } from '../acciones';
 import { CamposCliente } from '../campos-cliente';
 
 type TipoVenta = EntradaNuevaVenta['tipo_venta'];
@@ -38,6 +48,37 @@ export function FormularioNuevaVenta({ activas, minimos }: { activas: TipoVenta[
     } satisfies EntradaNuevaVenta,
   });
   const tipo = useWatch({ control, name: 'tipo_venta' });
+  const tipoDocumento = useWatch({ control, name: 'cliente_tipo_documento' });
+  const documento = normalizarDocumento(useWatch({ control, name: 'cliente_documento' }));
+  const consultable = documentoValido(tipoDocumento, documento);
+  const [conocido, setConocido] = useState<{ clave: string; cliente: ClienteConocido } | null>(null);
+  const cliente = consultable && conocido?.clave === `${tipoDocumento}:${documento}` ? conocido.cliente : null;
+
+  // Con un documento válido, busca borradores y ventas anteriores del cliente; autocompleta solo
+  // los campos vacíos para no pisar lo que el vendedor ya escribió.
+  useEffect(() => {
+    if (!consultable) return;
+    let vigente = true;
+    const t = setTimeout(async () => {
+      const r = await buscarCliente(tipoDocumento, documento);
+      if (!vigente || !r.ok) return;
+      setConocido({ clave: `${tipoDocumento}:${documento}`, cliente: r.datos });
+      const d = r.datos.datos;
+      if (!d) return;
+      const campos = [
+        ['cliente_nombre', d.nombre],
+        ['cliente_telefono', d.telefono],
+        ['cliente_email', d.email],
+      ] as const;
+      for (const [campo, valor] of campos) {
+        if (valor && !getValues(campo).trim()) setValue(campo, valor, { shouldValidate: true });
+      }
+    }, 350);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
+  }, [consultable, tipoDocumento, documento, getValues, setValue]);
 
   const enviar = handleSubmit(() => {
     const valores = getValues();
@@ -90,6 +131,28 @@ export function FormularioNuevaVenta({ activas, minimos }: { activas: TipoVenta[
             control={control as unknown as Control<EntradaCliente>}
             errors={errors}
           />
+          {cliente?.borrador && (
+            <Alert className="mt-4" data-testid="borrador-cliente">
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  {cliente.borrador.puedeContinuar
+                    ? `Este cliente tiene la orden #${cliente.borrador.numero} en borrador`
+                    : `La orden #${cliente.borrador.numero} de este cliente está en borrador (vendedor: ${cliente.borrador.vendedor})`}{' '}
+                  · creada {cliente.borrador.antiguedad} · {motosReservadas(cliente.borrador.motos)}.
+                </span>
+                {cliente.borrador.puedeContinuar && (
+                  <Button asChild size="sm">
+                    <Link href={`/ventas/${cliente.borrador.id}`}>Continuar esa orden</Link>
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+          {cliente?.datos && (
+            <p className="mt-3 text-sm text-muted-foreground" data-testid="datos-cliente">
+              Datos tomados de la venta #{cliente.datos.numero}: revisa que sigan vigentes.
+            </p>
+          )}
         </CardContent>
       </Card>
 

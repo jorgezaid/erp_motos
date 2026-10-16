@@ -16,15 +16,20 @@ type SP = Record<string, string | string[] | undefined>;
 
 /** /ventas (SPEC M6): órdenes con búsqueda por número, cliente o documento. */
 export default async function PaginaVentas({ searchParams }: { searchParams: Promise<SP> }) {
-  await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol('admin', 'vendedor');
   const sp = await searchParams;
   const params = leerParams(sp);
   const tipo = typeof sp.tipo === 'string' ? sp.tipo : '';
-  const { filas, total } = await consultarVentas({ ...params, tipo });
+  const mios = sp.mios === '1' ? '1' : '';
+  const { filas, total } = await consultarVentas({ ...params, tipo, mios }, { userId: sesion.userId, esAdmin: sesion.rol === 'admin' });
+  const misBorradores = mios === '1' && params.estado === 'borrador';
 
   return (
     <>
       <Encabezado titulo="Ventas" descripcion="Órdenes de venta: borradores, confirmadas y anuladas.">
+        <Button asChild variant={misBorradores ? 'secondary' : 'outline'} aria-pressed={misBorradores}>
+          <Link href={misBorradores ? '/ventas' : '/ventas?estado=borrador&mios=1'}>Mis borradores</Link>
+        </Button>
         <Button asChild>
           <Link href="/ventas/nueva">Nueva venta</Link>
         </Button>

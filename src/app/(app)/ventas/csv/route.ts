@@ -5,8 +5,12 @@ import { aCsv, leerParams, respuestaCsv } from '@/lib/tabla';
 import { COLUMNAS_CSV, consultarVentas } from '../datos';
 
 export async function GET(request: NextRequest) {
-  await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol('admin', 'vendedor');
   const sp = Object.fromEntries(request.nextUrl.searchParams);
-  const { filas } = await consultarVentas({ ...leerParams(sp), tipo: sp.tipo }, { todas: true });
+  const { filas } = await consultarVentas(
+    { ...leerParams(sp), tipo: sp.tipo, mios: sp.mios },
+    { userId: sesion.userId, esAdmin: sesion.rol === 'admin' },
+    { todas: true },
+  );
   return respuestaCsv(aCsv(filas, COLUMNAS_CSV), `ventas-${hoyLima()}.csv`);
 }

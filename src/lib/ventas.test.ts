@@ -2,14 +2,119 @@ import { describe, expect, it } from 'vitest';
 import {
   esquemaCliente,
   esquemaPago,
+  analizarCliente,
+  antiguedad,
+  avisoBorradores,
+  documentoValido,
   faltanParaEscala,
   filtrarUnidades,
+  motosReservadas,
+  puedeEditarOrden,
+  type OrdenDelCliente,
   metodoDerivado,
   motivosNoConfirmable,
   normalizarBusqueda,
   saldoPendiente,
   sumar,
 } from './ventas';
+
+describe('borradores y clientes conocidos (SPEC M6)', () => {
+  // 16/10/2026 10:00 en Lima
+  const ahora = new Date('2026-10-16T15:00:00Z');
+  const orden = (o: Partial<OrdenDelCliente>): OrdenDelCliente => ({
+    id: 'o',
+    numero: 1,
+    estado: 'confirmada',
+    created_at: '2026-10-01T15:00:00Z',
+    vendedor_id: 'v1',
+    vendedor: 'Victor Vendedor',
+    cliente_nombre: 'Juan Pérez',
+    cliente_telefono: null,
+    cliente_email: null,
+    motos: 0,
+    ...o,
+  });
+
+  it('antigüedad por días de calendario de Lima', () => {
+    expect(antiguedad('2026-10-16T06:00:00Z', ahora)).toBe('hoy'); // 01:00 en Lima
+    expect(antiguedad('2026-10-16T04:00:00Z', ahora)).toBe('ayer'); // 23:00 del 15 en Lima
+    expect(antiguedad('2026-10-13T15:00:00Z', ahora)).toBe('hace 3 días');
+  });
+
+  it('motos reservadas en singular y plural', () => {
+    expect(motosReservadas(0)).toBe('sin motos reservadas');
+    expect(motosReservadas(1)).toBe('1 moto reservada');
+    expect(motosReservadas(4)).toBe('4 motos reservadas');
+  });
+
+  it('can_edit_order: el admin continúa cualquier borrador; el vendedor solo los suyos', () => {
+    expect(puedeEditarOrden({ vendedor_id: 'v2' }, { userId: 'a', esAdmin: true })).toBe(true);
+    expect(puedeEditarOrden({ vendedor_id: 'v1' }, { userId: 'v1', esAdmin: false })).toBe(true);
+    expect(puedeEditarOrden({ vendedor_id: 'v2' }, { userId: 'v1', esAdmin: false })).toBe(false);
+  });
+
+  it('RN-20: documento válido igual que el CHECK de la BD', () => {
+    expect(documentoValido('DNI', '12345678')).toBe(true);
+    expect(documentoValido('DNI', '1234567')).toBe(false);
+    expect(documentoValido('RUC', '20123456789')).toBe(true);
+    expect(documentoValido('RUC', '30123456789')).toBe(false);
+    expect(documentoValido('CE', 'AB123456')).toBe(true);
+  });
+
+  it('detecta el borrador más reciente del cliente con su antigüedad y motos reservadas', () => {
+    const r = analizarCliente(
+      [
+        orden({ id: 'b-viejo', numero: 3, estado: 'borrador', created_at: '2026-10-05T15:00:00Z' }),
+        orden({ id: 'b', numero: 7, estado: 'borrador', created_at: '2026-10-13T15:00:00Z', motos: 2 }),
+        orden({ numero: 2 }),
+      ],
+      { userId: 'v1', esAdmin: false },
+      ahora,
+    );
+    expect(r.borrador).toEqual({ id: 'b', numero: 7, vendedor: 'Victor Vendedor', puedeContinuar: true, antiguedad: 'hace 3 días', motos: 2 });
+  });
+
+  it('el borrador de otro vendedor se avisa sin poder continuarlo; el admin sí puede', () => {
+    const ordenes = [orden({ estado: 'borrador', vendedor_id: 'v2', vendedor: 'Otra Vendedora' })];
+    expect(analizarCliente(ordenes, { userId: 'v1', esAdmin: false }, ahora).borrador?.puedeContinuar).toBe(false);
+    expect(analizarCliente(ordenes, { userId: 'admin', esAdmin: true }, ahora).borrador?.puedeContinuar).toBe(true);
+  });
+
+  it('autocompleta con la venta más reciente no anulada', () => {
+    const r = analizarCliente(
+      [
+        orden({ numero: 1, created_at: '2026-09-01T15:00:00Z', cliente_nombre: 'Juan P.', cliente_telefono: '999111222' }),
+        orden({ numero: 5, created_at: '2026-10-10T15:00:00Z', cliente_nombre: 'Juan Pérez', cliente_email: 'juan@correo.pe' }),
+        orden({ numero: 9, estado: 'anulada', created_at: '2026-10-15T15:00:00Z', cliente_nombre: 'Error' }),
+      ],
+      { userId: 'v1', esAdmin: false },
+      ahora,
+    );
+    expect(r.borrador).toBeNull();
+    expect(r.datos).toEqual({ numero: 5, nombre: 'Juan Pérez', telefono: '', email: 'juan@correo.pe' });
+  });
+
+  it('un cliente nuevo no tiene borrador ni datos', () => {
+    expect(analizarCliente([], { userId: 'v1', esAdmin: false }, ahora)).toEqual({ borrador: null, datos: null });
+  });
+
+  it('aviso del Inicio: N borradores, el más antiguo y las motos reservadas', () => {
+    expect(avisoBorradores([], ahora)).toBeNull();
+    expect(avisoBorradores([{ created_at: '2026-10-16T14:00:00Z', motos: 1 }], ahora)).toBe(
+      'Tienes 1 venta en borrador (creada hoy; 1 moto reservada).',
+    );
+    expect(
+      avisoBorradores(
+        [
+          { created_at: '2026-10-15T15:00:00Z', motos: 2 },
+          { created_at: '2026-10-11T15:00:00Z', motos: 0 },
+          { created_at: '2026-10-16T14:00:00Z', motos: 1 },
+        ],
+        ahora,
+      ),
+    ).toBe('Tienes 3 ventas en borrador (la más antigua, hace 5 días; 3 motos reservadas).');
+  });
+});
 
 describe('búsqueda de unidades del POS (SPEC M6)', () => {
   const unidades = [

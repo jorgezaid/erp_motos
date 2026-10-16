@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import { Decimal } from '@/lib/decimal';
+import { hoyLima } from '@/lib/format';
 import type { Valor } from '@/lib/costing/prorrateo';
 
 export type TipoVenta = 'unidad_x1' | 'mayorista_x3' | 'distribuidor_x6';
@@ -82,11 +83,114 @@ export function metodoDerivado(pagos: readonly { metodo: MetodoPago }[]): Metodo
 
 // ---------------------------------------------------------------- RN-20: cliente
 
+export type TipoDocumento = 'DNI' | 'RUC' | 'CE';
+
+/** RN-20 (igual que el CHECK `documento_valido`); el documento ya sin espacios y en mayúsculas. */
+export function documentoValido(tipo: TipoDocumento, documento: string): boolean {
+  return (
+    (tipo === 'DNI' && /^\d{8}$/.test(documento)) ||
+    (tipo === 'RUC' && /^(10|15|17|20)\d{9}$/.test(documento)) ||
+    (tipo === 'CE' && /^[A-Z0-9]{8,12}$/.test(documento))
+  );
+}
+
+/** Documento tal como se guarda: sin espacios y en mayúsculas. */
+export function normalizarDocumento(documento: string): string {
+  return documento.replace(/\s+/g, '').toUpperCase();
+}
+
+/** Días de calendario de Lima entre dos instantes (para la antigüedad de un borrador). */
+function diasLima(desde: string | Date, ahora: Date): number {
+  const dia = (d: Date) => Date.parse(`${hoyLima(d)}T00:00:00Z`);
+  return Math.max(0, Math.round((dia(ahora) - dia(new Date(desde))) / 86_400_000));
+}
+
+/** «hoy», «ayer» o «hace N días», según el calendario de Lima. */
+export function antiguedad(desde: string | Date, ahora: Date = new Date()): string {
+  const dias = diasLima(desde, ahora);
+  if (dias === 0) return 'hoy';
+  if (dias === 1) return 'ayer';
+  return `hace ${dias} días`;
+}
+
+/** «1 moto reservada», «3 motos reservadas», «sin motos reservadas». */
+export function motosReservadas(n: number): string {
+  if (n === 0) return 'sin motos reservadas';
+  return n === 1 ? '1 moto reservada' : `${n} motos reservadas`;
+}
+
+/** Edita la orden la BD si es admin o su vendedor (`can_edit_order`); aquí solo para la UX. */
+export function puedeEditarOrden(orden: { vendedor_id: string | null }, sesion: { userId: string; esAdmin: boolean }): boolean {
+  return sesion.esAdmin || orden.vendedor_id === sesion.userId;
+}
+
+/**
+ * Aviso del Inicio: «Tienes N ventas en borrador», con la antigüedad del más viejo y las motos
+ * que tienen reservadas (un borrador olvidado bloquea stock). null si no hay borradores.
+ */
+export function avisoBorradores(
+  borradores: readonly { created_at: string; motos: number }[],
+  ahora: Date = new Date(),
+): string | null {
+  const [primero] = borradores;
+  if (!primero) return null;
+  const n = borradores.length;
+  const masViejo = borradores.reduce((a, b) => (b.created_at < a ? b.created_at : a), primero.created_at);
+  const motos = borradores.reduce((s, b) => s + b.motos, 0);
+  const cabeza = n === 1 ? 'Tienes 1 venta en borrador' : `Tienes ${n} ventas en borrador`;
+  const edad = n === 1 ? `creada ${antiguedad(masViejo, ahora)}` : `la más antigua, ${antiguedad(masViejo, ahora)}`;
+  return `${cabeza} (${edad}; ${motosReservadas(motos)}).`;
+}
+
+export type OrdenDelCliente = {
+  id: string;
+  numero: number;
+  estado: 'borrador' | 'confirmada' | 'anulada';
+  created_at: string;
+  vendedor_id: string | null;
+  vendedor: string;
+  cliente_nombre: string;
+  cliente_telefono: string | null;
+  cliente_email: string | null;
+  motos: number;
+};
+
+export type ClienteConocido = {
+  /** Borrador más reciente del cliente (para no duplicarlo). */
+  borrador: { id: string; numero: number; vendedor: string; puedeContinuar: boolean; antiguedad: string; motos: number } | null;
+  /** Datos de la venta más reciente no anulada, para autocompletar. */
+  datos: { numero: number; nombre: string; telefono: string; email: string } | null;
+};
+
+/** Lo que ya se sabe de un cliente por sus órdenes anteriores (mismo tipo y n.º de documento). */
+export function analizarCliente(
+  ordenes: readonly OrdenDelCliente[],
+  sesion: { userId: string; esAdmin: boolean },
+  ahora: Date = new Date(),
+): ClienteConocido {
+  const recientes = [...ordenes].sort((a, b) => b.created_at.localeCompare(a.created_at) || b.numero - a.numero);
+  const b = recientes.find((o) => o.estado === 'borrador');
+  const d = recientes.find((o) => o.estado !== 'anulada');
+  return {
+    borrador: b
+      ? {
+          id: b.id,
+          numero: b.numero,
+          vendedor: b.vendedor,
+          puedeContinuar: puedeEditarOrden(b, sesion),
+          antiguedad: antiguedad(b.created_at, ahora),
+          motos: b.motos,
+        }
+      : null,
+    datos: d ? { numero: d.numero, nombre: d.cliente_nombre, telefono: d.cliente_telefono ?? '', email: d.cliente_email ?? '' } : null,
+  };
+}
+
 export const esquemaCliente = z
   .object({
     cliente_nombre: z.string().trim().min(1, 'Nombre del cliente: es obligatorio.').max(150),
     cliente_tipo_documento: z.enum(['DNI', 'RUC', 'CE'], 'Elige el tipo de documento.'),
-    cliente_documento: z.string().transform((v) => v.replace(/\s+/g, '').toUpperCase()),
+    cliente_documento: z.string().transform(normalizarDocumento),
     cliente_telefono: z
       .string()
       .trim()
@@ -99,11 +203,7 @@ export const esquemaCliente = z
       .transform((v) => v || null),
   })
   .superRefine((c, ctx) => {
-    const ok =
-      (c.cliente_tipo_documento === 'DNI' && /^\d{8}$/.test(c.cliente_documento)) ||
-      (c.cliente_tipo_documento === 'RUC' && /^(10|15|17|20)\d{9}$/.test(c.cliente_documento)) ||
-      (c.cliente_tipo_documento === 'CE' && /^[A-Z0-9]{8,12}$/.test(c.cliente_documento));
-    if (!ok) {
+    if (!documentoValido(c.cliente_tipo_documento, c.cliente_documento)) {
       ctx.addIssue({
         code: 'custom',
         path: ['cliente_documento'],

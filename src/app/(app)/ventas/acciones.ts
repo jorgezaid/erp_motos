@@ -14,7 +14,17 @@ import {
 } from '@/lib/errores';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
-import { esquemaCliente, esquemaPago, filtrarUnidades, type EntradaCliente, type EntradaPago } from '@/lib/ventas';
+import {
+  analizarCliente,
+  documentoValido,
+  esquemaCliente,
+  esquemaPago,
+  filtrarUnidades,
+  normalizarDocumento,
+  type ClienteConocido,
+  type EntradaCliente,
+  type EntradaPago,
+} from '@/lib/ventas';
 
 const uuid = z.uuid('Registro no válido.');
 const esquemaTipo = z.enum(['unidad_x1', 'mayorista_x3', 'distribuidor_x6'], 'Elige el tipo de venta.');
@@ -27,6 +37,36 @@ function revalidar(orderId?: string) {
 }
 
 const MENSAJE_ORDEN_AJENA = 'La orden no existe, ya no está en borrador o pertenece a otro vendedor.';
+
+/**
+ * Paso 1: ¿el cliente ya compró o tiene un borrador? Para no duplicar borradores y autocompletar
+ * sus datos. El vendedor lee todas las órdenes (RLS), pero solo continúa las suyas.
+ */
+export async function buscarCliente(tipoDocumento: string, documento: string): Promise<Resultado<ClienteConocido>> {
+  const sesion = await exigirRol('admin', 'vendedor');
+  const tipo = z.enum(['DNI', 'RUC', 'CE']).safeParse(tipoDocumento);
+  const doc = normalizarDocumento(documento);
+  if (!tipo.success || !documentoValido(tipo.data, doc)) return exito({ borrador: null, datos: null });
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('sales_orders')
+    .select(
+      'id, numero, estado, created_at, vendedor_id, cliente_nombre, cliente_telefono, cliente_email, profiles(nombre), order_items(count)',
+    )
+    .eq('cliente_tipo_documento', tipo.data)
+    .eq('cliente_documento', doc)
+    .eq('order_items.activo', true)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) return fallo(mensajeDeError(error));
+  const ordenes = data.map((o) => ({
+    ...o,
+    vendedor: o.profiles?.nombre || '—',
+    motos: o.order_items[0]?.count ?? 0,
+  }));
+  return exito(analizarCliente(ordenes, { userId: sesion.userId, esAdmin: sesion.rol === 'admin' }));
+}
 
 /** Paso 1: tipo de venta y cliente → orden en borrador (el vendedor lo fija la BD). */
 export async function crearOrden(entrada: { tipo_venta: string } & EntradaCliente): Promise<Resultado<{ id: string }>> {

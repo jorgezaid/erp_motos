@@ -1,6 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { Encabezado } from '@/components/encabezado';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
 import { alertasConciliacion, tieneAlertas } from '@/lib/auditoria';
@@ -13,6 +14,7 @@ import { rangoLima, totalMargen } from '@/lib/margenes';
 import { ETIQUETA_ROL } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
+import { avisoBorradores } from '@/lib/ventas';
 import type { Database } from '@/types/database';
 
 type Estado = Database['public']['Enums']['vehicle_status'];
@@ -45,7 +47,7 @@ export default async function Inicio() {
   const inicioMes = inicioMesLima();
   const mes = rangoLima(inicioMes, null).desde ?? '';
 
-  const [conteos, ventasMes, margenes, conciliacion, utilidadMes] = await Promise.all([
+  const [conteos, ventasMes, margenes, conciliacion, utilidadMes, misBorradores] = await Promise.all([
     Promise.all(
       ESTADOS.map(async (e) => {
         const { count } = await supabase.from('vehicle_inventory').select('id', { count: 'exact', head: true }).eq('estado', e);
@@ -60,6 +62,15 @@ export default async function Inicio() {
       : Promise.resolve({ data: [] }),
     esAdmin ? supabase.from('v_batch_reconciliation').select('*').limit(MAX_FILAS_CSV) : Promise.resolve({ data: [] }),
     esAdmin ? supabase.from('v_utilidad_mensual').select('*').eq('mes', inicioMes).maybeSingle() : Promise.resolve({ data: null }),
+    veVentas
+      ? supabase
+          .from('sales_orders')
+          .select('created_at, order_items(count)')
+          .eq('estado', 'borrador')
+          .eq('vendedor_id', sesion.userId)
+          .eq('order_items.activo', true)
+          .limit(MAX_FILAS_CSV)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const porEstado = new Map(conteos);
@@ -71,10 +82,22 @@ export default async function Inicio() {
   const alertas = (conciliacion.data ?? []).filter(tieneAlertas);
   const utilidad = utilidadDelMes(utilidadMes.data);
   const mesTexto = etiquetaMes(inicioMes.slice(0, 7));
+  const borradores = avisoBorradores((misBorradores.data ?? []).map((b) => ({ created_at: b.created_at, motos: b.order_items[0]?.count ?? 0 })));
 
   return (
     <>
       <Encabezado titulo={`Hola, ${sesion.nombre || sesion.email}`} descripcion={`Rol: ${ETIQUETA_ROL[sesion.rol]}`} />
+
+      {borradores && (
+        <Alert className="mb-6">
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3" data-testid="aviso-borradores">
+            <span>{borradores}</span>
+            <Link href="/ventas?estado=borrador&mios=1" className="font-medium text-foreground underline">
+              Ver mis borradores
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <section aria-label="Indicadores" className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Indicador

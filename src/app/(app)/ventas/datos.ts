@@ -3,6 +3,7 @@ import { ESTADO_ORDEN, METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
 import { formatFechaHora } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 import { filtroBusqueda, MAX_FILAS_CSV, rango, valorPermitido, type ColumnaCsv, type ParamsTabla } from '@/lib/tabla';
+import { puedeEditarOrden } from '@/lib/ventas';
 import type { Database } from '@/types/database';
 
 type Enums = Database['public']['Enums'];
@@ -18,20 +19,31 @@ export type FilaVenta = {
   metodo_pago: Enums['payment_method'] | null;
   estado: Enums['order_status'];
   vendedor: string;
+  /** Solo en borradores: antigüedad («hace 3 días») y motos reservadas, para detectar olvidados. */
+  creada: string;
+  motos: number;
+  puedeContinuar: boolean;
 };
 
+/**
+ * Órdenes con los filtros de la URL. `mios=1` deja solo las del usuario («Mis borradores» junto
+ * con `estado=borrador`).
+ */
 export async function consultarVentas(
-  { q, estado, pagina, tipo }: ParamsTabla & { tipo?: string },
+  { q, estado, pagina, tipo, mios }: ParamsTabla & { tipo?: string; mios?: string },
+  sesion: { userId: string; esAdmin: boolean },
   { todas = false }: { todas?: boolean } = {},
 ) {
   const supabase = await createClient();
   let consulta = supabase
     .from('sales_orders')
     .select(
-      'id, numero, created_at, confirmada_at, cliente_nombre, cliente_tipo_documento, cliente_documento, tipo_venta, total_pen, metodo_pago, estado, profiles(nombre)',
+      'id, numero, created_at, confirmada_at, cliente_nombre, cliente_tipo_documento, cliente_documento, tipo_venta, total_pen, metodo_pago, estado, vendedor_id, profiles(nombre), order_items(count)',
       { count: 'exact' },
     )
+    .eq('order_items.activo', true)
     .order('numero', { ascending: false });
+  if (mios === '1') consulta = consulta.eq('vendedor_id', sesion.userId);
 
   const busqueda = filtroBusqueda(q, ['cliente_nombre', 'cliente_documento']);
   if (busqueda) {
@@ -58,6 +70,9 @@ export async function consultarVentas(
     metodo_pago: o.metodo_pago,
     estado: o.estado,
     vendedor: o.profiles?.nombre ?? '—',
+    creada: o.created_at,
+    motos: o.order_items[0]?.count ?? 0,
+    puedeContinuar: o.estado === 'borrador' && puedeEditarOrden(o, sesion),
   }));
   return { filas, total: count ?? 0 };
 }
