@@ -727,6 +727,9 @@ isOneToOne: false
               "activo": boolean,"created_at": string,"email": string,"id": string,"nombre": string,"rol": Database["public"]['Enums']["app_role"]
             }[]
                            },
+"listo_rapido":
+{ Args: { "p_location_id": string,"p_unidades": Json }; Returns: Json
+                           },
 "nombre_escala":
 { Args: { "p_tipo": Database["public"]['Enums']["sale_type"] }; Returns: string
                            },

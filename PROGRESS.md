@@ -7,7 +7,7 @@
 - **Fase activa:** 10 — Gastos (M9): 10.1–10.4 hechas, 10.5 descartada. La fase 9 (producción: 0.5, 9.1–9.4) la hace el dueño del repo
 - **Próxima tarea:** ejecutar la E2E de la 10.6 cuando el cliente lo autorice. Fases 3 a 8 y 11.1 completas; ver `docs/INFORME-FINAL.md`
 - **BD local:** tiene los datos reales del cliente (lote `117GZH2606089`): **no** ejecutar `supabase db reset`, `pnpm db:demo` ni `pnpm e2e:limpio`
-- **Pendiente en producción:** `supabase db push` de la migración `20261015175924_rpc_importar_plantilla`
+- **Pendiente en producción:** `supabase db push` de las migraciones `20261015175924_rpc_importar_plantilla` (si aún no se aplicó) y `20261017194153_rpc_listo_rapido`
 - **Última actualización:** 2026-10-15
 
 ---
@@ -97,6 +97,11 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 - [ ] 12.4 **Pendiente para más adelante** (decisión del cliente): foto del modelo. Migración con `vehicle_models.foto_path` y bucket privado `modelos` (lectura staff, escritura solo admin, RLS y revoke a public/anon), subida en `/admin/modelos` y miniatura en Taller, Inventario y Ventas en lugar del ícono
 - [x] 12.5 Color propio por modelo (D36), no por categoría: paleta de 12 tonos saturados (`PALETA_MODELOS`) asignada por hash FNV-1a del código (`indiceColorModelo`, sin distinguir mayúsculas ni espacios); el recuadro del ícono toma el color del modelo y la etiqueta de categoría queda neutra (ícono + texto); los 8 modelos reales tienen colores distintos (prueba)
 
+## Fase 13 · Listo rápido en el taller (D37)
+- [x] 13.1 RPC `listo_rapido(p_unidades, p_location_id)` (security invoker, admin y técnico, revoke a public/anon): por cada moto en caja o en ensamble, en una transacción, ensamble → baterías faltantes (serial escrito o `PROV-<VIN>-<n>`) → inspección con todo el checklist (`checklist.listo_rapido`, observación «Listo rápido», sin voltaje medido) → tienda; los triggers de RN-02, RN-03, RN-10 y RN-11 siguen validando; todo o nada con el VIN en el error; `PROV-` reservado — migración `20261017194153_rpc_listo_rapido` + `tests/test_listo_rapido.sql`
+- [ ] 13.2 Botón «Listo rápido» en cada tarjeta del Taller y selección múltiple, con diálogo de ubicación (Showroom Piérola por defecto) y casillas de serial opcionales
+- [ ] 13.3 «Baterías sin serial real» (seriales `PROV-`): etiqueta y filtro en Taller e Inventario, conteo en Auditoría y reemplazo por el serial real en `/taller/[id]`
+
 ## Preguntas abiertas (para el dueño del negocio)
 1. **IGV, IPM y percepción:** ¿son crédito fiscal (régimen general)? Si lo son, poner `impuestos_recuperables_al_costo = false`; esto baja el costo cerca de un 18 % del CIF. *Consultar con el contador.*
 2. ¿Los precios de venta incluyen IGV? (La v1 supone que sí.)
@@ -161,6 +166,7 @@ Valores por defecto que usa la v1 mientras no se confirmen (todos se cambian sin
 | D34 | 2026-10-15 | Gastos: la lista se exporta a CSV (no .xlsx), con los mismos filtros, como el resto de la app; se descarta `/gastos/importar` (10.5): los gastos se registran solo desde la app. El filtro de mes parte del mes actual de Lima y ofrece "Todos los meses" | Decisión del cliente. Reutiliza la exportación CSV existente (D20) y evita una segunda vía de alta con su propia validación |
 | D35 | 2026-10-16 | Borradores de venta: con un documento válido, "Nueva venta" busca las órdenes del cliente (mismo tipo y n.º). Si tiene un borrador, lo avisa con su antigüedad y motos reservadas; "Continuar esa orden" solo aparece si el usuario puede editarla (admin: todas; vendedor: las suyas, como `can_edit_order`). El borrador de otro vendedor se avisa sin botón y no bloquea crear otra orden. Se autocompletan nombre, teléfono y email de la venta más reciente no anulada, solo en campos vacíos. En `/ventas`, "Mis borradores" = `?estado=borrador&mios=1` (vendedor_id = usuario) | Decisión del cliente. El vendedor ya lee todas las órdenes (RLS), así que no hizo falta migración; antigüedad y motos reservadas sirven para detectar borradores olvidados que bloquean stock |
 | D36 | 2026-10-17 | Identidad visual: el color es del **modelo**, no de la categoría. 12 tonos saturados elegidos por un hash del código del modelo (con una semilla con la que los 8 modelos reales no comparten color); un modelo futuro puede repetir el color de otro, pero el código y el ícono y el texto de la categoría lo siguen distinguiendo. La etiqueta de categoría pasa a ser neutra | Decisión del cliente. Depender solo del código (no del orden del catálogo) hace que el color no cambie al agregar modelos, y no requiere migración |
+| D37 | 2026-10-17 | «Listo rápido»: una RPC (`listo_rapido`, security invoker) hace en una transacción los mismos pasos del flujo normal del taller, sin desactivar triggers; acepta motos en caja y en ensamble (conserva sus baterías y completa las posiciones libres). Un serial vacío se reemplaza por `PROV-<VIN>-<posición>` (único porque el VIN lo es); el prefijo `PROV-` queda reservado y marca las «Baterías sin serial real» sin columna nueva. La inspección queda con `checklist.listo_rapido = true` y sin voltaje medido. Ubicación activa obligatoria | Decisión del cliente. Con llamadas separadas desde la app, una falla a mitad dejaba la moto a medias; la BD sigue siendo la autoridad |
 
 ## Problemas conocidos / deuda técnica
 - En Supabase, RLS filtra en silencio los UPDATE y DELETE sin permiso (devuelven 0 filas, no un error). La UI debe comprobar el número de filas afectadas.
