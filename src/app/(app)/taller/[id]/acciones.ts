@@ -14,6 +14,7 @@ import {
 } from '@/lib/errores';
 import { normalizarSerial } from '@/lib/registro';
 import { createClient } from '@/lib/supabase/server';
+import { esSerialProvisional, PREFIJO_PROVISIONAL } from '@/lib/taller';
 
 const uuid = z.uuid('Unidad no válida.');
 
@@ -23,13 +24,20 @@ function revalidar(vehicleId: string) {
   revalidatePath('/inventario');
 }
 
+/** RN-03 (mayúsculas, sin espacios); el prefijo PROV- queda para los provisionales (D37). */
+const serialReal = z
+  .string()
+  .transform(normalizarSerial)
+  .pipe(z.string().min(1, 'Escribe el serial.').max(40, 'Serial: máximo 40 caracteres.'))
+  .refine((s) => !esSerialProvisional(s), 'El prefijo PROV- está reservado a los seriales provisionales.');
+
 const esquemaBaterias = z.object({
   vehicleId: uuid,
   seriales: z
     .array(
       z.object({
         posicion: z.number().int().min(1).max(6),
-        serial: z.string().transform(normalizarSerial).pipe(z.string().min(1).max(40, 'Serial: máximo 40 caracteres.')),
+        serial: serialReal,
       }),
     )
     .min(1, 'Escanea al menos un serial.')
@@ -71,6 +79,30 @@ export async function quitarBateria(vehicleId: string, bateriaId: string): Promi
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidar(vehicleId);
+  return exito(null);
+}
+
+/**
+ * D37: reemplaza un serial provisional (PROV-) por el real, en cualquier estado de la moto. Solo
+ * cambia baterías provisionales; la BD valida RN-03 (serial único) y lo normaliza.
+ */
+export async function reemplazarSerialProvisional(vehicleId: string, bateriaId: string, serial: string): Promise<Resultado> {
+  await exigirRol('admin', 'tecnico');
+  if (!uuid.safeParse(vehicleId).success || !uuid.safeParse(bateriaId).success) return fallo('Batería no válida.');
+  const s = serialReal.safeParse(serial);
+  if (!s.success) return falloValidacion(s.error);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('vehicle_batteries')
+    .update({ serial: s.data })
+    .eq('id', bateriaId)
+    .eq('vehicle_id', vehicleId)
+    .ilike('serial', `${PREFIJO_PROVISIONAL}%`)
+    .select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo('Esa batería ya no tiene un serial provisional o no tienes permiso para cambiarla.');
+  revalidar(vehicleId);
+  revalidatePath('/auditoria');
   return exito(null);
 }
 

@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { Encabezado } from '@/components/encabezado';
 import { EstadoUnidad } from '@/components/estado-badge';
+import { EtiquetaSinSerial } from '@/components/etiqueta-sin-serial';
 import { IdentidadModelo } from '@/components/identidad-modelo';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
 import { formatFechaHora } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
-import { motivosObservada } from '@/lib/taller';
+import { esSerialProvisional, motivosObservada } from '@/lib/taller';
 import { BotonIniciarEnsamble } from '../boton-ensamble';
 import { SeccionBaterias } from './baterias';
 import { FormularioInspeccion } from './inspeccion';
@@ -79,7 +80,10 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
 
       <Card>
         <CardHeader>
-          <CardTitle>1. Seriales de batería</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            1. Seriales de batería
+            <EtiquetaSinSerial cantidad={(baterias ?? []).filter((b) => esSerialProvisional(b.serial)).length} />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <SeccionBaterias vehicleId={u.id} esperadas={esperadas} registradas={baterias ?? []} editable={enTaller} />

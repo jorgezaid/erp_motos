@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { alertasConciliacion, tieneAlertas } from '@/lib/auditoria';
+import { claveLoteModelo, motosSinSerialRealPorLote } from '@/lib/consultas/provisionales';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 import { obtenerLote } from '../datos';
@@ -12,12 +13,12 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const lote = await obtenerLote(id);
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('v_batch_reconciliation')
-    .select('*')
-    .eq('batch_id', lote.id)
-    .order('codigo_modelo');
+  const [{ data: filas, error }, sinSerial] = await Promise.all([
+    supabase.from('v_batch_reconciliation').select('*').eq('batch_id', lote.id).order('codigo_modelo'),
+    motosSinSerialRealPorLote(lote.id),
+  ]);
   if (error) throw new Error(error.message);
+  const data = filas.map((f) => ({ ...f, motos_sin_serial_real: sinSerial.get(claveLoteModelo(f.batch_id, f.codigo_modelo)) ?? 0 }));
   const conAlertas = data.filter(tieneAlertas).length;
 
   return (
@@ -49,6 +50,7 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
               <TableHead className="text-right">Registradas</TableHead>
               <TableHead className="text-right">Baterías completas</TableHead>
               <TableHead className="text-right">Inspección aprobada</TableHead>
+              <TableHead className="text-right">Sin serial real</TableHead>
               <TableHead>Alertas</TableHead>
             </TableRow>
           </TableHeader>
@@ -69,6 +71,7 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
                   <TableCell className="text-right">{f.unidades_registradas}</TableCell>
                   <TableCell className="text-right">{f.unidades_baterias_completas}</TableCell>
                   <TableCell className="text-right">{f.unidades_inspeccion_aprobada}</TableCell>
+                  <TableCell className="text-right">{f.motos_sin_serial_real}</TableCell>
                   <TableCell className="whitespace-normal">
                     {alertas.length === 0 ? '—' : <ul className="list-disc pl-4">{alertas.map((a) => <li key={a}>{a}</li>)}</ul>}
                   </TableCell>

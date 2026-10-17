@@ -1,6 +1,7 @@
 import 'server-only';
 import { exigirRol } from '@/lib/auth';
 import { alertasConciliacion, tieneAlertas } from '@/lib/auditoria';
+import { claveLoteModelo, motosSinSerialRealPorLote } from '@/lib/consultas/provisionales';
 import { rangoLima, type FilaMargen } from '@/lib/margenes';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
@@ -30,8 +31,10 @@ export async function consultarConciliacion({ q, estado }: { q: string; estado: 
     .order('codigo_modelo')
     .limit(MAX_FILAS_CSV);
   if (error) throw new Error(error.message);
+  const sinSerial = await motosSinSerialRealPorLote();
   const t = q.toLowerCase();
   return data
+    .map((f) => ({ ...f, motos_sin_serial_real: sinSerial.get(claveLoteModelo(f.batch_id, f.codigo_modelo)) ?? 0 }))
     .filter((f) => !t || (f.codigo_embarque ?? '').toLowerCase().includes(t) || (f.codigo_modelo ?? '').toLowerCase().includes(t))
     .filter((f) => (estado === 'alertas' ? tieneAlertas(f) : estado === 'ok' ? !tieneAlertas(f) : true))
     .map((f) => ({ ...f, alertas: alertasConciliacion(f) }));

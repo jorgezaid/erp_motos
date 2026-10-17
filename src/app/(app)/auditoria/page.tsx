@@ -64,13 +64,14 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
                 <TableHead className="text-right">Registradas</TableHead>
                 <TableHead className="text-right">Baterías completas</TableHead>
                 <TableHead className="text-right">Inspección aprobada</TableHead>
+                <TableHead className="text-right">Sin serial real</TableHead>
                 <TableHead>Alertas</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filas.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-20 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="h-20 text-center text-muted-foreground">
                     Sin resultados.
                   </TableCell>
                 </TableRow>
@@ -92,6 +93,7 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
                   <TableCell className="text-right">{c.unidades_registradas}</TableCell>
                   <TableCell className="text-right">{c.unidades_baterias_completas}</TableCell>
                   <TableCell className="text-right">{c.unidades_inspeccion_aprobada}</TableCell>
+                  <TableCell className="text-right">{c.motos_sin_serial_real}</TableCell>
                   <TableCell className="whitespace-normal">{c.alertas.join(' · ') || '—'}</TableCell>
                 </TableRow>
               ))}

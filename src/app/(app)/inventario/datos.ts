@@ -5,9 +5,9 @@ type SP = Record<string, string | string[] | undefined>;
 
 const texto = (v: string | string[] | undefined) => (typeof v === 'string' ? v.trim().slice(0, 60) : '');
 
-/** Filtros extra de /inventario (SPEC M4): modelo, ubicación y color. */
+/** Filtros extra de /inventario (SPEC M4): modelo, ubicación, color y baterías sin serial real (D37). */
 export function leerFiltrosInventario(sp: SP) {
-  return { modelo: texto(sp.modelo), ubicacion: texto(sp.ubicacion), color: texto(sp.color) };
+  return { modelo: texto(sp.modelo), ubicacion: texto(sp.ubicacion), color: texto(sp.color), baterias: texto(sp.baterias) };
 }
 
 /** Opciones de los selects de filtro (catálogos pequeños). */

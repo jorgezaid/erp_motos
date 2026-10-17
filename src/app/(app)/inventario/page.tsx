@@ -6,7 +6,7 @@ import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
-import { consultarStock, textoInspeccion } from '@/lib/consultas/stock';
+import { consultarStock, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { puedeVer } from '@/lib/roles';
 import { leerParams } from '@/lib/tabla';
@@ -39,6 +39,7 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
     estado: f.estado ?? 'en_caja',
     ubicacion: f.ubicacion ?? '—',
     baterias: `${f.baterias_registradas ?? 0}/${f.cantidad_baterias_12v ?? 0}`,
+    provisionales: f.baterias_provisionales,
     inspeccion: textoInspeccion(f.ultima_inspeccion_aprobada),
     precio_x1: f.precio_x1,
     precio_x3: f.precio_x3,
@@ -61,10 +62,15 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
           { param: 'modelo', etiqueta: 'Modelo', opciones: op.modelos },
           { param: 'ubicacion', etiqueta: 'Ubicación', opciones: op.ubicaciones },
           { param: 'color', etiqueta: 'Color', opciones: op.colores },
+          OPCION_FILTRO_BATERIAS,
         ]}
         csvHref="/inventario/csv"
       />
-      <TablaInventario filas={unidades} verPrecios={sesion.rol !== 'tecnico'} />
+      <TablaInventario
+        filas={unidades}
+        verPrecios={sesion.rol !== 'tecnico'}
+        enlaceTaller={puedeVer('/taller', sesion.rol)}
+      />
       <Paginacion pagina={params.pagina} total={total} searchParams={sp} />
     </>
   );

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   await exigirRol('admin', 'tecnico');
   const sp = Object.fromEntries(request.nextUrl.searchParams);
   const { filas } = await consultarStock(
-    { ...leerParams(sp), modelo: sp.modelo, categoria: sp.categoria, estados: ['en_caja', 'en_ensamble'] },
+    { ...leerParams(sp), modelo: sp.modelo, categoria: sp.categoria, baterias: sp.baterias, estados: ['en_caja', 'en_ensamble'] },
     { todas: true },
   );
   return respuestaCsv(aCsv(filas, COLUMNAS_CSV_STOCK), `taller-${hoyLima()}.csv`);

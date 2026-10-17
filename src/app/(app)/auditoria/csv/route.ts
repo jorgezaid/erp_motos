@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         { encabezado: 'Registradas', valor: (c) => c.unidades_registradas },
         { encabezado: 'Baterías completas', valor: (c) => c.unidades_baterias_completas },
         { encabezado: 'Inspección aprobada', valor: (c) => c.unidades_inspeccion_aprobada },
+        { encabezado: 'Baterías sin serial real (unidades)', valor: (c) => c.motos_sin_serial_real },
         { encabezado: 'Alertas', valor: (c) => c.alertas.join(' | ') },
       ]),
       `conciliacion-${fecha}.csv`,

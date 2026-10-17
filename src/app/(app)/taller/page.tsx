@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Encabezado } from '@/components/encabezado';
 import { EstadoUnidad } from '@/components/estado-badge';
+import { EtiquetaSinSerial } from '@/components/etiqueta-sin-serial';
 import { IdentidadModelo } from '@/components/identidad-modelo';
 import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
@@ -10,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
-import { consultarStock, textoInspeccion } from '@/lib/consultas/stock';
+import { contarMotosSinSerialReal } from '@/lib/consultas/provisionales';
+import { consultarStock, FILTRO_SIN_SERIAL_REAL, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
 import { CATEGORIA, ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { agruparPorModelo, contarPorModelo, textoConteoTaller } from '@/lib/modelos';
 import { createClient } from '@/lib/supabase/server';
@@ -37,19 +39,21 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
   const params = leerParams(sp);
   const modelo = typeof sp.modelo === 'string' ? sp.modelo : '';
   const categoria = typeof sp.categoria === 'string' ? sp.categoria : '';
+  const filtroBaterias = typeof sp.baterias === 'string' ? sp.baterias : '';
   const supabase = await createClient();
 
   const [{ filas, total }, modelos, cola] = await Promise.all([
-    consultarStock({ ...params, modelo, categoria, estados: [...ESTADOS_TALLER] }),
+    consultarStock({ ...params, modelo, categoria, baterias: filtroBaterias, estados: [...ESTADOS_TALLER] }),
     leerIdentidadModelos(),
     // Totales por modelo de toda la cola (no solo de la página ni de la búsqueda)
     supabase.from('v_stock').select('codigo_modelo, estado').in('estado', [...ESTADOS_TALLER]).limit(MAX_FILAS_CSV),
   ]);
   // D37: posiciones ya ocupadas (para las casillas de «Listo rápido») y ubicaciones en tienda
   const ids = filas.flatMap((f) => f.vehicle_id ?? []);
-  const [{ data: baterias }, { data: ubicaciones }] = await Promise.all([
+  const [{ data: baterias }, { data: ubicaciones }, sinSerialReal] = await Promise.all([
     supabase.from('vehicle_batteries').select('vehicle_id, posicion').in('vehicle_id', ids),
     supabase.from('locations').select('id, nombre').eq('activo', true).in('tipo', ['showroom', 'almacen']).order('nombre'),
+    contarMotosSinSerialReal(),
   ]);
   const ocupadas = new Map<string, (number | null)[]>();
   for (const b of baterias ?? []) ocupadas.set(b.vehicle_id, [...(ocupadas.get(b.vehicle_id) ?? []), b.posicion]);
@@ -81,9 +85,19 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
         extras={[
           { param: 'modelo', etiqueta: 'Modelo', opciones: opcionesModelo },
           { param: 'categoria', etiqueta: 'Categoría', opciones: opciones(CATEGORIA) },
+          OPCION_FILTRO_BATERIAS,
         ]}
         csvHref="/taller/csv"
       />
+      {sinSerialReal > 0 && (
+        <p className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <EtiquetaSinSerial cantidad={sinSerialReal} />
+          {sinSerialReal} {sinSerialReal === 1 ? 'moto tiene' : 'motos tienen'} seriales provisionales.
+          <Link href={`/inventario?baterias=${FILTRO_SIN_SERIAL_REAL}`} className="font-medium underline">
+            Ver y reemplazar
+          </Link>
+        </p>
+      )}
       {filas.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground">No hay unidades en la cola del taller.</p>
       ) : (
@@ -132,6 +146,7 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
                               <span className="inline-flex items-center gap-1">
                                 <ClipboardCheck className="size-4" aria-hidden /> {textoInspeccion(u.ultima_inspeccion_aprobada)}
                               </span>
+                              <EtiquetaSinSerial cantidad={u.baterias_provisionales} />
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {u.estado === 'en_caja' ? (

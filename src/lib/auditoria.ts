@@ -9,6 +9,8 @@ export type FilaConciliacion = {
   alerta_packing_vs_dam: boolean | null;
   alerta_faltan_registrar: boolean | null;
   alerta_baterias: boolean | null;
+  /** D37: motos con baterías de serial provisional (PROV-); no viene de la vista */
+  motos_sin_serial_real?: number;
 };
 
 export function alertasConciliacion(f: FilaConciliacion): string[] {
@@ -22,9 +24,12 @@ export function alertasConciliacion(f: FilaConciliacion): string[] {
   if (f.alerta_baterias) {
     alertas.push(`${reg - (f.unidades_baterias_completas ?? 0)} unidad(es) con baterías incompletas`);
   }
+  if (f.motos_sin_serial_real) {
+    alertas.push(`${f.motos_sin_serial_real} unidad(es) con baterías sin serial real`);
+  }
   return alertas;
 }
 
 export function tieneAlertas(f: FilaConciliacion): boolean {
-  return !!(f.alerta_packing_vs_dam || f.alerta_faltan_registrar || f.alerta_baterias);
+  return !!(f.alerta_packing_vs_dam || f.alerta_faltan_registrar || f.alerta_baterias || f.motos_sin_serial_real);
 }

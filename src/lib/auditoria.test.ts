@@ -36,4 +36,11 @@ describe('alertas de conciliación (v_batch_reconciliation)', () => {
     ]);
     expect(tieneAlertas(f)).toBe(true);
   });
+
+  it('D37: las unidades con baterías sin serial real son una alerta', () => {
+    const f = { ...base, motos_sin_serial_real: 2 };
+    expect(alertasConciliacion(f)).toEqual(['2 unidad(es) con baterías sin serial real']);
+    expect(tieneAlertas(f)).toBe(true);
+    expect(tieneAlertas({ ...base, motos_sin_serial_real: 0 })).toBe(false);
+  });
 });

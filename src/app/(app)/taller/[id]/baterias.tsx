@@ -5,8 +5,9 @@ import { useRef, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { esSerialProvisional } from '@/lib/taller';
 import { avisar } from '@/lib/toast';
-import { guardarBaterias, quitarBateria } from './acciones';
+import { guardarBaterias, quitarBateria, reemplazarSerialProvisional } from './acciones';
 
 type Bateria = { id: string; serial: string; posicion: number | null };
 
@@ -58,7 +59,9 @@ export function SeccionBaterias({
               <Label htmlFor={`bateria-${p}`} className="text-muted-foreground">
                 #{p}
               </Label>
-              {b ? (
+              {b && esSerialProvisional(b.serial) ? (
+                <ReemplazoProvisional vehicleId={vehicleId} bateria={b} posicion={p} />
+              ) : b ? (
                 <>
                   <p id={`bateria-${p}`} className="truncate rounded-md border bg-muted px-3 py-2 font-mono text-sm">
                     {b.serial}
@@ -114,5 +117,47 @@ export function SeccionBaterias({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * D37: batería con serial provisional (PROV-) de «Listo rápido»: se reemplaza por el real en
+ * cualquier estado de la moto (también en tienda o vendida).
+ */
+function ReemplazoProvisional({ vehicleId, bateria, posicion }: { vehicleId: string; bateria: Bateria; posicion: number }) {
+  const [valor, setValor] = useState('');
+  const [pendiente, startTransition] = useTransition();
+  function reemplazar() {
+    if (!valor.trim()) return;
+    startTransition(async () => {
+      if (avisar(await reemplazarSerialProvisional(vehicleId, bateria.id, valor), `Batería ${posicion}: serial real guardado`)) {
+        setValor('');
+      }
+    });
+  }
+  return (
+    <>
+      <div className="grid gap-1">
+        <Input
+          id={`bateria-${posicion}`}
+          aria-label={`Serial real de la batería ${posicion}`}
+          placeholder={bateria.serial}
+          value={valor}
+          autoComplete="off"
+          className="border-amber-400 font-mono dark:border-amber-700"
+          onChange={(e) => setValor(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              reemplazar();
+            }
+          }}
+        />
+        <span className="text-xs text-muted-foreground">Provisional: {bateria.serial}</span>
+      </div>
+      <Button size="sm" variant="outline" disabled={pendiente || !valor.trim()} onClick={reemplazar}>
+        {pendiente ? 'Guardando…' : 'Reemplazar'}
+      </Button>
+    </>
   );
 }
