@@ -90,6 +90,12 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 
 ---
 
+## Fase 12 · Identidad visual de los modelos
+- [x] 12.1 Componente `IdentidadModelo` (`components/identidad-modelo.tsx`, lógica en `lib/modelos.ts`): código y nombre comercial, categoría con ícono + texto + color (bicimoto azul/bicicleta, trimoto de pasajeros violeta/personas, trimoto de carga ámbar/camión; contraste AA en claro y oscuro), «60V · 5 baterías» destacado y potencia; tamaños compacto y grande; donde iría la foto va el ícono de la categoría
+- [ ] 12.2 Taller agrupado por código de modelo, con filtros por modelo y categoría, e identidad grande en `/taller/[id]`
+- [ ] 12.3 `IdentidadModelo` en Inventario, Registro de unidades y el buscador de Ventas
+- [ ] 12.4 **Pendiente para más adelante** (decisión del cliente): foto del modelo. Migración con `vehicle_models.foto_path` y bucket privado `modelos` (lectura staff, escritura solo admin, RLS y revoke a public/anon), subida en `/admin/modelos` y miniatura en Taller, Inventario y Ventas en lugar del ícono
+
 ## Preguntas abiertas (para el dueño del negocio)
 1. **IGV, IPM y percepción:** ¿son crédito fiscal (régimen general)? Si lo son, poner `impuestos_recuperables_al_costo = false`; esto baja el costo cerca de un 18 % del CIF. *Consultar con el contador.*
 2. ¿Los precios de venta incluyen IGV? (La v1 supone que sí.)
