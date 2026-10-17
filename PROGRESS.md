@@ -99,7 +99,7 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 
 ## Fase 13 · Listo rápido en el taller (D37)
 - [x] 13.1 RPC `listo_rapido(p_unidades, p_location_id)` (security invoker, admin y técnico, revoke a public/anon): por cada moto en caja o en ensamble, en una transacción, ensamble → baterías faltantes (serial escrito o `PROV-<VIN>-<n>`) → inspección con todo el checklist (`checklist.listo_rapido`, observación «Listo rápido», sin voltaje medido) → tienda; los triggers de RN-02, RN-03, RN-10 y RN-11 siguen validando; todo o nada con el VIN en el error; `PROV-` reservado — migración `20261017194153_rpc_listo_rapido` + `tests/test_listo_rapido.sql`
-- [ ] 13.2 Botón «Listo rápido» en cada tarjeta del Taller y selección múltiple, con diálogo de ubicación (Showroom Piérola por defecto) y casillas de serial opcionales
+- [x] 13.2 Botón «Listo rápido» en cada tarjeta del Taller y selección múltiple, con diálogo de ubicación (Showroom Piérola por defecto) y casillas de serial opcionales — casilla por tarjeta y barra fija «Listo rápido (N)» (`taller/listo-rapido.tsx`); el diálogo muestra solo las posiciones libres (`posicionesLibres`, igual que la RPC) con el serial provisional como placeholder y Enter = siguiente casilla (también entre motos); Server Action `listoRapido` (zod: PROV- reservado, seriales repetidos, ≤ 100 motos); `ubicacionPorDefecto` sin distinguir tildes
 - [ ] 13.3 «Baterías sin serial real» (seriales `PROV-`): etiqueta y filtro en Taller e Inventario, conteo en Auditoría y reemplazo por el serial real en `/taller/[id]`
 
 ## Preguntas abiertas (para el dueño del negocio)

@@ -15,8 +15,10 @@ import { CATEGORIA, ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { agruparPorModelo, contarPorModelo, textoConteoTaller } from '@/lib/modelos';
 import { createClient } from '@/lib/supabase/server';
 import { leerParams, MAX_FILAS_CSV } from '@/lib/tabla';
+import { posicionesLibres } from '@/lib/taller';
 import { cn } from '@/lib/utils';
 import { BotonIniciarEnsamble } from './boton-ensamble';
+import { BotonListoRapido, CasillaMoto, ListoRapidoProvider, type MotoRapida } from './listo-rapido';
 
 export const metadata: Metadata = { title: 'Taller · ERP Vehículos Eléctricos' };
 
@@ -43,6 +45,27 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
     // Totales por modelo de toda la cola (no solo de la página ni de la búsqueda)
     supabase.from('v_stock').select('codigo_modelo, estado').in('estado', [...ESTADOS_TALLER]).limit(MAX_FILAS_CSV),
   ]);
+  // D37: posiciones ya ocupadas (para las casillas de «Listo rápido») y ubicaciones en tienda
+  const ids = filas.flatMap((f) => f.vehicle_id ?? []);
+  const [{ data: baterias }, { data: ubicaciones }] = await Promise.all([
+    supabase.from('vehicle_batteries').select('vehicle_id, posicion').in('vehicle_id', ids),
+    supabase.from('locations').select('id, nombre').eq('activo', true).in('tipo', ['showroom', 'almacen']).order('nombre'),
+  ]);
+  const ocupadas = new Map<string, (number | null)[]>();
+  for (const b of baterias ?? []) ocupadas.set(b.vehicle_id, [...(ocupadas.get(b.vehicle_id) ?? []), b.posicion]);
+  const motos: MotoRapida[] = filas.flatMap((f) =>
+    f.vehicle_id
+      ? [
+          {
+            vehicleId: f.vehicle_id,
+            vin: f.vin_chasis ?? '',
+            codigo: f.codigo_modelo ?? '',
+            libres: posicionesLibres(f.cantidad_baterias_12v ?? 0, ocupadas.get(f.vehicle_id) ?? []),
+          },
+        ]
+      : [],
+  );
+
   const conteos = contarPorModelo(cola.data ?? []);
   const grupos = agruparPorModelo(filas);
   const opcionesModelo = [...conteos.keys()]
@@ -64,6 +87,7 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
       {filas.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground">No hay unidades en la cola del taller.</p>
       ) : (
+        <ListoRapidoProvider motos={motos} ubicaciones={ubicaciones ?? []}>
         <div className="grid gap-6" role="region" aria-label="Cola del taller">
           {grupos.map((g) => {
             const [primera] = g.filas;
@@ -88,7 +112,10 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
                         <Card className="h-full py-4">
                           <CardContent className="grid gap-3 px-4">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
+                              <div className="pt-1">
+                                <CasillaMoto vehicleId={u.vehicle_id ?? ''} vin={u.vin_chasis ?? ''} />
+                              </div>
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate font-mono font-semibold">{u.vin_chasis}</p>
                                 <p className="text-sm text-muted-foreground">
                                   {u.codigo_modelo} · {[u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || 'sin color'}
@@ -116,6 +143,7 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
                                   </Link>
                                 </Button>
                               )}
+                              <BotonListoRapido vehicleId={u.vehicle_id ?? ''} vin={u.vin_chasis ?? ''} />
                             </div>
                           </CardContent>
                         </Card>
@@ -127,6 +155,7 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
             );
           })}
         </div>
+        </ListoRapidoProvider>
       )}
       <Paginacion pagina={params.pagina} total={total} searchParams={sp} />
     </>

@@ -48,3 +48,35 @@ export function requisitosTienda(u: {
   if (!u.ubicacion) faltan.push('Elige la ubicación en tienda');
   return faltan;
 }
+
+/** D37: prefijo reservado a los seriales provisionales de «Listo rápido». */
+export const PREFIJO_PROVISIONAL = 'PROV-';
+
+/** D37: serial provisional único de la batería `posicion` de la moto (como `listo_rapido`). */
+export function serialProvisional(vin: string, posicion: number): string {
+  return `${PREFIJO_PROVISIONAL}${vin.trim().toUpperCase()}-${posicion}`;
+}
+
+/** D37: «Baterías sin serial real». */
+export function esSerialProvisional(serial: string | null | undefined): boolean {
+  return !!serial && serial.trim().toUpperCase().startsWith(PREFIJO_PROVISIONAL);
+}
+
+/**
+ * D37: posiciones que «Listo rápido» llenará, igual que la RPC: de la 1 a la 6, saltando las
+ * ocupadas, hasta completar las baterías que exige el voltaje.
+ */
+export function posicionesLibres(esperadas: number, ocupadas: readonly (number | null)[]): number[] {
+  const usadas = new Set(ocupadas.filter((p): p is number => p !== null));
+  const libres: number[] = [];
+  for (let p = 1; p <= 6 && ocupadas.length + libres.length < esperadas; p++) {
+    if (!usadas.has(p)) libres.push(p);
+  }
+  return libres;
+}
+
+/** D37: ubicación por defecto de «Listo rápido»: Showroom Piérola, o la primera de la lista. */
+export function ubicacionPorDefecto(ubicaciones: readonly { id: string; nombre: string }[]): string | null {
+  const normalizar = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  return (ubicaciones.find((u) => normalizar(u.nombre) === 'showroom pierola') ?? ubicaciones[0])?.id ?? null;
+}
