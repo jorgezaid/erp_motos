@@ -13,7 +13,10 @@ test('M4: cola del taller en el celular — en caja → en ensamble', async ({ p
   await expect(movil.getByText('DEMO48-001')).toHaveCount(0);
 
   await movil.getByRole('searchbox', { name: 'Buscar' }).fill(vin);
-  const tarjeta = movil.getByRole('list', { name: 'Cola del taller' }).getByRole('listitem').filter({ hasText: vin });
+  const tarjeta = movil.getByRole('region', { name: 'Cola del taller' }).getByRole('listitem').filter({ hasText: vin });
+  // Agrupada por modelo, con su identidad (categoría, voltaje y baterías) en el encabezado
+  const grupo = movil.getByRole('region', { name: /^DEMO-72 · .*en caja/ });
+  await expect(grupo.getByTestId('identidad-modelo').first()).toContainText('72V · 6 baterías');
   await expect(tarjeta).toContainText('En caja');
   await expect(tarjeta).toContainText('Baterías 0/6');
   await tarjeta.getByRole('button', { name: `Iniciar ensamble de ${vin}` }).click();

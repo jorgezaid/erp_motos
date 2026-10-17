@@ -6,7 +6,10 @@ import { aCsv, leerParams, respuestaCsv } from '@/lib/tabla';
 
 export async function GET(request: NextRequest) {
   await exigirRol('admin', 'tecnico');
-  const params = leerParams(Object.fromEntries(request.nextUrl.searchParams));
-  const { filas } = await consultarStock({ ...params, estados: ['en_caja', 'en_ensamble'] }, { todas: true });
+  const sp = Object.fromEntries(request.nextUrl.searchParams);
+  const { filas } = await consultarStock(
+    { ...leerParams(sp), modelo: sp.modelo, categoria: sp.categoria, estados: ['en_caja', 'en_ensamble'] },
+    { todas: true },
+  );
   return respuestaCsv(aCsv(filas, COLUMNAS_CSV_STOCK), `taller-${hoyLima()}.csv`);
 }

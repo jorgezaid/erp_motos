@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { Encabezado } from '@/components/encabezado';
 import { EstadoUnidad } from '@/components/estado-badge';
+import { IdentidadModelo } from '@/components/identidad-modelo';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
@@ -24,7 +25,9 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
   const [{ data: u }, { data: baterias }, { data: inspecciones }, { data: ubicaciones }] = await Promise.all([
     supabase
       .from('vehicle_inventory')
-      .select('id, vin_chasis, nro_motor, estado, location_id, color_primario, vehicle_models(codigo_modelo, voltaje_sistema, cantidad_baterias_12v)')
+      .select(
+        'id, vin_chasis, nro_motor, estado, location_id, color_primario, color_secundario, vehicle_models(codigo_modelo, nombre_comercial, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts)',
+      )
       .eq('id', id)
       .maybeSingle(),
     supabase.from('vehicle_batteries').select('id, serial, posicion').eq('vehicle_id', id).order('posicion'),
@@ -53,10 +56,17 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
       </p>
       <Encabezado
         titulo={<span className="font-mono">{u.vin_chasis}</span>}
-        descripcion={`${m.codigo_modelo} · ${m.voltaje_sistema}V (${esperadas} baterías de 12V) · Motor ${u.nro_motor}`}
+        descripcion={`Motor ${u.nro_motor} · ${[u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || 'sin color'}`}
       >
         <EstadoUnidad estado={u.estado} />
       </Encabezado>
+
+      {/* Identidad del modelo bien visible: qué moto es y cuántas baterías lleva */}
+      <Card className="py-4">
+        <CardContent className="px-4">
+          <IdentidadModelo modelo={m} tamano="grande" />
+        </CardContent>
+      </Card>
 
       {u.estado === 'en_caja' && (
         <Card>

@@ -46,6 +46,41 @@ export function textoEnergia(m: Pick<DatosModelo, 'voltaje_sistema' | 'cantidad_
   return `${m.voltaje_sistema}V · ${n} ${n === 1 ? 'batería' : 'baterías'}`;
 }
 
+export type ConteoTaller = { en_caja: number; en_ensamble: number };
+
+/** Unidades en caja y en ensamble por código de modelo (encabezados de la cola del taller). */
+export function contarPorModelo(
+  filas: readonly { codigo_modelo: string | null; estado: string | null }[],
+): Map<string, ConteoTaller> {
+  const conteos = new Map<string, ConteoTaller>();
+  for (const f of filas) {
+    if (!f.codigo_modelo || (f.estado !== 'en_caja' && f.estado !== 'en_ensamble')) continue;
+    const c = conteos.get(f.codigo_modelo) ?? { en_caja: 0, en_ensamble: 0 };
+    c[f.estado] += 1;
+    conteos.set(f.codigo_modelo, c);
+  }
+  return conteos;
+}
+
+/** «9 en caja · 3 en ensamble» (omite el que esté en cero salvo que ambos lo estén). */
+export function textoConteoTaller(c: ConteoTaller | undefined): string {
+  const { en_caja = 0, en_ensamble = 0 } = c ?? {};
+  const partes = [en_caja > 0 && `${en_caja} en caja`, en_ensamble > 0 && `${en_ensamble} en ensamble`].filter(Boolean);
+  return partes.length ? partes.join(' · ') : 'sin unidades en el taller';
+}
+
+/** Agrupa filas por código de modelo, ordenando los grupos por código (y respetando el orden dentro). */
+export function agruparPorModelo<F extends { codigo_modelo: string | null }>(filas: readonly F[]): { codigo: string; filas: F[] }[] {
+  const grupos = new Map<string, F[]>();
+  for (const f of filas) {
+    const codigo = f.codigo_modelo ?? '—';
+    grupos.set(codigo, [...(grupos.get(codigo) ?? []), f]);
+  }
+  return [...grupos.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, 'es', { numeric: true }))
+    .map(([codigo, fs]) => ({ codigo, filas: fs }));
+}
+
 /** «1 200 W» con separador de miles (como el resto de la app); null si no se conoce. */
 export function textoPotencia(watts: number | null | undefined): string | null {
   if (!watts) return null;

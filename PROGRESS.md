@@ -92,7 +92,7 @@ Decisión del cliente: **opción A pura** (D32, RN-22). Los gastos son del negoc
 
 ## Fase 12 · Identidad visual de los modelos
 - [x] 12.1 Componente `IdentidadModelo` (`components/identidad-modelo.tsx`, lógica en `lib/modelos.ts`): código y nombre comercial, categoría con ícono + texto + color (bicimoto azul/bicicleta, trimoto de pasajeros violeta/personas, trimoto de carga ámbar/camión; contraste AA en claro y oscuro), «60V · 5 baterías» destacado y potencia; tamaños compacto y grande; donde iría la foto va el ícono de la categoría
-- [ ] 12.2 Taller agrupado por código de modelo, con filtros por modelo y categoría, e identidad grande en `/taller/[id]`
+- [x] 12.2 Taller agrupado por código de modelo, con filtros por modelo y categoría, e identidad grande en `/taller/[id]` — grupos en orden natural (XSDU-9 antes que XSDU-29) con encabezado «XSDU-29 · nombre · 9 en caja · 3 en ensamble» (totales de toda la cola, no de la página); `v_stock` no trae el nombre comercial: se cruza con `vehicle_models` (`lib/consultas/modelos.ts`); filtro `categoria` en `consultarStock` y en el CSV del taller; E2E del taller ajustada (sin ejecutar)
 - [ ] 12.3 `IdentidadModelo` en Inventario, Registro de unidades y el buscador de Ventas
 - [ ] 12.4 **Pendiente para más adelante** (decisión del cliente): foto del modelo. Migración con `vehicle_models.foto_path` y bucket privado `modelos` (lectura staff, escritura solo admin, RLS y revoke a public/anon), subida en `/admin/modelos` y miniatura en Taller, Inventario y Ventas en lugar del ícono
 

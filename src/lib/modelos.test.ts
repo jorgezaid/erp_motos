@@ -1,5 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { bateriasDelModelo, ESTILO_CATEGORIA, textoCategoria, textoEnergia, textoPotencia } from './modelos';
+import {
+  agruparPorModelo,
+  bateriasDelModelo,
+  contarPorModelo,
+  ESTILO_CATEGORIA,
+  textoCategoria,
+  textoConteoTaller,
+  textoEnergia,
+  textoPotencia,
+} from './modelos';
+
+describe('cola del taller agrupada por modelo (SPEC M4)', () => {
+  const filas = [
+    { codigo_modelo: 'XSDU-29', estado: 'en_caja', vin: 'A' },
+    { codigo_modelo: 'XSDU-29', estado: 'en_ensamble', vin: 'B' },
+    { codigo_modelo: 'XSDU-29', estado: 'en_caja', vin: 'C' },
+    { codigo_modelo: 'XSDU-9', estado: 'en_caja', vin: 'D' },
+    { codigo_modelo: 'XSDU-31', estado: 'listo_en_tienda', vin: 'E' },
+  ];
+
+  it('agrupa por código de modelo en orden natural (XSDU-9 antes que XSDU-29)', () => {
+    const grupos = agruparPorModelo(filas);
+    expect(grupos.map((g) => g.codigo)).toEqual(['XSDU-9', 'XSDU-29', 'XSDU-31']);
+    expect(grupos[1]?.filas.map((f) => f.vin)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('cuenta en caja y en ensamble por modelo (ignora otros estados)', () => {
+    const c = contarPorModelo(filas);
+    expect(c.get('XSDU-29')).toEqual({ en_caja: 2, en_ensamble: 1 });
+    expect(c.has('XSDU-31')).toBe(false);
+  });
+
+  it('encabezado «9 en caja · 3 en ensamble»', () => {
+    expect(textoConteoTaller({ en_caja: 9, en_ensamble: 3 })).toBe('9 en caja · 3 en ensamble');
+    expect(textoConteoTaller({ en_caja: 0, en_ensamble: 2 })).toBe('2 en ensamble');
+    expect(textoConteoTaller(undefined)).toBe('sin unidades en el taller');
+  });
+});
 
 describe('identidad del modelo (SPEC M2)', () => {
   it('M2: voltaje y baterías destacados («60V · 5 baterías»)', () => {

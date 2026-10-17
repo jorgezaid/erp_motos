@@ -1,5 +1,6 @@
 import 'server-only';
-import { ESTADO_UNIDAD } from '@/lib/etiquetas';
+import { CATEGORIA, ESTADO_UNIDAD } from '@/lib/etiquetas';
+import type { Categoria } from '@/lib/modelos';
 import { createClient } from '@/lib/supabase/server';
 import { filtroBusqueda, MAX_FILAS_CSV, rango, valorPermitido, type ColumnaCsv, type ParamsTabla } from '@/lib/tabla';
 import type { Database } from '@/types/database';
@@ -16,6 +17,7 @@ export const ESTADOS: Estado[] = Object.keys(ESTADO_UNIDAD) as Estado[];
 export type FiltrosStock = ParamsTabla & {
   batchId?: string;
   modelo?: string;
+  categoria?: string;
   ubicacion?: string;
   color?: string;
   /** Solo estos estados (p. ej. la cola del taller) */
@@ -33,6 +35,8 @@ export async function consultarStock(f: FiltrosStock, { todas = false }: { todas
   if (f.estados?.length) consulta = consulta.in('estado', f.estados);
   if (f.batchId) consulta = consulta.eq('batch_id', f.batchId);
   if (f.modelo) consulta = consulta.eq('codigo_modelo', f.modelo);
+  const categoria = valorPermitido(f.categoria ?? '', Object.keys(CATEGORIA) as Categoria[]);
+  if (categoria) consulta = consulta.eq('categoria', categoria);
   if (f.ubicacion) consulta = consulta.eq('ubicacion', f.ubicacion);
   if (f.color) {
     const c = f.color.replace(/[,()*:"\\%_]/g, '');
