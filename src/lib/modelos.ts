@@ -1,6 +1,6 @@
 /**
- * Identidad visual de los modelos (SPEC M2/M4): categoría con texto + ícono + color (se distingue
- * también sin color), y voltaje/baterías destacados. Sin dependencias de React: sirve en Server y
+ * Identidad visual de los modelos (SPEC M2/M4): un color propio por modelo, categoría con texto +
+ * ícono (se distingue también sin color), y voltaje/baterías destacados. Sin dependencias de React: sirve en Server y
  * Client Components.
  */
 import { CATEGORIA } from '@/lib/etiquetas';
@@ -19,14 +19,57 @@ export type DatosModelo = {
 };
 
 /**
- * Colores por categoría con contraste AA (texto -900/-100 sobre fondo -100/-950), en claro y
- * oscuro. El borde ayuda a separar la ficha del fondo de la tarjeta.
+ * Paleta de colores por modelo: 12 tonos saturados separados ~30° en el círculo cromático y
+ * alternando claros y oscuros, con el ícono en blanco o casi negro según el fondo (contraste ≥ 3:1
+ * para el ícono, igual en claro y oscuro). El color nunca es la única pista: van también el código
+ * del modelo y el ícono y el texto de la categoría.
  */
-export const ESTILO_CATEGORIA: Record<Categoria, string> = {
-  bicimoto: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950 dark:text-sky-100 dark:border-sky-800',
-  trimoto_pasajeros: 'bg-violet-100 text-violet-900 border-violet-300 dark:bg-violet-950 dark:text-violet-100 dark:border-violet-800',
-  trimoto_carga: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800',
-};
+export const PALETA_MODELOS = [
+  'bg-red-600 text-white border-red-700',
+  'bg-orange-400 text-orange-950 border-orange-500',
+  'bg-yellow-300 text-yellow-950 border-yellow-500',
+  'bg-lime-400 text-lime-950 border-lime-600',
+  'bg-green-700 text-white border-green-800',
+  'bg-teal-600 text-white border-teal-700',
+  'bg-cyan-300 text-cyan-950 border-cyan-500',
+  'bg-blue-700 text-white border-blue-800',
+  'bg-violet-500 text-white border-violet-600',
+  'bg-fuchsia-600 text-white border-fuchsia-700',
+  'bg-pink-300 text-pink-950 border-pink-500',
+  'bg-amber-800 text-white border-amber-900',
+] as const;
+
+/**
+ * Semilla del hash: con ella los 8 modelos reales (XSDU-17, 23, 24, 25, 29, 31, 35 y 36) caen en
+ * colores distintos. Cambiarla cambia el color de todos los modelos.
+ */
+const SEMILLA_COLOR = '9:';
+
+/** FNV-1a de 32 bits: determinista y sin dependencias. */
+function hashFnv1a(texto: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texto.length; i++) {
+    h ^= texto.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h;
+}
+
+/**
+ * Posición en `PALETA_MODELOS` del modelo, estable: depende solo del código (sin distinguir
+ * mayúsculas ni espacios), no del orden del catálogo. null si no hay código.
+ */
+export function indiceColorModelo(codigo: string | null | undefined): number | null {
+  const clave = codigo?.trim().toUpperCase();
+  if (!clave) return null;
+  return hashFnv1a(SEMILLA_COLOR + clave) % PALETA_MODELOS.length;
+}
+
+/** Clases del color del modelo; null si no hay código. */
+export function estiloColorModelo(codigo: string | null | undefined): string | null {
+  const i = indiceColorModelo(codigo);
+  return i === null ? null : (PALETA_MODELOS[i] ?? null);
+}
 
 /** Nombre de la categoría para mostrar ("Trimoto de carga"); "Sin categoría" si falta. */
 export function textoCategoria(categoria: Categoria | null): string {

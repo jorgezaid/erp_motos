@@ -1,5 +1,5 @@
 import { Bike, CircleHelp, Truck, UsersRound, type LucideIcon } from 'lucide-react';
-import { ESTILO_CATEGORIA, textoCategoria, textoEnergia, textoPotencia, type Categoria, type DatosModelo } from '@/lib/modelos';
+import { estiloColorModelo, textoCategoria, textoEnergia, textoPotencia, type Categoria, type DatosModelo } from '@/lib/modelos';
 import { cn } from '@/lib/utils';
 
 const ICONO: Record<Categoria, LucideIcon> = {
@@ -8,16 +8,27 @@ const ICONO: Record<Categoria, LucideIcon> = {
   trimoto_carga: Truck,
 };
 
-const SIN_CATEGORIA = 'bg-muted text-muted-foreground border-border';
+const SIN_COLOR = 'bg-muted text-muted-foreground border-border';
 
-/** Ícono de la categoría en un recuadro de color (va donde algún día irá la foto del modelo). */
-export function IconoCategoria({ categoria, className }: { categoria: Categoria | null; className?: string }) {
+/**
+ * Ícono de la categoría sobre el color del modelo (va donde algún día irá la foto del modelo).
+ * El color depende del código del modelo; el ícono, de la categoría.
+ */
+export function IconoCategoria({
+  categoria,
+  codigoModelo,
+  className,
+}: {
+  categoria: Categoria | null;
+  codigoModelo: string | null;
+  className?: string;
+}) {
   const Icono = categoria ? ICONO[categoria] : CircleHelp;
   return (
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-md border',
-        categoria ? ESTILO_CATEGORIA[categoria] : SIN_CATEGORIA,
+        estiloColorModelo(codigoModelo) ?? SIN_COLOR,
         className,
       )}
       aria-hidden
@@ -27,14 +38,14 @@ export function IconoCategoria({ categoria, className }: { categoria: Categoria 
   );
 }
 
-/** Categoría como etiqueta: ícono + texto + color (se entiende también sin color). */
+/** Categoría como etiqueta neutra: ícono + texto (el color queda para el modelo). */
 export function EtiquetaCategoria({ categoria, className }: { categoria: Categoria | null; className?: string }) {
   const Icono = categoria ? ICONO[categoria] : CircleHelp;
   return (
     <span
       className={cn(
-        'inline-flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
-        categoria ? ESTILO_CATEGORIA[categoria] : SIN_CATEGORIA,
+        'inline-flex w-fit items-center gap-1 rounded-full border bg-background px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+        !categoria && 'text-muted-foreground',
         className,
       )}
     >
@@ -45,9 +56,9 @@ export function EtiquetaCategoria({ categoria, className }: { categoria: Categor
 }
 
 /**
- * Identidad del modelo (SPEC M2/M4): código y nombre comercial, categoría (ícono + texto + color),
- * voltaje y baterías destacados y potencia. `compacto` para filas y tarjetas; `grande` para la
- * ficha de la moto en el taller.
+ * Identidad del modelo (SPEC M2/M4): código y nombre comercial, color propio del modelo,
+ * categoría (ícono + texto), voltaje y baterías destacados y potencia. `compacto` para filas y
+ * tarjetas; `grande` para la ficha de la moto en el taller.
  */
 export function IdentidadModelo({
   modelo,
@@ -62,7 +73,11 @@ export function IdentidadModelo({
   const potencia = textoPotencia(modelo.potencia_motor_watts);
   return (
     <div className={cn('flex min-w-0 items-center', grande ? 'gap-4' : 'gap-2.5', className)} data-testid="identidad-modelo">
-      <IconoCategoria categoria={modelo.categoria} className={grande ? 'size-16' : 'size-10'} />
+      <IconoCategoria
+        categoria={modelo.categoria}
+        codigoModelo={modelo.codigo_modelo}
+        className={grande ? 'size-16' : 'size-10'}
+      />
       <div className="grid min-w-0 gap-1">
         <p className={cn('flex flex-wrap items-baseline gap-x-2 leading-tight', grande ? 'text-2xl' : 'text-sm')}>
           <span className="font-semibold">{modelo.codigo_modelo ?? '—'}</span>

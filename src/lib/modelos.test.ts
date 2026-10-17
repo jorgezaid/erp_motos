@@ -3,7 +3,9 @@ import {
   agruparPorModelo,
   bateriasDelModelo,
   contarPorModelo,
-  ESTILO_CATEGORIA,
+  estiloColorModelo,
+  indiceColorModelo,
+  PALETA_MODELOS,
   textoCategoria,
   textoConteoTaller,
   textoEnergia,
@@ -56,10 +58,33 @@ describe('identidad del modelo (SPEC M2)', () => {
     expect(textoPotencia(null)).toBeNull();
   });
 
-  it('cada categoría tiene texto y un color distinto', () => {
+  it('cada categoría tiene su texto', () => {
     expect(textoCategoria('bicimoto')).toBe('Bicimoto');
     expect(textoCategoria('trimoto_carga')).toBe('Trimoto de carga');
     expect(textoCategoria(null)).toBe('Sin categoría');
-    expect(new Set(Object.values(ESTILO_CATEGORIA)).size).toBe(3);
+  });
+});
+
+describe('color por modelo', () => {
+  const REALES = ['XSDU-17', 'XSDU-23', 'XSDU-24', 'XSDU-25', 'XSDU-29', 'XSDU-31', 'XSDU-35', 'XSDU-36'];
+
+  it('los 8 modelos reales tienen colores distintos', () => {
+    expect(new Set(REALES.map(indiceColorModelo)).size).toBe(REALES.length);
+  });
+
+  it('es estable: depende solo del código, sin mayúsculas ni espacios', () => {
+    expect(indiceColorModelo(' xsdu-29 ')).toBe(indiceColorModelo('XSDU-29'));
+    expect(estiloColorModelo('XSDU-29')).toBe(PALETA_MODELOS[indiceColorModelo('XSDU-29') ?? -1]);
+    expect(indiceColorModelo(null)).toBeNull();
+    expect(estiloColorModelo('')).toBeNull();
+  });
+
+  it('la paleta no repite tonos y cualquier código cae dentro de ella', () => {
+    expect(new Set(PALETA_MODELOS.map((c) => c.split(' ')[0])).size).toBe(PALETA_MODELOS.length);
+    for (const codigo of ['DEMO-48', 'DEMO-60', 'DEMO-72', 'Z', 'XSDU-100']) {
+      const i = indiceColorModelo(codigo) ?? -1;
+      expect(i).toBeGreaterThanOrEqual(0);
+      expect(i).toBeLessThan(PALETA_MODELOS.length);
+    }
   });
 });
