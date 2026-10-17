@@ -3,6 +3,7 @@
 import { Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
+import { IdentidadModelo } from '@/components/identidad-modelo';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import type { DatosModelo } from '@/lib/modelos';
 import { normalizarSerial, parsearPegado, textoFaltantes, validarFilas, type FilaRegistro } from '@/lib/registro';
 import { avisar } from '@/lib/toast';
 import { registrarUnidades } from './acciones';
@@ -24,6 +26,7 @@ export type Pendiente = {
   codigo_modelo: string;
   declaradas: number;
   registradas: number;
+  modelo: DatosModelo;
 };
 
 const SIN_UBICACION = '__ninguna__';
@@ -125,9 +128,12 @@ export function RegistroMasivo({
             </Select>
           </div>
           {seleccion && (
-            <p className="text-lg font-semibold sm:col-span-2" data-testid="faltantes">
-              {textoFaltantes(seleccion.declaradas, seleccion.registradas)}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-md border p-3 sm:col-span-2">
+              <IdentidadModelo modelo={seleccion.modelo} />
+              <p className="text-lg font-semibold" data-testid="faltantes">
+                {textoFaltantes(seleccion.declaradas, seleccion.registradas)}
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>

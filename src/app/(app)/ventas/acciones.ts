@@ -13,6 +13,8 @@ import {
   type Resultado,
 } from '@/lib/errores';
 import { createClient } from '@/lib/supabase/server';
+import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
+import type { DatosModelo } from '@/lib/modelos';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
 import {
   analizarCliente,
@@ -250,6 +252,7 @@ export type UnidadDisponible = {
   vehicle_id: string;
   vin_chasis: string;
   codigo_modelo: string;
+  modelo: DatosModelo;
   colores: string;
   ubicacion: string;
   precio: number | null;
@@ -275,13 +278,18 @@ export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resu
   const columna = ({ unidad_x1: 'precio_x1', mayorista_x3: 'precio_x3', distribuidor_x6: 'precio_x6' } as const)[tipo.data];
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('v_stock')
-    .select('vehicle_id, vin_chasis, codigo_modelo, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6')
-    .eq('estado', 'listo_en_tienda')
-    .order('codigo_modelo')
-    .order('vin_chasis')
-    .limit(MAX_FILAS_CSV);
+  const [{ data, error }, modelos] = await Promise.all([
+    supabase
+      .from('v_stock')
+      .select(
+        'vehicle_id, vin_chasis, codigo_modelo, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6',
+      )
+      .eq('estado', 'listo_en_tienda')
+      .order('codigo_modelo')
+      .order('vin_chasis')
+      .limit(MAX_FILAS_CSV),
+    leerIdentidadModelos(),
+  ]);
   if (error) return fallo(mensajeDeError(error));
   const conPrecio = data.filter((u) => u[columna] !== null);
   const encontradas = filtrarUnidades(conPrecio, q.slice(0, 60)).slice(0, MAX_RESULTADOS);
@@ -291,6 +299,7 @@ export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resu
       vehicle_id: u.vehicle_id ?? '',
       vin_chasis: u.vin_chasis ?? '',
       codigo_modelo: u.codigo_modelo ?? '',
+      modelo: modeloDeFila(u, modelos),
       colores: [u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || '—',
       ubicacion: u.ubicacion ?? '—',
       precio: u[columna],

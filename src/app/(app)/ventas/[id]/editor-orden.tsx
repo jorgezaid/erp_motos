@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { BotonConfirmar } from '@/components/confirmar';
+import { IdentidadModelo } from '@/components/identidad-modelo';
 import { RadioOpciones } from '@/components/formulario/radio-opciones';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -191,7 +192,9 @@ export function EditorOrden({
                     {resultados.unidades.map((u) => (
                       <TableRow key={u.vehicle_id}>
                         <TableCell className="font-mono">{u.vin_chasis}</TableCell>
-                        <TableCell>{u.codigo_modelo}</TableCell>
+                        <TableCell>
+                          <IdentidadModelo modelo={u.modelo} className="min-w-52" />
+                        </TableCell>
                         <TableCell>{u.colores}</TableCell>
                         <TableCell>{u.ubicacion}</TableCell>
                         <TableCell className="text-right">{formatPEN(u.precio)}</TableCell>

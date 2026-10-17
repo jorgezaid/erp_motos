@@ -5,6 +5,7 @@ import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { exigirRol } from '@/lib/auth';
+import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import { consultarStock, textoInspeccion } from '@/lib/consultas/stock';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { puedeVer } from '@/lib/roles';
@@ -22,14 +23,18 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
   const sp = await searchParams;
   const params = leerParams(sp);
   const extra = leerFiltrosInventario(sp);
-  const [{ filas, total }, op] = await Promise.all([consultarStock({ ...params, ...extra }), opcionesFiltroInventario()]);
+  const [{ filas, total }, op, modelos] = await Promise.all([
+    consultarStock({ ...params, ...extra }),
+    opcionesFiltroInventario(),
+    leerIdentidadModelos(),
+  ]);
 
   const unidades: FilaInventario[] = filas.map((f) => ({
     vehicle_id: f.vehicle_id ?? '',
     vin_chasis: f.vin_chasis ?? '',
     nro_motor: f.nro_motor ?? '',
     codigo_modelo: f.codigo_modelo ?? '',
-    voltaje: `${f.voltaje_sistema ?? ''}V`,
+    modelo: modeloDeFila(f, modelos),
     colores: [f.color_primario, f.color_secundario].filter(Boolean).join(' / ') || '—',
     estado: f.estado ?? 'en_caja',
     ubicacion: f.ubicacion ?? '—',

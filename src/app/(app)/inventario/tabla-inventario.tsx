@@ -2,15 +2,17 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { EstadoUnidad } from '@/components/estado-badge';
+import { IdentidadModelo } from '@/components/identidad-modelo';
 import { TablaDatos } from '@/components/tabla/tabla-datos';
 import { formatPEN } from '@/lib/format';
+import type { DatosModelo } from '@/lib/modelos';
 
 export type FilaInventario = {
   vehicle_id: string;
   vin_chasis: string;
   nro_motor: string;
   codigo_modelo: string;
-  voltaje: string;
+  modelo: DatosModelo;
   colores: string;
   estado: 'en_caja' | 'en_ensamble' | 'listo_en_tienda' | 'reservado' | 'vendido';
   ubicacion: string;
@@ -24,8 +26,11 @@ export type FilaInventario = {
 const base: ColumnDef<FilaInventario, unknown>[] = [
   { accessorKey: 'vin_chasis', header: 'VIN', cell: ({ row }) => <span className="font-mono">{row.original.vin_chasis}</span> },
   { accessorKey: 'nro_motor', header: 'Motor', cell: ({ row }) => <span className="font-mono">{row.original.nro_motor}</span> },
-  { accessorKey: 'codigo_modelo', header: 'Modelo' },
-  { accessorKey: 'voltaje', header: 'Voltaje' },
+  {
+    accessorKey: 'codigo_modelo',
+    header: 'Modelo',
+    cell: ({ row }) => <IdentidadModelo modelo={row.original.modelo} className="min-w-56" />,
+  },
   { accessorKey: 'colores', header: 'Colores' },
   { accessorKey: 'estado', header: 'Estado', cell: ({ row }) => <EstadoUnidad estado={row.original.estado} /> },
   { accessorKey: 'ubicacion', header: 'Ubicación' },

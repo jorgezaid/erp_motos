@@ -9,7 +9,7 @@ import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
-import { leerIdentidadModelos } from '@/lib/consultas/modelos';
+import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import { consultarStock, textoInspeccion } from '@/lib/consultas/stock';
 import { CATEGORIA, ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { agruparPorModelo, contarPorModelo, textoConteoTaller } from '@/lib/modelos';
@@ -66,15 +66,15 @@ export default async function PaginaTaller({ searchParams }: { searchParams: Pro
       ) : (
         <div className="grid gap-6" role="region" aria-label="Cola del taller">
           {grupos.map((g) => {
+            const [primera] = g.filas;
+            if (!primera) return null;
             const m = modelos.get(g.codigo);
             const conteo = textoConteoTaller(conteos.get(g.codigo));
             const titulo = [g.codigo, m?.nombre_comercial, conteo].filter(Boolean).join(' · ');
             return (
               <section key={g.codigo} aria-label={titulo} className="grid gap-3">
                 <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b pb-2">
-                  <IdentidadModelo
-                    modelo={m ?? { codigo_modelo: g.codigo, categoria: g.filas[0]?.categoria ?? null, voltaje_sistema: g.filas[0]?.voltaje_sistema ?? null }}
-                  />
+                  <IdentidadModelo modelo={modeloDeFila(primera, modelos)} />
                   <p className="text-sm font-medium" data-testid={`conteo-${g.codigo}`}>
                     {conteo}
                   </p>

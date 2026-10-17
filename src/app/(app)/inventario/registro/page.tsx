@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Encabezado } from '@/components/encabezado';
 import { exigirRol } from '@/lib/auth';
+import { leerIdentidadModelos } from '@/lib/consultas/modelos';
 import { createClient } from '@/lib/supabase/server';
 import { RegistroMasivo, type Pendiente } from './registro-masivo';
 
@@ -13,15 +14,20 @@ export const metadata: Metadata = { title: 'Registro de unidades · ERP Vehícul
 export default async function PaginaRegistro() {
   await exigirRol('admin', 'tecnico');
   const supabase = await createClient();
-  const [{ data: pendientes, error }, { data: ubicaciones }] = await Promise.all([
+  const [{ data: pendientes, error }, { data: ubicaciones }, modelos] = await Promise.all([
     supabase.rpc('pendientes_de_registro'),
     supabase.from('locations').select('id, nombre').eq('activo', true).order('nombre'),
+    leerIdentidadModelos(),
   ]);
   if (error) throw new Error(error.message);
 
   const opciones: Pendiente[] = pendientes
     .filter((p) => p.registradas < p.declaradas)
-    .map((p) => ({ ...p, clave: `${p.batch_id}:${p.model_id}` }));
+    .map((p) => ({
+      ...p,
+      clave: `${p.batch_id}:${p.model_id}`,
+      modelo: modelos.get(p.codigo_modelo) ?? { codigo_modelo: p.codigo_modelo, categoria: null, voltaje_sistema: null },
+    }));
 
   return (
     <>
