@@ -24,6 +24,8 @@ import {
   esquemaPago,
   filtrarUnidades,
   normalizarDocumento,
+  repartirDescuento,
+  sumar,
   type ClienteConocido,
   type EntradaAjustePrecio,
   type EntradaCliente,
@@ -209,6 +211,47 @@ export async function ajustarPrecio(orderId: string, itemId: string, entrada: En
   if (error) return fallo(mensajeDeError(error));
   revalidar(orderId);
   return exito(null);
+}
+
+const esquemaMotivoDescuento = z.string().trim().min(5, 'Motivo del descuento: mínimo 5 caracteres.').max(300);
+
+/**
+ * RN-25, atajo «cuadrar con lo pagado»: si los pagos suman menos que el total, reparte la
+ * diferencia entre las motos (proporcional al precio) y la aplica con la misma RPC en UNA
+ * llamada (todo o nada). El reparto se recalcula aquí con lo que hay en la BD, no con lo que
+ * mostró el navegador; la RPC aplica los límites (lista, costo landing y % del vendedor).
+ */
+export async function cuadrarConPagado(orderId: string, motivo: string): Promise<Resultado<{ descuento: string }>> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
+  const m = esquemaMotivoDescuento.safeParse(motivo);
+  if (!m.success) return falloValidacion(m.error);
+
+  const supabase = await createClient();
+  const [{ data: orden, error }, { data: items, error: errorItems }, { data: pagos, error: errorPagos }] = await Promise.all([
+    supabase.from('sales_orders').select('estado, total_pen').eq('id', orderId).maybeSingle(),
+    supabase.from('order_items').select('id, precio_unitario_pen').eq('order_id', orderId).eq('activo', true).order('created_at'),
+    supabase.from('payments').select('monto_pen').eq('order_id', orderId),
+  ]);
+  const errorLectura = error ?? errorItems ?? errorPagos;
+  if (errorLectura) return fallo(mensajeDeError(errorLectura));
+  if (!orden || orden.estado !== 'borrador') return fallo(MENSAJE_ORDEN_AJENA);
+
+  const pagado = sumar((pagos ?? []).map((p) => p.monto_pen));
+  const reparto = repartirDescuento(
+    (items ?? []).map((i) => ({ id: i.id, precio: i.precio_unitario_pen })),
+    pagado,
+  );
+  if (!reparto) return fallo('No hay descuento que aplicar: registra un pago menor que el total.');
+
+  const { error: errorRpc } = await supabase.rpc('ajustar_precio_item', {
+    p_order_id: orderId,
+    p_ajustes: reparto.map((r) => ({ item_id: r.id, precio: r.precio })),
+    p_motivo: m.data,
+  });
+  if (errorRpc) return fallo(mensajeDeError(errorRpc));
+  revalidar(orderId);
+  return exito({ descuento: sumar(reparto.map((r) => r.descuento)) });
 }
 
 /** Paso 5: RN-14 (mínimo de la escala y pagos exactos), RN-15 y RN-16 los aplica la BD. */

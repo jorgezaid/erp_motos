@@ -270,6 +270,33 @@ export function margenResultante(precio: Valor, costo: Valor): string {
   return p.minus(costo).div(p).toString();
 }
 
+/**
+ * Atajo «cuadrar con lo pagado» (RN-25): reparte el descuento (total − pagado) entre las motos
+ * en proporción a su precio actual. Cada parte se redondea al céntimo (half-up) y el residuo va
+ * a la moto más cara (la primera si empatan), así Σ precios nuevos = pagado exacto.
+ * Devuelve null si no hay nada que repartir (sin motos, o pagado ≤ 0 o ≥ total).
+ */
+export function repartirDescuento<I extends { id: string; precio: Valor }>(
+  items: readonly I[],
+  pagado: Valor,
+): { id: string; precio: string; descuento: string }[] | null {
+  const total = new Decimal(sumar(items.map((i) => i.precio)));
+  const objetivo = new Decimal(pagado);
+  if (items.length === 0 || objetivo.lte(0) || objetivo.gte(total)) return null;
+
+  const descuento = total.minus(objetivo);
+  const partes = items.map((i) => ({
+    id: i.id,
+    precio: new Decimal(i.precio),
+    parte: descuento.times(i.precio).div(total).toDecimalPlaces(2),
+  }));
+  const residuo = descuento.minus(partes.reduce((s, p) => s.plus(p.parte), new Decimal(0)));
+  const mayor = partes.reduce<(typeof partes)[number] | null>((m, p) => (m === null || p.precio.gt(m.precio) ? p : m), null);
+  if (mayor) mayor.parte = mayor.parte.plus(residuo);
+
+  return partes.map((p) => ({ id: p.id, precio: p.precio.minus(p.parte).toFixed(2), descuento: p.parte.toFixed(2) }));
+}
+
 /** Precio final de una moto: monto con hasta 2 decimales y motivo (obligatorio si baja de la lista, lo valida la BD). */
 export const esquemaAjustePrecio = z.object({
   precio: z

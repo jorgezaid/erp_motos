@@ -8,6 +8,7 @@ import {
   fraccionDescuento,
   margenResultante,
   precioMinimoVendedor,
+  repartirDescuento,
   analizarCliente,
   antiguedad,
   avisoBorradores,
@@ -267,6 +268,55 @@ describe('RN-25: descuentos', () => {
     expect(margenResultante(1900, 1134)).toBe(new Decimal(766).div(1900).toString());
     expect(formatPorcentaje(fraccionDescuento(2061.82, 1855.64))).toBe('10 %');
     expect(formatPorcentaje('0.40315')).toBe('40.3 %');
+  });
+
+  it('RN-25: repartirDescuento es proporcional al precio y suma exactamente lo pagado', () => {
+    const r = repartirDescuento(
+      [
+        { id: 'a', precio: 2000 },
+        { id: 'b', precio: 1000 },
+      ],
+      2700,
+    );
+    expect(r).toEqual([
+      { id: 'a', precio: '1800.00', descuento: '200.00' },
+      { id: 'b', precio: '900.00', descuento: '100.00' },
+    ]);
+  });
+
+  it('RN-25: repartirDescuento manda el residuo de céntimos a la moto más cara', () => {
+    // descuento 100 entre 3 motos iguales: 33.33 × 3 = 99.99 → el residuo 0.01 va a la primera
+    const iguales = repartirDescuento(
+      [
+        { id: 'a', precio: '1000.00' },
+        { id: 'b', precio: '1000.00' },
+        { id: 'c', precio: '1000.00' },
+      ],
+      '2900.00',
+    );
+    expect(iguales?.map((x) => x.descuento)).toEqual(['33.34', '33.33', '33.33']);
+    expect(sumar((iguales ?? []).map((x) => x.precio))).toBe('2900.00');
+
+    const distintas = repartirDescuento(
+      [
+        { id: 'a', precio: 1855.64 },
+        { id: 'b', precio: 2061.82 },
+        { id: 'c', precio: 999.99 },
+      ],
+      4500.01,
+    );
+    expect(sumar((distintas ?? []).map((x) => x.precio))).toBe('4500.01');
+    expect(sumar((distintas ?? []).map((x) => x.descuento))).toBe('417.44');
+    // 417.44 × 1855.64 / 4917.45 = 157.524… → 157.52 (sin residuo: no es la más cara)
+    expect(distintas?.[0]?.descuento).toBe('157.52');
+  });
+
+  it('RN-25: repartirDescuento con una sola moto o sin nada que repartir', () => {
+    expect(repartirDescuento([{ id: 'a', precio: 2061.82 }], 1900)).toEqual([{ id: 'a', precio: '1900.00', descuento: '161.82' }]);
+    expect(repartirDescuento([], 100)).toBeNull();
+    expect(repartirDescuento([{ id: 'a', precio: 100 }], 0)).toBeNull();
+    expect(repartirDescuento([{ id: 'a', precio: 100 }], 100)).toBeNull();
+    expect(repartirDescuento([{ id: 'a', precio: 100 }], 150)).toBeNull();
   });
 
   it('RN-25: esquemaAjustePrecio normaliza el precio y exige 5 caracteres de motivo si se escribe', () => {

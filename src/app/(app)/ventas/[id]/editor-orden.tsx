@@ -43,6 +43,7 @@ import {
   registrarPago,
   type BusquedaUnidades,
 } from '../acciones';
+import { BotonCuadrarConPagado } from './cuadrar-pagado';
 import { DialogoPrecioFinal } from './precio-final';
 
 export type ItemOrden = {
@@ -97,6 +98,7 @@ export function EditorOrden({
 
   const minimo = minimos[tipo];
   const activa = activas.includes(tipo);
+  const pagado = sumar(pagos.map((p) => p.monto_pen));
   const saldo = saldoPendiente(total, pagos);
   const saldoDecimal = new Decimal(saldo);
   const faltan = activa ? faltanParaEscala(tipo, items.length, minimo) : null;
@@ -434,7 +436,7 @@ export function EditorOrden({
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Pagado{metodo ? ` (${METODO_PAGO[metodo]})` : ''}</dt>
-                <dd className="font-medium">{formatPEN(sumar(pagos.map((p) => p.monto_pen)))}</dd>
+                <dd className="font-medium">{formatPEN(pagado)}</dd>
               </div>
               <div className="flex items-baseline justify-between border-t pt-2">
                 <dt className="font-medium">Saldo pendiente</dt>
@@ -446,6 +448,15 @@ export function EditorOrden({
                 </dd>
               </div>
             </dl>
+            {saldoDecimal.gt(0) && pagos.length > 0 && (
+              <BotonCuadrarConPagado
+                orderId={orderId}
+                items={items}
+                pagado={pagado}
+                rol={esAdmin ? 'admin' : 'vendedor'}
+                descuentoMax={descuentoMax}
+              />
+            )}
             {motivos.length > 0 && (
               <ul className="list-disc pl-5 text-sm text-muted-foreground" aria-label="Para confirmar">
                 {motivos.map((m) => (
