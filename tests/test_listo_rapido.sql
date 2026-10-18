@@ -152,4 +152,4 @@ do $$ begin
 end $$;
 \echo '✔ 6. Un serial provisional se reemplaza por el real con un UPDATE (el técnico)'
 
-\echo 'TODAS LAS PRUEBAS DE listo_rapido PASARON'
+\echo 'TODAS LAS PRUEBAS DE listo_rapido PASARON'
