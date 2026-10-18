@@ -13,7 +13,13 @@ import {
   type Resultado,
 } from '@/lib/errores';
 import { esquemaEscalaActiva } from '@/lib/escalas';
-import { esquemaMargenes, precioManual, type EntradaMargenes } from '@/lib/esquemas/precios';
+import {
+  esquemaDescuentoMaximo,
+  esquemaMargenes,
+  precioManual,
+  type EntradaDescuentoMaximo,
+  type EntradaMargenes,
+} from '@/lib/esquemas/precios';
 import { createClient } from '@/lib/supabase/server';
 
 const esquemaPrecio = z.object({
@@ -56,6 +62,25 @@ export async function cambiarEscalaActiva(entrada: z.input<typeof esquemaEscalaA
     .update({ activo: d.data.activo })
     .eq('tipo_venta', d.data.tipoVenta)
     .select('tipo_venta');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidatePath('/precios');
+  revalidatePath('/ventas', 'layout');
+  return exito(null);
+}
+
+/** RN-25: descuento máximo por moto que puede dar el vendedor (el admin no tiene límite de %). */
+export async function guardarDescuentoMaximo(entrada: EntradaDescuentoMaximo): Promise<Resultado> {
+  await exigirRol('admin');
+  const d = esquemaDescuentoMaximo.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('configuracion_ventas')
+    .update({ descuento_max_vendedor: Number(d.data.porcentaje) })
+    .eq('id', true)
+    .select('id');
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidatePath('/precios');

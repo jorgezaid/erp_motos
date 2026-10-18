@@ -240,3 +240,49 @@ export const esquemaPago = z.object({
 });
 
 export type EntradaPago = z.input<typeof esquemaPago>;
+
+// ---------------------------------------------------------------- RN-25: descuentos
+
+/** Descuento como fracción del precio de lista: (lista − final) / lista. */
+export function fraccionDescuento(lista: Valor, final: Valor): string {
+  const l = new Decimal(lista);
+  if (l.lte(0)) return '0';
+  return l.minus(final).div(l).toString();
+}
+
+/** 0.1 → "10 %"; 0.1234 → "12.3 %". */
+export function formatPorcentaje(fraccion: Valor): string {
+  return `${new Decimal(fraccion).times(100).toDecimalPlaces(1).toString()} %`;
+}
+
+/**
+ * Precio más bajo que puede poner el vendedor (RN-25): lista × (1 − máximo), redondeado hacia
+ * arriba al céntimo, porque la BD exige (lista − final) ≤ lista × máximo.
+ */
+export function precioMinimoVendedor(lista: Valor, descuentoMax: Valor): string {
+  return new Decimal(lista).times(new Decimal(1).minus(descuentoMax)).toDecimalPlaces(2, Decimal.ROUND_UP).toFixed(2);
+}
+
+/** Margen sobre el precio (SPEC §8): (precio − costo) / precio. Solo para el admin. */
+export function margenResultante(precio: Valor, costo: Valor): string {
+  const p = new Decimal(precio);
+  if (p.lte(0)) return '0';
+  return p.minus(costo).div(p).toString();
+}
+
+/** Precio final de una moto: monto con hasta 2 decimales y motivo (obligatorio si baja de la lista, lo valida la BD). */
+export const esquemaAjustePrecio = z.object({
+  precio: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\s/g, '').replace(',', '.'))
+    .refine((v) => /^\d{1,12}(\.\d{1,2})?$/.test(v) && new Decimal(v).gt(0), 'Precio final: mayor que 0 con hasta 2 decimales.')
+    .transform((v) => new Decimal(v).toFixed(2)),
+  motivo: z
+    .string()
+    .trim()
+    .max(300, 'Motivo: hasta 300 caracteres.')
+    .refine((v) => v === '' || v.length >= 5, 'Motivo: mínimo 5 caracteres.'),
+});
+
+export type EntradaAjustePrecio = z.input<typeof esquemaAjustePrecio>;

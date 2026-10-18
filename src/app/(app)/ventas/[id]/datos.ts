@@ -9,17 +9,18 @@ import { createClient } from '@/lib/supabase/server';
 export const obtenerOrden = cache(async (id: string) => {
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();
-  const [{ data: orden, error }, { data: items }, { data: pagos }, { data: margenes }] = await Promise.all([
+  const [{ data: orden, error }, { data: items }, { data: pagos }, { data: margenes }, { data: config }] = await Promise.all([
     supabase.from('sales_orders').select('*').eq('id', id).maybeSingle(),
     supabase
       .from('order_items')
       .select(
-        'id, vehicle_id, precio_unitario_pen, activo, vehicle_inventory(vin_chasis, nro_motor, color_primario, color_secundario, vehicle_models(codigo_modelo, nombre_comercial, voltaje_sistema, garantia_meses, garantia_baterias_meses))',
+        'id, vehicle_id, precio_unitario_pen, precio_lista_pen, motivo_ajuste, activo, vehicle_inventory(vin_chasis, nro_motor, color_primario, color_secundario, vehicle_models(codigo_modelo, nombre_comercial, voltaje_sistema, garantia_meses, garantia_baterias_meses))',
       )
       .eq('order_id', id)
       .order('created_at'),
     supabase.from('payments').select('id, metodo, monto_pen, referencia, created_at').eq('order_id', id).order('created_at'),
     supabase.from('price_margins').select('tipo_venta, cantidad_minima, activo'),
+    supabase.from('configuracion_ventas').select('descuento_max_vendedor').maybeSingle(),
   ]);
   if (error) throw new Error(error.message);
   if (!orden) notFound();
@@ -35,6 +36,8 @@ export const obtenerOrden = cache(async (id: string) => {
     pagos: pagos ?? [],
     minimos: minimosPorTipo(margenes ?? []),
     activas: tiposActivos(margenes ?? []),
+    /** RN-25: descuento máximo del vendedor por moto (fracción; 0 si no se pudo leer). */
+    descuentoMaxVendedor: config?.descuento_max_vendedor ?? 0,
     vendedor: vendedor?.nombre ?? '—',
   };
 });

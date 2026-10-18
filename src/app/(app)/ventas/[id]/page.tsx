@@ -66,6 +66,21 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
         </>
       );
     }
+    const esAdmin = sesion.rol === 'admin';
+    // Costo landing (RN-25: mínimo y margen al ajustar el precio): solo se consulta y se
+    // serializa para el admin (CLAUDE.md regla 5)
+    const costos = new Map<string, number | null>();
+    if (esAdmin && items.length > 0) {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from('v_vehicle_costs')
+        .select('vehicle_id, costo_landing_calculado_pen')
+        .in(
+          'vehicle_id',
+          items.map((i) => i.vehicle_id),
+        );
+      for (const c of data ?? []) if (c.vehicle_id) costos.set(c.vehicle_id, c.costo_landing_calculado_pen);
+    }
     const lineas: ItemOrden[] = items.map((i) => {
       const v = i.vehicle_inventory;
       return {
@@ -74,6 +89,9 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
         modelo: v?.vehicle_models?.codigo_modelo ?? '',
         colores: [v?.color_primario, v?.color_secundario].filter(Boolean).join(' / ') || '—',
         precio: i.precio_unitario_pen,
+        lista: i.precio_lista_pen,
+        motivo: i.motivo_ajuste,
+        ...(esAdmin ? { costo: costos.get(i.vehicle_id) ?? null } : {}),
       };
     });
     return (
@@ -89,6 +107,8 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
           pagos={pagos.map((p) => ({ ...p, metodo: p.metodo as Exclude<typeof p.metodo, 'mixto'> }))}
           minimos={minimos}
           activas={activas}
+          esAdmin={esAdmin}
+          descuentoMax={datos.descuentoMaxVendedor}
         />
       </>
     );

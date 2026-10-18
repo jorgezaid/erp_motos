@@ -21,7 +21,17 @@ import { METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import { faltanParaEscala, metodoDerivado, motivosNoConfirmable, saldoPendiente, sumar, type MetodoPago, type TipoVenta } from '@/lib/ventas';
+import {
+  faltanParaEscala,
+  formatPorcentaje,
+  fraccionDescuento,
+  metodoDerivado,
+  motivosNoConfirmable,
+  saldoPendiente,
+  sumar,
+  type MetodoPago,
+  type TipoVenta,
+} from '@/lib/ventas';
 import {
   agregarUnidad,
   buscarUnidades,
@@ -33,8 +43,20 @@ import {
   registrarPago,
   type BusquedaUnidades,
 } from '../acciones';
+import { DialogoPrecioFinal } from './precio-final';
 
-export type ItemOrden = { id: string; vin: string; modelo: string; colores: string; precio: number };
+export type ItemOrden = {
+  id: string;
+  vin: string;
+  modelo: string;
+  colores: string;
+  precio: number;
+  /** Precio de la lista (RN-13); `precio` es el final, igual o menor (RN-25). */
+  lista: number;
+  motivo: string | null;
+  /** Costo landing: solo en la sesión de admin (nunca se serializa para el vendedor). */
+  costo?: number | null;
+};
 export type PagoOrden = { id: string; metodo: MetodoPago; monto_pen: number; referencia: string | null };
 
 /** Pasos 2 a 5 del POS (SPEC M6) sobre una orden en borrador. */
@@ -47,6 +69,8 @@ export function EditorOrden({
   pagos,
   minimos,
   activas,
+  esAdmin,
+  descuentoMax,
 }: {
   orderId: string;
   numero: number;
@@ -57,6 +81,9 @@ export function EditorOrden({
   minimos: Record<TipoVenta, number>;
   /** Escalas activas (D31): solo esas se ofrecen y solo para ellas se avisa "Faltan N unidades". */
   activas: TipoVenta[];
+  esAdmin: boolean;
+  /** RN-25: descuento máximo del vendedor por moto (fracción). */
+  descuentoMax: number;
 }) {
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
@@ -226,14 +253,15 @@ export function EditorOrden({
                     <TableHead>VIN</TableHead>
                     <TableHead>Modelo</TableHead>
                     <TableHead>Colores</TableHead>
-                    <TableHead className="text-right">Precio</TableHead>
+                    <TableHead className="text-right">Precio de lista</TableHead>
+                    <TableHead className="text-right">Precio final</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         La orden aún no tiene unidades.
                       </TableCell>
                     </TableRow>
@@ -243,8 +271,27 @@ export function EditorOrden({
                       <TableCell className="font-mono">{i.vin}</TableCell>
                       <TableCell>{i.modelo}</TableCell>
                       <TableCell>{i.colores}</TableCell>
-                      <TableCell className="text-right">{formatPEN(i.precio)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right text-muted-foreground">{formatPEN(i.lista)}</TableCell>
+                      <TableCell className="text-right" data-testid={`precio-final-${i.vin}`}>
+                        <span className="font-medium">{formatPEN(i.precio)}</span>
+                        {i.precio < i.lista && (
+                          <span className="block max-w-56 text-xs whitespace-normal text-muted-foreground">
+                            −{formatPEN(new Decimal(i.lista).minus(i.precio).toFixed(2))} (
+                            {formatPorcentaje(fraccionDescuento(i.lista, i.precio))}) · {i.motivo}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <DialogoPrecioFinal
+                          orderId={orderId}
+                          itemId={i.id}
+                          vin={i.vin}
+                          lista={i.lista}
+                          precio={i.precio}
+                          motivo={i.motivo}
+                          limite={esAdmin ? { rol: 'admin', costo: i.costo ?? null } : { rol: 'vendedor', descuentoMax }}
+                          deshabilitado={pendiente}
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -260,7 +307,7 @@ export function EditorOrden({
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={3}>
+                    <TableCell colSpan={4}>
                       {items.length} unidad(es) · escala {TIPO_VENTA[tipo]}
                     </TableCell>
                     <TableCell className="text-right font-semibold" data-testid="total-orden">

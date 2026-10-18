@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aPorcentaje, esquemaMargenes, precioManual } from './precios';
+import { aPorcentaje, esquemaDescuentoMaximo, esquemaMargenes, precioManual } from './precios';
 
 describe('márgenes globales (SPEC §8, RN-09)', () => {
   it('porcentaje → fracción con 4 decimales', () => {
@@ -32,5 +32,15 @@ describe('precio manual (SPEC §8)', () => {
     expect(precioManual.safeParse('0').success).toBe(false);
     expect(precioManual.safeParse('-1').success).toBe(false);
     expect(precioManual.safeParse('10.555').success).toBe(false);
+  });
+});
+
+describe('descuento máximo del vendedor (RN-25)', () => {
+  it('RN-25: porcentaje → fracción de configuracion_ventas', () => {
+    expect(esquemaDescuentoMaximo.parse({ porcentaje: '10' })).toEqual({ porcentaje: '0.1000' });
+    expect(esquemaDescuentoMaximo.parse({ porcentaje: '12,5' })).toEqual({ porcentaje: '0.1250' });
+    expect(esquemaDescuentoMaximo.parse({ porcentaje: '0' })).toEqual({ porcentaje: '0.0000' });
+    expect(esquemaDescuentoMaximo.safeParse({ porcentaje: '100' }).success).toBe(false);
+    expect(esquemaDescuentoMaximo.safeParse({ porcentaje: '' }).success).toBe(false);
   });
 });

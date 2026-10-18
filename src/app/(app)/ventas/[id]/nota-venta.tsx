@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Decimal } from '@/lib/decimal';
 import { COBERTURA, METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
 import { formatFecha, formatFechaHora, formatPEN } from '@/lib/format';
 import type { Database } from '@/types/database';
@@ -81,7 +82,15 @@ export function NotaVenta({ datos, garantias }: { datos: OrdenCompleta; garantia
                     </span>
                   ))}
                 </TableCell>
-                <TableCell className="text-right">{formatPEN(i.precio_unitario_pen)}</TableCell>
+                <TableCell className="text-right">
+                  {formatPEN(i.precio_unitario_pen)}
+                  {i.precio_unitario_pen < i.precio_lista_pen && (
+                    <span className="block text-xs text-muted-foreground">
+                      Lista {formatPEN(i.precio_lista_pen)} · desc.{' '}
+                      {formatPEN(new Decimal(i.precio_lista_pen).minus(i.precio_unitario_pen).toFixed(2))}
+                    </span>
+                  )}
+                </TableCell>
               </TableRow>
             );
           })}

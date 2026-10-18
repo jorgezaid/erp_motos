@@ -140,3 +140,11 @@ export async function margenesActuales() {
   if (error) throw new Error(error.message);
   return ordenarEscalas(data);
 }
+
+/** RN-25: descuento máximo por moto del vendedor (fracción). */
+export async function descuentoMaximoVendedor() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('configuracion_ventas').select('descuento_max_vendedor').maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.descuento_max_vendedor ?? 0;
+}

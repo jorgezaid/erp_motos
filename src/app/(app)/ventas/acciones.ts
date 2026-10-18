@@ -19,11 +19,13 @@ import { MAX_FILAS_CSV } from '@/lib/tabla';
 import {
   analizarCliente,
   documentoValido,
+  esquemaAjustePrecio,
   esquemaCliente,
   esquemaPago,
   filtrarUnidades,
   normalizarDocumento,
   type ClienteConocido,
+  type EntradaAjustePrecio,
   type EntradaCliente,
   type EntradaPago,
 } from '@/lib/ventas';
@@ -185,6 +187,26 @@ export async function eliminarPago(orderId: string, pagoId: string): Promise<Res
   const { data, error } = await supabase.from('payments').delete().eq('id', pagoId).eq('order_id', orderId).select('id');
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_ORDEN_AJENA);
+  revalidar(orderId);
+  return exito(null);
+}
+
+/**
+ * RN-25: precio final de una moto. La RPC valida todo (≤ lista, ≥ costo landing, motivo si
+ * baja, límite % del vendedor) y nunca devuelve el costo al vendedor.
+ */
+export async function ajustarPrecio(orderId: string, itemId: string, entrada: EntradaAjustePrecio): Promise<Resultado> {
+  await exigirRol('admin', 'vendedor');
+  if (!uuid.safeParse(orderId).success || !uuid.safeParse(itemId).success) return fallo('Unidad no válida.');
+  const d = esquemaAjustePrecio.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('ajustar_precio_item', {
+    p_order_id: orderId,
+    p_ajustes: [{ item_id: itemId, precio: d.data.precio }],
+    p_motivo: d.data.motivo,
+  });
+  if (error) return fallo(mensajeDeError(error));
   revalidar(orderId);
   return exito(null);
 }

@@ -45,6 +45,8 @@ const CHECKS: Record<string, string> = {
     'Documento inválido: el DNI tiene 8 dígitos; el RUC, 11 dígitos y empieza por 10, 15, 17 o 20; el CE, de 8 a 12 letras o números.',
   anulacion_con_motivo: 'Para anular la orden indica el motivo.',
   vehicle_models_voltaje_sistema_check: 'El voltaje debe ser 48V, 60V o 72V.',
+  precio_no_supera_lista: 'El precio final no puede superar el precio de lista.',
+  descuento_con_motivo: 'Indica el motivo del descuento.',
 };
 
 export function mensajeDeError(error: ErrorSupabase | null | undefined): string {

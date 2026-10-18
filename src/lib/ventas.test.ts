@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { Decimal } from './decimal';
 import {
+  esquemaAjustePrecio,
   esquemaCliente,
   esquemaPago,
+  formatPorcentaje,
+  fraccionDescuento,
+  margenResultante,
+  precioMinimoVendedor,
   analizarCliente,
   antiguedad,
   avisoBorradores,
@@ -244,5 +250,33 @@ describe('esquemaPago', () => {
     });
     expect(esquemaPago.safeParse({ metodo: 'efectivo', monto: '0', referencia: '' }).success).toBe(false);
     expect(esquemaPago.safeParse({ metodo: 'mixto', monto: '10', referencia: '' }).success).toBe(false);
+  });
+});
+
+describe('RN-25: descuentos', () => {
+  it('RN-25: precio mínimo del vendedor redondeado hacia arriba (como el límite de la BD)', () => {
+    // 2061.82 × 0.90 = 1855.638 → 1855.64 (1855.63 superaría el 10 %)
+    expect(precioMinimoVendedor(2061.82, 0.1)).toBe('1855.64');
+    expect(precioMinimoVendedor('2000.00', '0.10')).toBe('1800.00');
+    expect(precioMinimoVendedor(2000, 0)).toBe('2000.00');
+  });
+
+  it('RN-25: fracción de descuento, margen resultante y porcentaje', () => {
+    expect(fraccionDescuento(2000, 1800)).toBe('0.1');
+    expect(fraccionDescuento(2000, 2000)).toBe('0');
+    expect(margenResultante(1900, 1134)).toBe(new Decimal(766).div(1900).toString());
+    expect(formatPorcentaje(fraccionDescuento(2061.82, 1855.64))).toBe('10 %');
+    expect(formatPorcentaje('0.40315')).toBe('40.3 %');
+  });
+
+  it('RN-25: esquemaAjustePrecio normaliza el precio y exige 5 caracteres de motivo si se escribe', () => {
+    expect(esquemaAjustePrecio.parse({ precio: '1 855,6', motivo: '  Cliente frecuente ' })).toEqual({
+      precio: '1855.60',
+      motivo: 'Cliente frecuente',
+    });
+    expect(esquemaAjustePrecio.parse({ precio: '2000', motivo: '' })).toEqual({ precio: '2000.00', motivo: '' });
+    expect(esquemaAjustePrecio.safeParse({ precio: '0', motivo: '' }).success).toBe(false);
+    expect(esquemaAjustePrecio.safeParse({ precio: '10.999', motivo: '' }).success).toBe(false);
+    expect(esquemaAjustePrecio.safeParse({ precio: '1800', motivo: 'ok' }).success).toBe(false);
   });
 });
