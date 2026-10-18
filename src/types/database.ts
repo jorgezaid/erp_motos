@@ -121,6 +121,19 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"configuracion_ventas": {
+                  Row: {
+                    "descuento_max_vendedor": number,"id": boolean,"updated_at": string
+                  }
+                  Insert: {
+                    "descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"gastos": {
                   Row: {
                     "categoria": Database["public"]['Enums']["categoria_gasto"],"comprobante_path": string | null,"creado_por": string | null,"created_at": string,"descripcion": string,"estado": Database["public"]['Enums']["estado_gasto"],"fecha": string | null,"fecha_estimada": string | null,"id": string,"metodo_pago": Database["public"]['Enums']["payment_method"] | null,"monto_pen": number,"proveedor": string | null,"updated_at": string
@@ -174,16 +187,22 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "activo": boolean,"created_at": string,"id": string,"order_id": string,"precio_unitario_pen": number,"vehicle_id": string
+                    "activo": boolean,"ajustado_at": string | null,"ajustado_por": string | null,"created_at": string,"id": string,"motivo_ajuste": string | null,"order_id": string,"precio_lista_pen": number,"precio_unitario_pen": number,"vehicle_id": string
                   }
                   Insert: {
-                    "activo"?: boolean,"created_at"?: string,"id"?: string,"order_id": string,"precio_unitario_pen"?: number,"vehicle_id": string
+                    "activo"?: boolean,"ajustado_at"?: string | null,"ajustado_por"?: string | null,"created_at"?: string,"id"?: string,"motivo_ajuste"?: string | null,"order_id": string,"precio_lista_pen"?: number,"precio_unitario_pen"?: number,"vehicle_id": string
                   }
                   Update: {
-                    "activo"?: boolean,"created_at"?: string,"id"?: string,"order_id"?: string,"precio_unitario_pen"?: number,"vehicle_id"?: string
+                    "activo"?: boolean,"ajustado_at"?: string | null,"ajustado_por"?: string | null,"created_at"?: string,"id"?: string,"motivo_ajuste"?: string | null,"order_id"?: string,"precio_lista_pen"?: number,"precio_unitario_pen"?: number,"vehicle_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "order_items_ajustado_por_fkey"
+      columns: ["ajustado_por"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "order_items_order_id_fkey"
       columns: ["order_id"]
 isOneToOne: false
@@ -672,7 +691,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "can_edit_order":
+            "ajustar_precio_item":
+{ Args: { "p_ajustes": Json,"p_motivo": string,"p_order_id": string }; Returns: Json
+                           },
+"can_edit_order":
 { Args: { "p_order_id": string }; Returns: boolean
                            },
 "current_app_role":

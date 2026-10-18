@@ -159,7 +159,7 @@ Cada regla tiene un ID que se cita en el código y en las pruebas. La columna **
 | RN-10 | Una unidad pasa de `en_ensamble` a `listo_en_tienda` solo si tiene **(a)** todos sus seriales de batería, **(b)** su **última** inspección aprobada y **(c)** una ubicación asignada. | BD |
 | RN-11 | Una inspección se aprueba solo si `baterias_contadas = baterias_esperadas`, el VIN está verificado y el motor está verificado. `baterias_esperadas` la fija el sistema. Las inspecciones no se editan: si algo falla, se registra una nueva. | BD |
 | RN-12 | Solo se venden unidades en `listo_en_tienda` de lotes **liquidados**. | BD |
-| RN-13 | El precio de cada ítem sale de `price_list` según el tipo de venta de la orden; el cliente no puede enviarlo ni alterarlo. Si cambia el tipo de venta, se vuelven a cotizar todos los ítems. | BD |
+| RN-13 | El precio de cada ítem sale de `price_list` según el tipo de venta de la orden (precio de lista); el cliente no puede enviarlo: solo bajarlo con un descuento (RN-25). Si cambia el tipo de venta, se vuelven a cotizar todos los ítems y se descartan los descuentos. | BD |
 | RN-14 | Para confirmar una orden se exigen: al menos 1 ítem, la cantidad mínima de la escala (x3 → 3, x6 → 6) y pagos que sumen **exactamente** el total. | BD |
 | RN-15 | `metodo_pago` se deriva de los pagos: si hay más de un método, es `mixto`. | BD |
 | RN-16 | Al confirmar una orden, sus unidades pasan a `vendido` y se crean dos garantías por unidad: la general (`garantia_meses`) y la de baterías (`garantia_baterias_meses`), con inicio en la fecha de Lima. | BD |
@@ -171,6 +171,7 @@ Cada regla tiene un ID que se cita en el código y en las pruebas. La columna **
 | RN-22 | **Los gastos son del negocio y nunca afectan el costo de las motos**: no se cargan a un lote, no modifican `import_batches`, `batch_model_costs` ni `price_list`, y no invalidan costeos. Se descuentan solo de la utilidad del mes (RN-23). | BD (sin vínculo con lotes; prueba SQL) |
 | RN-23 | Utilidad neta del mes (de Lima) = ventas confirmadas del mes − costo landing de lo vendido (`v_sales_margin`) − **todos** los gastos realizados con `fecha` en ese mes. | BD (vista `v_utilidad_mensual`) |
 | RN-24 | Los gastos y sus comprobantes son solo para admin (RLS en `gastos` y en `storage.objects` del bucket `comprobantes-gastos`). | BD |
+| RN-25 | En una orden en borrador, el precio final de cada moto puede bajar del de lista (nunca subir), con motivo obligatorio y **nunca por debajo de su costo landing**. El vendedor descuenta como máximo `configuracion_ventas.descuento_max_vendedor` (10 % por defecto, lo cambia el admin en `/precios`) y, si el precio queda bajo el costo, recibe un mensaje genérico que no lo revela; el admin descuenta hasta el costo. Se aplica con la RPC `ajustar_precio_item` (todo o nada). | BD (RPC) + zod en la UI |
 
 ---
 
