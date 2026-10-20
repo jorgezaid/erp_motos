@@ -423,13 +423,13 @@ isOneToOne: false
                   ]
                 },"vehicle_inventory": {
                   Row: {
-                    "batch_id": string,"color_primario": string | null,"color_secundario": string | null,"created_at": string,"estado": Database["public"]['Enums']["vehicle_status"],"id": string,"location_id": string | null,"model_id": string,"notas": string | null,"nro_motor": string,"updated_at": string,"vin_chasis": string
+                    "batch_id": string,"color_actualizado_at": string | null,"color_actualizado_por": string | null,"color_primario": string | null,"color_secundario": string | null,"created_at": string,"estado": Database["public"]['Enums']["vehicle_status"],"id": string,"location_id": string | null,"model_id": string,"notas": string | null,"nro_motor": string,"updated_at": string,"vin_chasis": string
                   }
                   Insert: {
-                    "batch_id": string,"color_primario"?: string | null,"color_secundario"?: string | null,"created_at"?: string,"estado"?: Database["public"]['Enums']["vehicle_status"],"id"?: string,"location_id"?: string | null,"model_id": string,"notas"?: string | null,"nro_motor": string,"updated_at"?: string,"vin_chasis": string
+                    "batch_id": string,"color_actualizado_at"?: string | null,"color_actualizado_por"?: string | null,"color_primario"?: string | null,"color_secundario"?: string | null,"created_at"?: string,"estado"?: Database["public"]['Enums']["vehicle_status"],"id"?: string,"location_id"?: string | null,"model_id": string,"notas"?: string | null,"nro_motor": string,"updated_at"?: string,"vin_chasis": string
                   }
                   Update: {
-                    "batch_id"?: string,"color_primario"?: string | null,"color_secundario"?: string | null,"created_at"?: string,"estado"?: Database["public"]['Enums']["vehicle_status"],"id"?: string,"location_id"?: string | null,"model_id"?: string,"notas"?: string | null,"nro_motor"?: string,"updated_at"?: string,"vin_chasis"?: string
+                    "batch_id"?: string,"color_actualizado_at"?: string | null,"color_actualizado_por"?: string | null,"color_primario"?: string | null,"color_secundario"?: string | null,"created_at"?: string,"estado"?: Database["public"]['Enums']["vehicle_status"],"id"?: string,"location_id"?: string | null,"model_id"?: string,"notas"?: string | null,"nro_motor"?: string,"updated_at"?: string,"vin_chasis"?: string
                   }
                   Relationships: [
                     {
@@ -438,6 +438,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "batch_items"
       referencedColumns: ["batch_id","model_id"]
+    },{
+      foreignKeyName: "vehicle_inventory_color_actualizado_por_fkey"
+      columns: ["color_actualizado_por"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     },{
       foreignKeyName: "vehicle_inventory_location_id_fkey"
       columns: ["location_id"]
@@ -700,6 +706,9 @@ isOneToOne: false
 "current_app_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"]
                            },
+"editar_color_unidad":
+{ Args: { "p_primario": string,"p_secundario"?: string,"p_vehicle_id": string }; Returns: Json
+                           },
 "fecha_lima":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -754,6 +763,9 @@ isOneToOne: false
                            },
 "nombre_escala":
 { Args: { "p_tipo": Database["public"]['Enums']["sale_type"] }; Returns: string
+                           },
+"normalizar_color":
+{ Args: { "p": string }; Returns: string
                            },
 "pendientes_de_registro":
 { Args: Record<PropertyKey, never>; Returns: {

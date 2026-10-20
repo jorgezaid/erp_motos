@@ -124,8 +124,9 @@ declare r jsonb := (select r from resultado);
 begin
   assert (r -> 'lote' ->> 'actualizado')::boolean, 'lote actualizado';
   assert (r -> 'unidades' ->> 'actualizadas')::int = 1, 'una unidad actualizada';
-  assert (select color_primario from public.vehicle_inventory where vin_chasis = 'IMPVIN001') = 'Verde', 'color';
-  assert (select color_primario from public.vehicle_inventory where vin_chasis = 'IMPVIN003') = 'Azul', 'otra unidad intacta';
+  -- D39: los colores se guardan en MAYÚSCULAS
+  assert (select color_primario from public.vehicle_inventory where vin_chasis = 'IMPVIN001') = 'VERDE', 'color';
+  assert (select color_primario from public.vehicle_inventory where vin_chasis = 'IMPVIN003') = 'AZUL', 'otra unidad intacta';
   assert (select count(*) from public.vehicle_inventory) = 3, 'no borra la unidad ausente';
   assert (select count(*) from public.batch_items) = 2, 'no borra la línea ausente';
   assert (select flete_internacional_usd from public.import_batches) = 520, 'monto';

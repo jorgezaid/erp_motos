@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
+import { EditarColor } from '@/components/editar-color';
 import { EstadoUnidad } from '@/components/estado-badge';
 import { EtiquetaSinSerial } from '@/components/etiqueta-sin-serial';
 import { IdentidadModelo } from '@/components/identidad-modelo';
@@ -16,6 +17,10 @@ export type FilaInventario = {
   codigo_modelo: string;
   modelo: DatosModelo;
   colores: string;
+  color_primario: string | null;
+  color_secundario: string | null;
+  /** D39: la sesión puede cambiar el color de esta moto (`puedeEditarColor`) */
+  editarColor: boolean;
   estado: 'en_caja' | 'en_ensamble' | 'listo_en_tienda' | 'reservado' | 'vendido';
   ubicacion: string;
   baterias: string;
@@ -74,20 +79,54 @@ function columnaBaterias(enlaceTaller: boolean): ColumnDef<FilaInventario, unkno
   };
 }
 
+/** D39: colores con «Editar color» en las filas que la sesión puede cambiar. */
+function columnaColores(sugerencias: string[]): ColumnDef<FilaInventario, unknown> {
+  return {
+    accessorKey: 'colores',
+    header: 'Colores',
+    cell: ({ row }) => {
+      const f = row.original;
+      return (
+        <div className="flex items-center gap-1">
+          <span>{f.colores}</span>
+          {f.editarColor && (
+            <EditarColor
+              vehicleId={f.vehicle_id}
+              vin={f.vin_chasis}
+              primario={f.color_primario}
+              secundario={f.color_secundario}
+              sugerencias={sugerencias}
+              compacto
+            />
+          )}
+        </div>
+      );
+    },
+  };
+}
+
 /**
  * `verPrecios`: admin y vendedor (el técnico no ve precios; el RLS además los devuelve vacíos).
  * `enlaceTaller`: admin y técnico (pueden reemplazar los seriales provisionales).
+ * `coloresExistentes`: sugerencias del editor de color (D39).
  */
 export function TablaInventario({
   filas,
   verPrecios,
   enlaceTaller,
+  coloresExistentes,
 }: {
   filas: FilaInventario[];
   verPrecios: boolean;
   enlaceTaller: boolean;
+  coloresExistentes: string[];
 }) {
-  const columnas = base.map((c) => ('accessorKey' in c && c.accessorKey === 'baterias' ? columnaBaterias(enlaceTaller) : c));
+  const columnas = base.map((c) => {
+    if (!('accessorKey' in c)) return c;
+    if (c.accessorKey === 'baterias') return columnaBaterias(enlaceTaller);
+    if (c.accessorKey === 'colores') return columnaColores(coloresExistentes);
+    return c;
+  });
   return (
     <TablaDatos
       columnas={verPrecios ? [...columnas, ...precios] : columnas}

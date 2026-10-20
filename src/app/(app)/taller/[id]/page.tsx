@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { EditarColor } from '@/components/editar-color';
 import { Encabezado } from '@/components/encabezado';
 import { EstadoUnidad } from '@/components/estado-badge';
 import { EtiquetaSinSerial } from '@/components/etiqueta-sin-serial';
@@ -8,9 +9,11 @@ import { IdentidadModelo } from '@/components/identidad-modelo';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
+import { puedeEditarColor, textoColores } from '@/lib/esquemas/color';
 import { formatFechaHora } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 import { esSerialProvisional, motivosObservada } from '@/lib/taller';
+import { coloresExistentes } from '../../inventario/datos';
 import { BotonIniciarEnsamble } from '../boton-ensamble';
 import { SeccionBaterias } from './baterias';
 import { FormularioInspeccion } from './inspeccion';
@@ -18,12 +21,12 @@ import { PasarATienda } from './pasar-tienda';
 
 /** /taller/[id] (SPEC M4): baterías, inspección y "Pasar a tienda". Diseño móvil primero. */
 export default async function UnidadTaller({ params }: { params: Promise<{ id: string }> }) {
-  await exigirRol('admin', 'tecnico');
+  const sesion = await exigirRol('admin', 'tecnico');
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();
 
-  const [{ data: u }, { data: baterias }, { data: inspecciones }, { data: ubicaciones }] = await Promise.all([
+  const [{ data: u }, { data: baterias }, { data: inspecciones }, { data: ubicaciones }, colores] = await Promise.all([
     supabase
       .from('vehicle_inventory')
       .select(
@@ -39,6 +42,7 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
       .order('created_at', { ascending: false })
       .limit(5),
     supabase.from('locations').select('id, nombre').eq('activo', true).in('tipo', ['showroom', 'almacen']).order('nombre'),
+    coloresExistentes(),
   ]);
   if (!u || !u.vehicle_models) notFound();
 
@@ -57,15 +61,34 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
       </p>
       <Encabezado
         titulo={<span className="font-mono">{u.vin_chasis}</span>}
-        descripcion={`Motor ${u.nro_motor} · ${[u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || 'sin color'}`}
+        descripcion={`Motor ${u.nro_motor} · ${textoColores(u.color_primario, u.color_secundario)}`}
       >
         <EstadoUnidad estado={u.estado} />
       </Encabezado>
 
-      {/* Identidad del modelo bien visible: qué moto es y cuántas baterías lleva */}
+      {/* Identidad del modelo bien visible: qué moto es, cuántas baterías lleva y su color (D39) */}
       <Card className="py-4">
-        <CardContent className="px-4">
+        <CardContent className="grid gap-3 px-4">
           <IdentidadModelo modelo={m} tamano="grande" />
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+            <p className="text-sm">
+              <span className="text-muted-foreground">Color: </span>
+              <span className="font-medium" data-testid="colores-unidad">
+                {textoColores(u.color_primario, u.color_secundario)}
+              </span>
+            </p>
+            {puedeEditarColor(sesion.rol, u.estado) ? (
+              <EditarColor
+                vehicleId={u.id}
+                vin={u.vin_chasis}
+                primario={u.color_primario}
+                secundario={u.color_secundario}
+                sugerencias={colores}
+              />
+            ) : (
+              <span className="text-sm text-muted-foreground">Moto vendida: solo el administrador corrige el color.</span>
+            )}
+          </div>
         </CardContent>
       </Card>
 

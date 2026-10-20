@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import { consultarStock, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
+import { puedeEditarColor } from '@/lib/esquemas/color';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { puedeVer } from '@/lib/roles';
 import { leerParams } from '@/lib/tabla';
@@ -36,6 +37,9 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
     codigo_modelo: f.codigo_modelo ?? '',
     modelo: modeloDeFila(f, modelos),
     colores: [f.color_primario, f.color_secundario].filter(Boolean).join(' / ') || '—',
+    color_primario: f.color_primario,
+    color_secundario: f.color_secundario,
+    editarColor: puedeEditarColor(sesion.rol, f.estado ?? 'en_caja'),
     estado: f.estado ?? 'en_caja',
     ubicacion: f.ubicacion ?? '—',
     baterias: `${f.baterias_registradas ?? 0}/${f.cantidad_baterias_12v ?? 0}`,
@@ -70,6 +74,7 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
         filas={unidades}
         verPrecios={sesion.rol !== 'tecnico'}
         enlaceTaller={puedeVer('/taller', sesion.rol)}
+        coloresExistentes={op.colores.map((c) => c.valor)}
       />
       <Paginacion pagina={params.pagina} total={total} searchParams={sp} />
     </>

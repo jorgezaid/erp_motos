@@ -10,23 +10,30 @@ export function leerFiltrosInventario(sp: SP) {
   return { modelo: texto(sp.modelo), ubicacion: texto(sp.ubicacion), color: texto(sp.color), baterias: texto(sp.baterias) };
 }
 
+/** Colores ya usados (primario o secundario), ordenados: filtro y sugerencias del editor (D39). */
+export async function coloresExistentes(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('vehicle_inventory').select('color_primario, color_secundario').limit(2000);
+  const colores = new Set<string>();
+  for (const c of data ?? []) {
+    if (c.color_primario) colores.add(c.color_primario);
+    if (c.color_secundario) colores.add(c.color_secundario);
+  }
+  return [...colores].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
 /** Opciones de los selects de filtro (catálogos pequeños). */
 export async function opcionesFiltroInventario() {
   const supabase = await createClient();
-  const [{ data: modelos }, { data: ubicaciones }, { data: colores }] = await Promise.all([
+  const [{ data: modelos }, { data: ubicaciones }, colores] = await Promise.all([
     supabase.from('vehicle_models').select('codigo_modelo').order('codigo_modelo'),
     supabase.from('locations').select('nombre').eq('activo', true).order('nombre'),
-    supabase.from('vehicle_inventory').select('color_primario, color_secundario').limit(2000),
+    coloresExistentes(),
   ]);
-  const setColores = new Set<string>();
-  for (const c of colores ?? []) {
-    if (c.color_primario) setColores.add(c.color_primario);
-    if (c.color_secundario) setColores.add(c.color_secundario);
-  }
   const op = (v: string) => ({ valor: v, etiqueta: v });
   return {
     modelos: (modelos ?? []).map((m) => op(m.codigo_modelo)),
     ubicaciones: (ubicaciones ?? []).map((u) => op(u.nombre)),
-    colores: [...setColores].sort((a, b) => a.localeCompare(b, 'es')).map(op),
+    colores: colores.map(op),
   };
 }
