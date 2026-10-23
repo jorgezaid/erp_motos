@@ -46,6 +46,12 @@ describe('identidad del modelo (SPEC M2)', () => {
     expect(textoEnergia({ voltaje_sistema: 72, cantidad_baterias_12v: 6 })).toBe('72V · 6 baterías');
   });
 
+  it('D41: batería de litio con su cantidad («60V · 1 batería de litio»)', () => {
+    expect(textoEnergia({ voltaje_sistema: 60, cantidad_baterias_12v: 1, tipo_bateria: 'litio' })).toBe('60V · 1 batería de litio');
+    expect(textoEnergia({ voltaje_sistema: 72, cantidad_baterias_12v: 2, tipo_bateria: 'litio' })).toBe('72V · 2 baterías de litio');
+    expect(textoEnergia({ voltaje_sistema: 60, cantidad_baterias_12v: 5, tipo_bateria: 'plomo_12v' })).toBe('60V · 5 baterías');
+  });
+
   it('M2: si no viene la cantidad, se deriva del voltaje (48V = 4 baterías de 12V)', () => {
     expect(bateriasDelModelo({ voltaje_sistema: 48 })).toBe(4);
     expect(textoEnergia({ voltaje_sistema: 48, cantidad_baterias_12v: null })).toBe('48V · 4 baterías');

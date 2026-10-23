@@ -14,13 +14,18 @@ import {
 } from '@/lib/errores';
 import { esquemaModelo, type EntradaModelo, type Modelo } from '@/lib/esquemas/modelo';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 
-/** numeric de la BD: los valores validados (≤ 12 dígitos) viajan exactos como number en el JSON. */
-function aFila(m: Modelo) {
+/**
+ * numeric de la BD: los valores validados (≤ 12 dígitos) viajan exactos como number en el JSON.
+ * `cantidad_baterias_12v` la recalcula siempre el trigger de la BD (D41); se envía la misma.
+ */
+function aFila(m: Modelo): Database['public']['Tables']['vehicle_models']['Insert'] {
   return {
     ...m,
-    volumen_cbm_unitario: Number(m.volumen_cbm_unitario),
-    exw_usd_unitario: Number(m.exw_usd_unitario),
+    cantidad_baterias_12v: m.baterias_litio ?? m.voltaje_sistema / 12,
+    volumen_cbm_unitario: m.volumen_cbm_unitario === null ? null : Number(m.volumen_cbm_unitario),
+    exw_usd_unitario: m.exw_usd_unitario === null ? null : Number(m.exw_usd_unitario),
   };
 }
 

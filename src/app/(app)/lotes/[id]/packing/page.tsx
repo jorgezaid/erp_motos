@@ -29,8 +29,9 @@ export default async function PackingLote({ params }: { params: Promise<{ id: st
     codigo_modelo: i.codigo_modelo,
     cantidad_packing_list: i.cantidad_packing_list,
     cantidad_dam: i.cantidad_dam,
-    exw_usd_unitario: i.exw_usd_unitario,
-    volumen_cbm_unitario: i.volumen_cbm_unitario,
+    // En un lote de importación la BD exige EXW y CBM en la línea (guard_linea_lote, D41)
+    exw_usd_unitario: i.exw_usd_unitario ?? 0,
+    volumen_cbm_unitario: i.volumen_cbm_unitario ?? 0,
     registradas: registradas.get(i.model_id) ?? 0,
   }));
   const enLote = new Set(lineas.map((l) => l.model_id));

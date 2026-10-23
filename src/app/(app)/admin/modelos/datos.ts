@@ -1,5 +1,5 @@
 import 'server-only';
-import { CATEGORIA } from '@/lib/etiquetas';
+import { CATEGORIA, TIPO_BATERIA } from '@/lib/etiquetas';
 import { createClient } from '@/lib/supabase/server';
 import { filtroBusqueda, MAX_FILAS_CSV, rango, valorPermitido, type ColumnaCsv, type ParamsTabla } from '@/lib/tabla';
 import type { Database } from '@/types/database';
@@ -39,7 +39,9 @@ export const COLUMNAS_CSV: ColumnaCsv<FilaModelo>[] = [
   { encabezado: 'Nombre comercial', valor: (m) => m.nombre_comercial },
   { encabezado: 'Categoría', valor: (m) => CATEGORIA[m.categoria] },
   { encabezado: 'Voltaje (V)', valor: (m) => m.voltaje_sistema },
-  { encabezado: 'Baterías 12V', valor: (m) => m.cantidad_baterias_12v },
+  { encabezado: 'Tipo de batería', valor: (m) => TIPO_BATERIA[m.tipo_bateria] },
+  { encabezado: 'Baterías por moto', valor: (m) => m.cantidad_baterias_12v },
+  { encabezado: 'Con techo', valor: (m) => (m.tiene_techo ? 'Sí' : 'No') },
   { encabezado: 'Amperaje (Ah)', valor: (m) => m.amperaje_bateria_ah },
   { encabezado: 'Potencia (W)', valor: (m) => m.potencia_motor_watts },
   { encabezado: 'CBM unitario', valor: (m) => m.volumen_cbm_unitario },

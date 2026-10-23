@@ -25,7 +25,9 @@ const columnas: ColumnDef<Fila, unknown>[] = [
   {
     accessorKey: 'voltaje_sistema',
     header: 'Voltaje',
-    cell: ({ row }) => `${row.original.voltaje_sistema}V · ${row.original.cantidad_baterias_12v} bat.`,
+    cell: ({ row }) =>
+      `${row.original.voltaje_sistema}V · ${row.original.cantidad_baterias_12v} bat.${row.original.tipo_bateria === 'litio' ? ' de litio' : ''}` +
+      (row.original.tiene_techo ? ' · con techo' : ''),
   },
   { accessorKey: 'amperaje_bateria_ah', header: 'Ah', meta: { className: 'text-right' } },
   { accessorKey: 'potencia_motor_watts', header: 'W', meta: { className: 'text-right' } },

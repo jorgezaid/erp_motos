@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bateriasPorVoltaje, esquemaModelo, MODELO_VACIO, textoBaterias } from './modelo';
+import { bateriasPorVoltaje, esquemaModelo, MODELO_VACIO, textoBaterias, textoBateriasModelo } from './modelo';
 
 const valido = {
   ...MODELO_VACIO,
@@ -50,5 +50,28 @@ describe('esquemaModelo (SPEC M2)', () => {
   it('amperaje y potencia: enteros positivos', () => {
     expect(esquemaModelo.safeParse({ ...valido, amperaje_bateria_ah: '0' }).success).toBe(false);
     expect(esquemaModelo.safeParse({ ...valido, potencia_motor_watts: '12.5' }).success).toBe(false);
+  });
+
+  it('D41: EXW y CBM opcionales (compras locales)', () => {
+    const r = esquemaModelo.parse({ ...valido, volumen_cbm_unitario: '', exw_usd_unitario: '' });
+    expect(r.volumen_cbm_unitario).toBeNull();
+    expect(r.exw_usd_unitario).toBeNull();
+  });
+
+  it('D41: litio exige su cantidad (1 a 6); plomo la ignora', () => {
+    expect(esquemaModelo.parse({ ...valido, tipo_bateria: 'litio', baterias_litio: '1', tiene_techo: true })).toMatchObject({
+      tipo_bateria: 'litio',
+      baterias_litio: 1,
+      tiene_techo: true,
+    });
+    expect(esquemaModelo.safeParse({ ...valido, tipo_bateria: 'litio', baterias_litio: '' }).success).toBe(false);
+    expect(esquemaModelo.safeParse({ ...valido, tipo_bateria: 'litio', baterias_litio: '7' }).success).toBe(false);
+    expect(esquemaModelo.parse({ ...valido, tipo_bateria: 'plomo_12v', baterias_litio: '3' }).baterias_litio).toBeNull();
+  });
+
+  it('D41: vista previa de las baterías según el tipo', () => {
+    expect(textoBateriasModelo(60, 'plomo_12v', '')).toBe('5 baterías de 12V');
+    expect(textoBateriasModelo(60, 'litio', '1')).toBe('1 batería de litio');
+    expect(textoBateriasModelo(60, 'litio', '')).toBe('Indica de 1 a 6 baterías de litio');
   });
 });

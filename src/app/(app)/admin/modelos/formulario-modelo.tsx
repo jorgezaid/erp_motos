@@ -9,12 +9,13 @@ import { Campo, CampoTexto } from '@/components/formulario/campo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { CATEGORIA, opciones } from '@/lib/etiquetas';
-import { esquemaModelo, textoBaterias, VOLTAJES, type EntradaModelo } from '@/lib/esquemas/modelo';
+import { CATEGORIA, opciones, TIPO_BATERIA } from '@/lib/etiquetas';
+import { esquemaModelo, textoBaterias, textoBateriasModelo, VOLTAJES, type EntradaModelo } from '@/lib/esquemas/modelo';
 import { avisar } from '@/lib/toast';
 import { actualizarModelo, crearModelo } from './acciones';
 
 const OPCIONES_VOLTAJE = VOLTAJES.map((v) => ({ valor: String(v), etiqueta: `${v}V` }));
+const OPCIONES_BATERIA = opciones(TIPO_BATERIA);
 
 export function FormularioModelo({ id, inicial }: { id?: string; inicial: EntradaModelo }) {
   const router = useRouter();
@@ -28,6 +29,8 @@ export function FormularioModelo({ id, inicial }: { id?: string; inicial: Entrad
     formState: { errors },
   } = useForm({ resolver: zodResolver(esquemaModelo), defaultValues: inicial });
   const voltaje = useWatch({ control, name: 'voltaje_sistema' });
+  const tipoBateria = useWatch({ control, name: 'tipo_bateria' });
+  const litio = useWatch({ control, name: 'baterias_litio' });
 
   const enviar = handleSubmit(() => {
     // Se envía la entrada cruda (texto): la Server Action vuelve a validar con el mismo esquema
@@ -57,15 +60,39 @@ export function FormularioModelo({ id, inicial }: { id?: string; inicial: Entrad
           opciones={OPCIONES_VOLTAJE}
           error={errors.voltaje_sistema?.message}
         />
-        <Campo id="baterias" etiqueta="Baterías (derivadas del voltaje)">
-          <Input id="baterias" readOnly value={textoBaterias(Number(voltaje))} aria-readonly className="bg-muted" />
-        </Campo>
+        <CampoSelect
+          control={control}
+          nombre="tipo_bateria"
+          etiqueta="Tipo de batería"
+          opciones={OPCIONES_BATERIA}
+          error={errors.tipo_bateria?.message}
+        />
+        {tipoBateria === 'litio' ? (
+          <CampoTexto
+            etiqueta="Baterías de litio por moto"
+            inputMode="numeric"
+            registro={register('baterias_litio')}
+            error={errors.baterias_litio?.message}
+            ayuda={textoBateriasModelo(Number(voltaje), tipoBateria, litio ?? '')}
+          />
+        ) : (
+          <Campo id="baterias" etiqueta="Baterías (derivadas del voltaje)">
+            <Input id="baterias" readOnly value={textoBaterias(Number(voltaje))} aria-readonly className="bg-muted" />
+          </Campo>
+        )}
         <CampoTexto etiqueta="Amperaje de batería (Ah)" inputMode="numeric" registro={register('amperaje_bateria_ah')} error={errors.amperaje_bateria_ah?.message} />
         <CampoTexto etiqueta="Potencia del motor (W)" inputMode="numeric" registro={register('potencia_motor_watts')} error={errors.potencia_motor_watts?.message} />
-        <CampoTexto etiqueta="Volumen unitario (CBM)" inputMode="decimal" registro={register('volumen_cbm_unitario')} error={errors.volumen_cbm_unitario?.message} />
-        <CampoTexto etiqueta="EXW unitario (US$)" inputMode="decimal" registro={register('exw_usd_unitario')} error={errors.exw_usd_unitario?.message} ayuda="Precio referencial; en cada lote se puede ajustar." />
+        <CampoTexto etiqueta="Volumen unitario (CBM)" inputMode="decimal" registro={register('volumen_cbm_unitario')} error={errors.volumen_cbm_unitario?.message} ayuda="Opcional en compras locales; un lote de importación lo exige." />
+        <CampoTexto etiqueta="EXW unitario (US$)" inputMode="decimal" registro={register('exw_usd_unitario')} error={errors.exw_usd_unitario?.message} ayuda="Precio referencial, opcional en compras locales; en cada lote se puede ajustar." />
         <CampoTexto etiqueta="Garantía general (meses)" inputMode="numeric" registro={register('garantia_meses')} error={errors.garantia_meses?.message} />
         <CampoTexto etiqueta="Garantía de baterías (meses)" inputMode="numeric" registro={register('garantia_baterias_meses')} error={errors.garantia_baterias_meses?.message} />
+        <Campo id="tiene_techo" etiqueta="Con techo">
+          <Controller
+            control={control}
+            name="tiene_techo"
+            render={({ field }) => <Switch id="tiene_techo" checked={field.value} onCheckedChange={field.onChange} />}
+          />
+        </Campo>
         <Campo id="activo" etiqueta="Activo">
           <Controller
             control={control}

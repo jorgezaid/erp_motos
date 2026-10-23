@@ -25,13 +25,13 @@ export type Database = {
           Tables: {
             "batch_items": {
                   Row: {
-                    "batch_id": string,"cantidad_dam": number | null,"cantidad_packing_list": number,"cbm_total": number | null,"created_at": string,"exw_total_usd": number | null,"exw_usd_unitario": number,"id": string,"model_id": string,"volumen_cbm_unitario": number
+                    "batch_id": string,"cantidad_dam": number | null,"cantidad_packing_list": number,"cbm_total": number | null,"created_at": string,"exw_total_usd": number | null,"exw_usd_unitario": number | null,"id": string,"model_id": string,"volumen_cbm_unitario": number | null
                   }
                   Insert: {
-                    "batch_id": string,"cantidad_dam"?: number | null,"cantidad_packing_list": number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario": number,"id"?: string,"model_id": string,"volumen_cbm_unitario": number
+                    "batch_id": string,"cantidad_dam"?: number | null,"cantidad_packing_list": number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id": string,"volumen_cbm_unitario"?: number | null
                   }
                   Update: {
-                    "batch_id"?: string,"cantidad_dam"?: number | null,"cantidad_packing_list"?: number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number,"id"?: string,"model_id"?: string,"volumen_cbm_unitario"?: number
+                    "batch_id"?: string,"cantidad_dam"?: number | null,"cantidad_packing_list"?: number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id"?: string,"volumen_cbm_unitario"?: number | null
                   }
                   Relationships: [
                     {
@@ -534,13 +534,13 @@ isOneToOne: false
                   ]
                 },"vehicle_models": {
                   Row: {
-                    "activo": boolean,"amperaje_bateria_ah": number,"cantidad_baterias_12v": number | null,"categoria": Database["public"]['Enums']["vehicle_category"],"codigo_modelo": string,"created_at": string,"exw_usd_unitario": number,"garantia_baterias_meses": number,"garantia_meses": number,"id": string,"nombre_comercial": string | null,"potencia_motor_watts": number,"updated_at": string,"voltaje_sistema": number,"volumen_cbm_unitario": number
+                    "activo": boolean,"amperaje_bateria_ah": number,"baterias_litio": number | null,"cantidad_baterias_12v": number,"categoria": Database["public"]['Enums']["vehicle_category"],"codigo_modelo": string,"created_at": string,"exw_usd_unitario": number | null,"garantia_baterias_meses": number,"garantia_meses": number,"id": string,"nombre_comercial": string | null,"potencia_motor_watts": number,"tiene_techo": boolean,"tipo_bateria": Database["public"]['Enums']["tipo_bateria"],"updated_at": string,"voltaje_sistema": number,"volumen_cbm_unitario": number | null
                   }
                   Insert: {
-                    "activo"?: boolean,"amperaje_bateria_ah": number,"cantidad_baterias_12v"?: never,"categoria": Database["public"]['Enums']["vehicle_category"],"codigo_modelo": string,"created_at"?: string,"exw_usd_unitario": number,"garantia_baterias_meses"?: number,"garantia_meses"?: number,"id"?: string,"nombre_comercial"?: string | null,"potencia_motor_watts": number,"updated_at"?: string,"voltaje_sistema": number,"volumen_cbm_unitario": number
+                    "activo"?: boolean,"amperaje_bateria_ah": number,"baterias_litio"?: number | null,"cantidad_baterias_12v": number,"categoria": Database["public"]['Enums']["vehicle_category"],"codigo_modelo": string,"created_at"?: string,"exw_usd_unitario"?: number | null,"garantia_baterias_meses"?: number,"garantia_meses"?: number,"id"?: string,"nombre_comercial"?: string | null,"potencia_motor_watts": number,"tiene_techo"?: boolean,"tipo_bateria"?: Database["public"]['Enums']["tipo_bateria"],"updated_at"?: string,"voltaje_sistema": number,"volumen_cbm_unitario"?: number | null
                   }
                   Update: {
-                    "activo"?: boolean,"amperaje_bateria_ah"?: number,"cantidad_baterias_12v"?: never,"categoria"?: Database["public"]['Enums']["vehicle_category"],"codigo_modelo"?: string,"created_at"?: string,"exw_usd_unitario"?: number,"garantia_baterias_meses"?: number,"garantia_meses"?: number,"id"?: string,"nombre_comercial"?: string | null,"potencia_motor_watts"?: number,"updated_at"?: string,"voltaje_sistema"?: number,"volumen_cbm_unitario"?: number
+                    "activo"?: boolean,"amperaje_bateria_ah"?: number,"baterias_litio"?: number | null,"cantidad_baterias_12v"?: number,"categoria"?: Database["public"]['Enums']["vehicle_category"],"codigo_modelo"?: string,"created_at"?: string,"exw_usd_unitario"?: number | null,"garantia_baterias_meses"?: number,"garantia_meses"?: number,"id"?: string,"nombre_comercial"?: string | null,"potencia_motor_watts"?: number,"tiene_techo"?: boolean,"tipo_bateria"?: Database["public"]['Enums']["tipo_bateria"],"updated_at"?: string,"voltaje_sistema"?: number,"volumen_cbm_unitario"?: number | null
                   }
                   Relationships: [
                     
@@ -851,7 +851,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
+            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","tipo_bateria": "plomo_12v"|"litio","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -971,7 +971,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
+            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"tipo_bateria": ["plomo_12v", "litio"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
           }
         }
 } as const

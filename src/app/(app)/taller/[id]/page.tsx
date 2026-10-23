@@ -30,7 +30,7 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
     supabase
       .from('vehicle_inventory')
       .select(
-        'id, vin_chasis, nro_motor, estado, location_id, color_primario, color_secundario, vehicle_models(codigo_modelo, nombre_comercial, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts)',
+        'id, vin_chasis, nro_motor, estado, location_id, color_primario, color_secundario, vehicle_models(codigo_modelo, nombre_comercial, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts, tipo_bateria, tiene_techo)',
       )
       .eq('id', id)
       .maybeSingle(),

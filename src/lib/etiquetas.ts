@@ -24,6 +24,12 @@ export const CATEGORIA: Record<Enums['vehicle_category'], string> = {
   trimoto_carga: 'Trimoto de carga',
 };
 
+/** D41: tipo de batería del modelo. */
+export const TIPO_BATERIA: Record<Enums['tipo_bateria'], string> = {
+  plomo_12v: 'Plomo 12V (según el voltaje)',
+  litio: 'Litio',
+};
+
 export const TIPO_VENTA: Record<Enums['sale_type'], string> = {
   unidad_x1: 'Minorista (x1)',
   mayorista_x3: 'Mayorista (x3)',

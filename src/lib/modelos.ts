@@ -16,6 +16,9 @@ export type DatosModelo = {
   voltaje_sistema: number | null;
   cantidad_baterias_12v?: number | null;
   potencia_motor_watts?: number | null;
+  /** D41: plomo 12V (por defecto) o litio */
+  tipo_bateria?: Database['public']['Enums']['tipo_bateria'] | null;
+  tiene_techo?: boolean | null;
 };
 
 /**
@@ -82,11 +85,11 @@ export function bateriasDelModelo(m: Pick<DatosModelo, 'voltaje_sistema' | 'cant
   return m.voltaje_sistema ? m.voltaje_sistema / 12 : null;
 }
 
-/** «60V · 5 baterías» (lo que más importa en el taller). */
-export function textoEnergia(m: Pick<DatosModelo, 'voltaje_sistema' | 'cantidad_baterias_12v'>): string {
+/** «60V · 5 baterías» o «60V · 1 batería de litio» (lo que más importa en el taller). */
+export function textoEnergia(m: Pick<DatosModelo, 'voltaje_sistema' | 'cantidad_baterias_12v' | 'tipo_bateria'>): string {
   const n = bateriasDelModelo(m);
   if (!m.voltaje_sistema || !n) return '—';
-  return `${m.voltaje_sistema}V · ${n} ${n === 1 ? 'batería' : 'baterías'}`;
+  return `${m.voltaje_sistema}V · ${n} ${n === 1 ? 'batería' : 'baterías'}${m.tipo_bateria === 'litio' ? ' de litio' : ''}`;
 }
 
 export type ConteoTaller = { en_caja: number; en_ensamble: number };

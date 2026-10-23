@@ -89,6 +89,7 @@ export function IdentidadModelo({
           <EtiquetaCategoria categoria={modelo.categoria} />
           <span className={cn('font-semibold tabular-nums', grande ? 'text-lg' : 'text-xs')}>{textoEnergia(modelo)}</span>
           {potencia && <span className={cn('text-muted-foreground tabular-nums', grande ? 'text-sm' : 'text-xs')}>{potencia}</span>}
+          {modelo.tiene_techo && <span className={cn('text-muted-foreground', grande ? 'text-sm' : 'text-xs')}>Con techo</span>}
         </div>
       </div>
     </div>

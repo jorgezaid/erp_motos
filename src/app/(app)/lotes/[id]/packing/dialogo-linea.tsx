@@ -19,7 +19,7 @@ import { esquemaLineaPacking, type EntradaLineaPacking } from '@/lib/esquemas/lo
 import { avisar } from '@/lib/toast';
 import { actualizarLinea, agregarLinea } from '../acciones';
 
-export type ModeloCatalogo = { id: string; codigo_modelo: string; exw_usd_unitario: number; volumen_cbm_unitario: number };
+export type ModeloCatalogo = { id: string; codigo_modelo: string; exw_usd_unitario: number | null; volumen_cbm_unitario: number | null };
 
 const VACIA: EntradaLineaPacking = {
   model_id: '',
@@ -94,8 +94,8 @@ export function DialogoLinea({
                       field.onChange(v);
                       const m = modelos.find((x) => x.id === v);
                       if (m) {
-                        setValue('exw_usd_unitario', String(m.exw_usd_unitario));
-                        setValue('volumen_cbm_unitario', String(m.volumen_cbm_unitario));
+                        setValue('exw_usd_unitario', m.exw_usd_unitario === null ? '' : String(m.exw_usd_unitario));
+                        setValue('volumen_cbm_unitario', m.volumen_cbm_unitario === null ? '' : String(m.volumen_cbm_unitario));
                       }
                     }}
                   >

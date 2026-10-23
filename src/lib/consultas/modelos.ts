@@ -10,7 +10,7 @@ export async function leerIdentidadModelos(): Promise<Map<string, DatosModelo>> 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('vehicle_models')
-    .select('codigo_modelo, nombre_comercial, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts')
+    .select('codigo_modelo, nombre_comercial, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts, tipo_bateria, tiene_techo')
     .order('codigo_modelo');
   if (error) throw new Error(error.message);
   return new Map(data.map((m) => [m.codigo_modelo, m]));
