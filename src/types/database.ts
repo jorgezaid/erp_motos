@@ -25,13 +25,13 @@ export type Database = {
           Tables: {
             "batch_items": {
                   Row: {
-                    "batch_id": string,"cantidad_dam": number | null,"cantidad_packing_list": number,"cbm_total": number | null,"created_at": string,"exw_total_usd": number | null,"exw_usd_unitario": number | null,"id": string,"model_id": string,"volumen_cbm_unitario": number | null
+                    "batch_id": string,"cantidad_dam": number | null,"cantidad_packing_list": number,"cbm_total": number | null,"created_at": string,"exw_total_usd": number | null,"exw_usd_unitario": number | null,"id": string,"model_id": string,"precio_compra_unitario_pen": number | null,"volumen_cbm_unitario": number | null
                   }
                   Insert: {
-                    "batch_id": string,"cantidad_dam"?: number | null,"cantidad_packing_list": number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id": string,"volumen_cbm_unitario"?: number | null
+                    "batch_id": string,"cantidad_dam"?: number | null,"cantidad_packing_list": number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id": string,"precio_compra_unitario_pen"?: number | null,"volumen_cbm_unitario"?: number | null
                   }
                   Update: {
-                    "batch_id"?: string,"cantidad_dam"?: number | null,"cantidad_packing_list"?: number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id"?: string,"volumen_cbm_unitario"?: number | null
+                    "batch_id"?: string,"cantidad_dam"?: number | null,"cantidad_packing_list"?: number,"cbm_total"?: never,"created_at"?: string,"exw_total_usd"?: never,"exw_usd_unitario"?: number | null,"id"?: string,"model_id"?: string,"precio_compra_unitario_pen"?: number | null,"volumen_cbm_unitario"?: number | null
                   }
                   Relationships: [
                     {
@@ -68,13 +68,13 @@ isOneToOne: false
                   ]
                 },"batch_model_costs": {
                   Row: {
-                    "alquiler_asignado_pen": number,"armado_pen": number,"batch_id": string,"calculado_at": string,"calculado_por": string | null,"cantidad": number,"costo_landing_unitario_pen": number | null,"costo_total_pen": number | null,"flete_internacional_asignado_usd": number,"flete_nacional_asignado_pen": number,"fob_asignado_usd": number,"gastos_agente_asignado_usd": number,"impuestos_asignados_pen": number,"model_id": string,"publicidad_asignada_pen": number,"sueldos_asignado_pen": number,"tipo_cambio": number
+                    "alquiler_asignado_pen": number,"armado_pen": number,"batch_id": string,"calculado_at": string,"calculado_por": string | null,"cantidad": number,"compra_asignada_pen": number,"costo_landing_unitario_pen": number,"costo_total_pen": number,"flete_internacional_asignado_usd": number,"flete_nacional_asignado_pen": number,"fob_asignado_usd": number,"gastos_agente_asignado_usd": number,"impuestos_asignados_pen": number,"model_id": string,"otros_gastos_asignado_pen": number,"publicidad_asignada_pen": number,"sueldos_asignado_pen": number,"tipo_cambio": number,"costo_total_fila": number | null
                   }
                   Insert: {
-                    "alquiler_asignado_pen"?: number,"armado_pen"?: number,"batch_id": string,"calculado_at"?: string,"calculado_por"?: string | null,"cantidad": number,"costo_landing_unitario_pen"?: never,"costo_total_pen"?: never,"flete_internacional_asignado_usd"?: number,"flete_nacional_asignado_pen"?: number,"fob_asignado_usd"?: number,"gastos_agente_asignado_usd"?: number,"impuestos_asignados_pen"?: number,"model_id": string,"publicidad_asignada_pen"?: number,"sueldos_asignado_pen"?: number,"tipo_cambio": number
+                    "alquiler_asignado_pen"?: number,"armado_pen"?: number,"batch_id": string,"calculado_at"?: string,"calculado_por"?: string | null,"cantidad": number,"compra_asignada_pen"?: number,"costo_landing_unitario_pen": number,"costo_total_pen": number,"flete_internacional_asignado_usd"?: number,"flete_nacional_asignado_pen"?: number,"fob_asignado_usd"?: number,"gastos_agente_asignado_usd"?: number,"impuestos_asignados_pen"?: number,"model_id": string,"otros_gastos_asignado_pen"?: number,"publicidad_asignada_pen"?: number,"sueldos_asignado_pen"?: number,"tipo_cambio": number
                   }
                   Update: {
-                    "alquiler_asignado_pen"?: number,"armado_pen"?: number,"batch_id"?: string,"calculado_at"?: string,"calculado_por"?: string | null,"cantidad"?: number,"costo_landing_unitario_pen"?: never,"costo_total_pen"?: never,"flete_internacional_asignado_usd"?: number,"flete_nacional_asignado_pen"?: number,"fob_asignado_usd"?: number,"gastos_agente_asignado_usd"?: number,"impuestos_asignados_pen"?: number,"model_id"?: string,"publicidad_asignada_pen"?: number,"sueldos_asignado_pen"?: number,"tipo_cambio"?: number
+                    "alquiler_asignado_pen"?: number,"armado_pen"?: number,"batch_id"?: string,"calculado_at"?: string,"calculado_por"?: string | null,"cantidad"?: number,"compra_asignada_pen"?: number,"costo_landing_unitario_pen"?: number,"costo_total_pen"?: number,"flete_internacional_asignado_usd"?: number,"flete_nacional_asignado_pen"?: number,"fob_asignado_usd"?: number,"gastos_agente_asignado_usd"?: number,"impuestos_asignados_pen"?: number,"model_id"?: string,"otros_gastos_asignado_pen"?: number,"publicidad_asignada_pen"?: number,"sueldos_asignado_pen"?: number,"tipo_cambio"?: number
                   }
                   Relationships: [
                     {
@@ -155,13 +155,13 @@ isOneToOne: false
                   ]
                 },"import_batches": {
                   Row: {
-                    "ad_valorem_pen": number,"alquiler_periodo_pen": number,"codigo_embarque": string,"costo_armado_unitario_pen": number,"created_at": string,"estado": Database["public"]['Enums']["batch_status"],"fecha_embarque": string | null,"fecha_llegada": string | null,"flete_internacional_usd": number,"flete_nacional_pen": number,"fob_total_usd": number,"gastos_agente_usd": number,"gastos_operativos_fijos_pen": number | null,"id": string,"igv_pen": number,"impuestos_asignables_pen": number | null,"impuestos_recuperables_al_costo": boolean,"impuestos_sunat_pen": number | null,"ipm_pen": number,"liquidado_at": string | null,"liquidado_por": string | null,"notas": string | null,"nro_dam": string | null,"percepcion_pen": number,"proveedor": string | null,"proveedor_id": string | null,"publicidad_inicial_pen": number,"sueldos_periodo_pen": number,"tipo_cambio": number | null,"updated_at": string
+                    "ad_valorem_pen": number,"alquiler_periodo_pen": number,"codigo_embarque": string,"costo_armado_unitario_pen": number,"created_at": string,"estado": Database["public"]['Enums']["batch_status"],"fecha_compra": string | null,"fecha_embarque": string | null,"fecha_llegada": string | null,"flete_internacional_usd": number,"flete_nacional_pen": number,"fob_total_usd": number,"gastos_agente_usd": number,"gastos_operativos_fijos_pen": number | null,"id": string,"igv_pen": number,"impuestos_asignables_pen": number | null,"impuestos_recuperables_al_costo": boolean,"impuestos_sunat_pen": number | null,"ipm_pen": number,"liquidado_at": string | null,"liquidado_por": string | null,"notas": string | null,"nro_dam": string | null,"nro_factura": string | null,"otros_gastos_pen": number,"percepcion_pen": number,"precio_incluye_igv": boolean,"proveedor": string | null,"proveedor_id": string | null,"publicidad_inicial_pen": number,"sueldos_periodo_pen": number,"tipo_cambio": number | null,"tipo_lote": Database["public"]['Enums']["tipo_lote"],"updated_at": string
                   }
                   Insert: {
-                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque": string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
+                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque": string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_compra"?: string | null,"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"nro_factura"?: string | null,"otros_gastos_pen"?: number,"percepcion_pen"?: number,"precio_incluye_igv"?: boolean,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"tipo_lote"?: Database["public"]['Enums']["tipo_lote"],"updated_at"?: string
                   }
                   Update: {
-                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque"?: string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
+                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque"?: string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_compra"?: string | null,"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"nro_factura"?: string | null,"otros_gastos_pen"?: number,"percepcion_pen"?: number,"precio_incluye_igv"?: boolean,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"tipo_lote"?: Database["public"]['Enums']["tipo_lote"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -771,6 +771,9 @@ isOneToOne: false
 "can_edit_order":
 { Args: { "p_order_id": string }; Returns: boolean
                            },
+"costo_total_fila":
+{ Args: { "c": Database["public"]['Tables']["batch_model_costs"]['Row'] }; Returns: number
+                           },
 "current_app_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["app_role"]
                            },
@@ -791,14 +794,16 @@ isOneToOne: false
 "calculado_at": string,
 "calculado_por": string | null,
 "cantidad": number,
-"costo_landing_unitario_pen": number | null,
-"costo_total_pen": number | null,
+"compra_asignada_pen": number,
+"costo_landing_unitario_pen": number,
+"costo_total_pen": number,
 "flete_internacional_asignado_usd": number,
 "flete_nacional_asignado_pen": number,
 "fob_asignado_usd": number,
 "gastos_agente_asignado_usd": number,
 "impuestos_asignados_pen": number,
 "model_id": string,
+"otros_gastos_asignado_pen": number,
 "publicidad_asignada_pen": number,
 "sueldos_asignado_pen": number,
 "tipo_cambio": number
@@ -851,7 +856,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","tipo_bateria": "plomo_12v"|"litio","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
+            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","tipo_bateria": "plomo_12v"|"litio","tipo_lote": "importacion"|"compra_local","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -971,7 +976,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"tipo_bateria": ["plomo_12v", "litio"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
+            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"tipo_bateria": ["plomo_12v", "litio"],"tipo_lote": ["importacion", "compra_local"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
           }
         }
 } as const
