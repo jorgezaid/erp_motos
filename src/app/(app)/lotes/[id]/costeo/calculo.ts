@@ -1,4 +1,5 @@
 import 'server-only';
+import { calcularCosteoCompraLocal } from '@/lib/costing/compra-local';
 import { calcularProrrateo, ErrorProrrateo, type FilaCosteo } from '@/lib/costing/prorrateo';
 import type { Database } from '@/types/database';
 
@@ -13,27 +14,8 @@ export type ResultadoCosteo = { ok: true; filas: (FilaCosteo & { codigo_modelo: 
  */
 export function costeoDelLote(lote: Lote, items: readonly Item[]): ResultadoCosteo {
   try {
-    const filas = calcularProrrateo(
-      {
-        tipo_cambio: lote.tipo_cambio,
-        fob_total_usd: lote.fob_total_usd,
-        flete_internacional_usd: lote.flete_internacional_usd,
-        gastos_agente_usd: lote.gastos_agente_usd,
-        impuestos_asignables_pen: lote.impuestos_asignables_pen ?? 0,
-        flete_nacional_pen: lote.flete_nacional_pen,
-        alquiler_periodo_pen: lote.alquiler_periodo_pen,
-        sueldos_periodo_pen: lote.sueldos_periodo_pen,
-        publicidad_inicial_pen: lote.publicidad_inicial_pen,
-        costo_armado_unitario_pen: lote.costo_armado_unitario_pen,
-      },
-      items.map((i) => ({
-        model_id: i.model_id,
-        codigo_modelo: i.codigo_modelo,
-        cantidad_packing_list: i.cantidad_packing_list,
-        exw_total_usd: i.exw_total_usd ?? 0,
-        cbm_total: i.cbm_total ?? 0,
-      })),
-    );
+    const filas =
+      lote.tipo_lote === 'compra_local' ? costeoCompraLocal(lote, items) : prorrateoImportacion(lote, items);
     const codigo = new Map(items.map((i) => [i.model_id, i.codigo_modelo]));
     return {
       ok: true,
@@ -45,4 +27,47 @@ export function costeoDelLote(lote: Lote, items: readonly Item[]): ResultadoCost
     if (e instanceof ErrorProrrateo) return { ok: false, error: e.message };
     throw e;
   }
+}
+
+/** Compra local (D41): precio de compra en soles, IGV, flete Lima → Arequipa, otros gastos y armado. */
+function costeoCompraLocal(lote: Lote, items: readonly Item[]): FilaCosteo[] {
+  return calcularCosteoCompraLocal(
+    {
+      precio_incluye_igv: lote.precio_incluye_igv,
+      igv_al_costo: lote.impuestos_recuperables_al_costo,
+      flete_nacional_pen: lote.flete_nacional_pen,
+      otros_gastos_pen: lote.otros_gastos_pen,
+      costo_armado_unitario_pen: lote.costo_armado_unitario_pen,
+    },
+    items.map((i) => ({
+      model_id: i.model_id,
+      codigo_modelo: i.codigo_modelo,
+      cantidad_packing_list: i.cantidad_packing_list,
+      precio_compra_unitario_pen: i.precio_compra_unitario_pen,
+    })),
+  );
+}
+
+function prorrateoImportacion(lote: Lote, items: readonly Item[]): FilaCosteo[] {
+  return calcularProrrateo(
+    {
+      tipo_cambio: lote.tipo_cambio,
+      fob_total_usd: lote.fob_total_usd,
+      flete_internacional_usd: lote.flete_internacional_usd,
+      gastos_agente_usd: lote.gastos_agente_usd,
+      impuestos_asignables_pen: lote.impuestos_asignables_pen ?? 0,
+      flete_nacional_pen: lote.flete_nacional_pen,
+      alquiler_periodo_pen: lote.alquiler_periodo_pen,
+      sueldos_periodo_pen: lote.sueldos_periodo_pen,
+      publicidad_inicial_pen: lote.publicidad_inicial_pen,
+      costo_armado_unitario_pen: lote.costo_armado_unitario_pen,
+    },
+    items.map((i) => ({
+      model_id: i.model_id,
+      codigo_modelo: i.codigo_modelo,
+      cantidad_packing_list: i.cantidad_packing_list,
+      exw_total_usd: i.exw_total_usd ?? 0,
+      cbm_total: i.cbm_total ?? 0,
+    })),
+  );
 }

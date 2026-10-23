@@ -48,12 +48,18 @@ const CONCEPTOS = [
 type ColumnaProrrateada = (typeof CONCEPTOS)[number]['columna'];
 type MontoLote = Exclude<keyof LoteCosteo, 'tipo_cambio'>;
 
-/** Columnas de `batch_model_costs` que llena el costeo (sin `batch_id`: lo pone la RPC). */
+/**
+ * Columnas de `batch_model_costs` que llena el costeo (sin `batch_id`: lo pone la RPC).
+ * `compra_asignada_pen` y `otros_gastos_asignado_pen` solo los llena la compra local (D41);
+ * en una importación no vienen y la BD los deja en 0.
+ */
 export type FilaCosteo = {
   model_id: string;
   cantidad: number;
   tipo_cambio: string;
   armado_pen: string;
+  compra_asignada_pen?: string;
+  otros_gastos_asignado_pen?: string;
 } & Record<ColumnaProrrateada, string>;
 
 export type CodigoErrorProrrateo =
@@ -249,7 +255,7 @@ export function calcularProrrateo(lote: LoteCosteo, lineas: readonly LineaCosteo
   });
 }
 
-/** Misma expresión que las columnas generadas de `batch_model_costs`, sin redondear. */
+/** Misma expresión que `public.costo_total_fila` (antes, la columna generada), sin redondear. */
 function costoTotalExacto(fila: FilaCosteo): Decimal {
   return new Decimal(fila.fob_asignado_usd)
     .plus(fila.flete_internacional_asignado_usd)
@@ -260,7 +266,9 @@ function costoTotalExacto(fila: FilaCosteo): Decimal {
     .plus(fila.alquiler_asignado_pen)
     .plus(fila.sueldos_asignado_pen)
     .plus(fila.publicidad_asignada_pen)
-    .plus(fila.armado_pen);
+    .plus(fila.armado_pen)
+    .plus(fila.compra_asignada_pen ?? 0)
+    .plus(fila.otros_gastos_asignado_pen ?? 0);
 }
 
 /** Replica `batch_model_costs.costo_total_pen` (numeric(16,4)): para la vista previa y las pruebas. */
