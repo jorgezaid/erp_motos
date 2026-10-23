@@ -26,7 +26,7 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();
 
-  const [{ data: u }, { data: baterias }, { data: inspecciones }, { data: ubicaciones }, colores] = await Promise.all([
+  const [{ data: u }, { data: baterias }, { data: inspecciones }, { data: ubicaciones }, colores, { data: movimientos }] = await Promise.all([
     supabase
       .from('vehicle_inventory')
       .select(
@@ -43,6 +43,16 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
       .limit(5),
     supabase.from('locations').select('id, nombre').eq('activo', true).in('tipo', ['showroom', 'almacen']).order('nombre'),
     coloresExistentes(),
+    // D40: historial de ubicaciones (lo llena un trigger con cualquier cambio)
+    supabase
+      .from('movimientos_ubicacion')
+      .select(
+        'id, movido_at, desde:locations!movimientos_ubicacion_desde_location_id_fkey(nombre), hacia:locations!movimientos_ubicacion_hacia_location_id_fkey(nombre), profiles(nombre)',
+      )
+      .eq('vehicle_id', id)
+      .order('movido_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(20),
   ]);
   if (!u || !u.vehicle_models) notFound();
 
@@ -162,6 +172,30 @@ export default async function UnidadTaller({ params }: { params: Promise<{ id: s
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historial de ubicaciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {movimientos?.length ? (
+            <ol className="grid gap-2 text-sm" data-testid="historial-ubicaciones">
+              {movimientos.map((mv) => (
+                <li key={mv.id} className="flex flex-wrap items-baseline justify-between gap-x-3 border-b pb-2 last:border-0 last:pb-0">
+                  <span>
+                    {mv.desde?.nombre ?? 'Sin ubicación'} → <span className="font-medium">{mv.hacia?.nombre ?? 'Sin ubicación'}</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {mv.profiles?.nombre || 'Sistema'} · {formatFechaHora(mv.movido_at)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted-foreground">Sin movimientos registrados.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

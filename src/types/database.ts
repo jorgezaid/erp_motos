@@ -185,6 +185,55 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"movimientos_ubicacion": {
+                  Row: {
+                    "desde_location_id": string | null,"hacia_location_id": string | null,"id": number,"movido_at": string,"movido_por": string | null,"vehicle_id": string
+                  }
+                  Insert: {
+                    "desde_location_id"?: string | null,"hacia_location_id"?: string | null,"id"?: never,"movido_at"?: string,"movido_por"?: string | null,"vehicle_id": string
+                  }
+                  Update: {
+                    "desde_location_id"?: string | null,"hacia_location_id"?: string | null,"id"?: never,"movido_at"?: string,"movido_por"?: string | null,"vehicle_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "movimientos_ubicacion_desde_location_id_fkey"
+      columns: ["desde_location_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "movimientos_ubicacion_hacia_location_id_fkey"
+      columns: ["hacia_location_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "movimientos_ubicacion_movido_por_fkey"
+      columns: ["movido_por"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "movimientos_ubicacion_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "v_stock"
+      referencedColumns: ["vehicle_id"]
+    },{
+      foreignKeyName: "movimientos_ubicacion_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "v_vehicle_costs"
+      referencedColumns: ["vehicle_id"]
+    },{
+      foreignKeyName: "movimientos_ubicacion_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_inventory"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"order_items": {
                   Row: {
                     "activo": boolean,"ajustado_at": string | null,"ajustado_por": string | null,"created_at": string,"id": string,"motivo_ajuste": string | null,"order_id": string,"precio_lista_pen": number,"precio_unitario_pen": number,"vehicle_id": string
@@ -760,6 +809,9 @@ isOneToOne: false
                            },
 "listo_rapido":
 { Args: { "p_location_id": string,"p_unidades": Json }; Returns: Json
+                           },
+"mover_unidades":
+{ Args: { "p_location_id": string,"p_vehicle_ids": (string)[] }; Returns: number
                            },
 "nombre_escala":
 { Args: { "p_tipo": Database["public"]['Enums']["sale_type"] }; Returns: string

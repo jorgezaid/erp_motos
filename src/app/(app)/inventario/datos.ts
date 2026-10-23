@@ -22,6 +22,14 @@ export async function coloresExistentes(): Promise<string[]> {
   return [...colores].sort((a, b) => a.localeCompare(b, 'es'));
 }
 
+/** D40: destinos para mover motos (ubicaciones activas de cualquier tipo). */
+export async function ubicacionesActivas(): Promise<{ id: string; nombre: string }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('locations').select('id, nombre').eq('activo', true).order('nombre');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /** Opciones de los selects de filtro (catálogos pequeños). */
 export async function opcionesFiltroInventario() {
   const supabase = await createClient();

@@ -8,10 +8,11 @@ import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import { consultarStock, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
 import { puedeEditarColor } from '@/lib/esquemas/color';
+import { puedeMoverUnidad } from '@/lib/esquemas/mover';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
 import { puedeVer } from '@/lib/roles';
 import { leerParams } from '@/lib/tabla';
-import { leerFiltrosInventario, opcionesFiltroInventario } from './datos';
+import { leerFiltrosInventario, opcionesFiltroInventario, ubicacionesActivas } from './datos';
 import { TablaInventario, type FilaInventario } from './tabla-inventario';
 
 export const metadata: Metadata = { title: 'Inventario · ERP Vehículos Eléctricos' };
@@ -24,10 +25,12 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
   const sp = await searchParams;
   const params = leerParams(sp);
   const extra = leerFiltrosInventario(sp);
-  const [{ filas, total }, op, modelos] = await Promise.all([
+  const moverMotos = sesion.rol === 'admin' || sesion.rol === 'tecnico';
+  const [{ filas, total }, op, modelos, ubicaciones] = await Promise.all([
     consultarStock({ ...params, ...extra }),
     opcionesFiltroInventario(),
     leerIdentidadModelos(),
+    moverMotos ? ubicacionesActivas() : null,
   ]);
 
   const unidades: FilaInventario[] = filas.map((f) => ({
@@ -42,6 +45,8 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
     editarColor: puedeEditarColor(sesion.rol, f.estado ?? 'en_caja'),
     estado: f.estado ?? 'en_caja',
     ubicacion: f.ubicacion ?? '—',
+    ubicacion_id: f.location_id,
+    mover: puedeMoverUnidad(sesion.rol, f.estado ?? 'en_caja'),
     baterias: `${f.baterias_registradas ?? 0}/${f.cantidad_baterias_12v ?? 0}`,
     provisionales: f.baterias_provisionales,
     inspeccion: textoInspeccion(f.ultima_inspeccion_aprobada),
@@ -75,6 +80,7 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
         verPrecios={sesion.rol !== 'tecnico'}
         enlaceTaller={puedeVer('/taller', sesion.rol)}
         coloresExistentes={op.colores.map((c) => c.valor)}
+        ubicaciones={ubicaciones}
       />
       <Paginacion pagina={params.pagina} total={total} searchParams={sp} />
     </>
