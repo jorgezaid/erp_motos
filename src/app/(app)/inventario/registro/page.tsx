@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Encabezado } from '@/components/encabezado';
 import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos } from '@/lib/consultas/modelos';
@@ -31,6 +32,13 @@ export default async function PaginaRegistro() {
 
   return (
     <>
+      {/* Fuera del menú lateral (D40): se entra desde /inventario */}
+      <p className="text-sm text-muted-foreground">
+        <Link href="/inventario" className="hover:underline">
+          Inventario
+        </Link>{' '}
+        / Registro de unidades
+      </p>
       <Encabezado
         titulo="Registro de unidades"
         descripcion="Registra VIN y motor de las unidades que llegaron, hasta lo declarado en el packing list (RN-04)."

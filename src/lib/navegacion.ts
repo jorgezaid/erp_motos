@@ -7,7 +7,6 @@ export const MODULOS: readonly Modulo[] = [
   { href: '/', etiqueta: 'Inicio', grupo: 'operacion' },
   { href: '/lotes', etiqueta: 'Lotes', grupo: 'operacion' },
   { href: '/inventario', etiqueta: 'Inventario', grupo: 'operacion' },
-  { href: '/inventario/registro', etiqueta: 'Registro de unidades', grupo: 'operacion' },
   { href: '/taller', etiqueta: 'Taller', grupo: 'operacion' },
   { href: '/precios', etiqueta: 'Precios', grupo: 'operacion' },
   { href: '/ventas', etiqueta: 'Ventas', grupo: 'operacion' },
