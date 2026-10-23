@@ -20,6 +20,7 @@ import {
   type EntradaDatosLote,
   type EntradaLineaPacking,
 } from '@/lib/esquemas/lote';
+import { proveedorDelLote } from '@/lib/esquemas/proveedor';
 import { createClient } from '@/lib/supabase/server';
 import { costeoDelLote } from './costeo/calculo';
 
@@ -33,7 +34,7 @@ function revalidarLote(id: string) {
 }
 
 /**
- * Pestaña Datos. Si el lote está liquidado solo se guardan las notas (RN-08); el resto lo
+ * Pestaña Datos. Si el lote está liquidado solo se guardan las notas y el proveedor (RN-08, D41); el resto lo
  * rechazaría la BD de todos modos.
  */
 export async function guardarDatosLote(id: string, entrada: EntradaDatosLote): Promise<Resultado> {
@@ -46,9 +47,12 @@ export async function guardarDatosLote(id: string, entrada: EntradaDatosLote): P
 
   let cambios;
   if (actual.estado === 'liquidado') {
+    // Liquidado: solo notas y proveedor (D41), como permite guard_batch_update
     const notas = z.string().trim().max(2000).safeParse(entrada.notas);
     if (!notas.success) return fallo('Notas: máximo 2000 caracteres.');
-    cambios = { notas: notas.data || null };
+    const proveedor = proveedorDelLote.safeParse(entrada.proveedor_id);
+    if (!proveedor.success) return fallo('Elige un proveedor.');
+    cambios = { notas: notas.data || null, proveedor_id: proveedor.data };
   } else {
     const d = esquemaDatosLote.safeParse(entrada);
     if (!d.success) return falloValidacion(d.error);

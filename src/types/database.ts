@@ -155,13 +155,13 @@ isOneToOne: false
                   ]
                 },"import_batches": {
                   Row: {
-                    "ad_valorem_pen": number,"alquiler_periodo_pen": number,"codigo_embarque": string,"costo_armado_unitario_pen": number,"created_at": string,"estado": Database["public"]['Enums']["batch_status"],"fecha_embarque": string | null,"fecha_llegada": string | null,"flete_internacional_usd": number,"flete_nacional_pen": number,"fob_total_usd": number,"gastos_agente_usd": number,"gastos_operativos_fijos_pen": number | null,"id": string,"igv_pen": number,"impuestos_asignables_pen": number | null,"impuestos_recuperables_al_costo": boolean,"impuestos_sunat_pen": number | null,"ipm_pen": number,"liquidado_at": string | null,"liquidado_por": string | null,"notas": string | null,"nro_dam": string | null,"percepcion_pen": number,"proveedor": string | null,"publicidad_inicial_pen": number,"sueldos_periodo_pen": number,"tipo_cambio": number | null,"updated_at": string
+                    "ad_valorem_pen": number,"alquiler_periodo_pen": number,"codigo_embarque": string,"costo_armado_unitario_pen": number,"created_at": string,"estado": Database["public"]['Enums']["batch_status"],"fecha_embarque": string | null,"fecha_llegada": string | null,"flete_internacional_usd": number,"flete_nacional_pen": number,"fob_total_usd": number,"gastos_agente_usd": number,"gastos_operativos_fijos_pen": number | null,"id": string,"igv_pen": number,"impuestos_asignables_pen": number | null,"impuestos_recuperables_al_costo": boolean,"impuestos_sunat_pen": number | null,"ipm_pen": number,"liquidado_at": string | null,"liquidado_por": string | null,"notas": string | null,"nro_dam": string | null,"percepcion_pen": number,"proveedor": string | null,"proveedor_id": string | null,"publicidad_inicial_pen": number,"sueldos_periodo_pen": number,"tipo_cambio": number | null,"updated_at": string
                   }
                   Insert: {
-                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque": string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
+                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque": string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque"?: string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
+                    "ad_valorem_pen"?: number,"alquiler_periodo_pen"?: number,"codigo_embarque"?: string,"costo_armado_unitario_pen"?: number,"created_at"?: string,"estado"?: Database["public"]['Enums']["batch_status"],"fecha_embarque"?: string | null,"fecha_llegada"?: string | null,"flete_internacional_usd"?: number,"flete_nacional_pen"?: number,"fob_total_usd"?: number,"gastos_agente_usd"?: number,"gastos_operativos_fijos_pen"?: never,"id"?: string,"igv_pen"?: number,"impuestos_asignables_pen"?: never,"impuestos_recuperables_al_costo"?: boolean,"impuestos_sunat_pen"?: never,"ipm_pen"?: number,"liquidado_at"?: string | null,"liquidado_por"?: string | null,"notas"?: string | null,"nro_dam"?: string | null,"percepcion_pen"?: number,"proveedor"?: string | null,"proveedor_id"?: string | null,"publicidad_inicial_pen"?: number,"sueldos_periodo_pen"?: number,"tipo_cambio"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -169,6 +169,12 @@ isOneToOne: false
       columns: ["liquidado_por"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "import_batches_proveedor_id_fkey"
+      columns: ["proveedor_id"]
+isOneToOne: false
+      referencedRelation: "proveedores"
       referencedColumns: ["id"]
     }
                   ]
@@ -379,6 +385,19 @@ isOneToOne: false
                   }
                   Update: {
                     "activo"?: boolean,"created_at"?: string,"id"?: string,"nombre"?: string,"rol"?: Database["public"]['Enums']["app_role"] | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"proveedores": {
+                  Row: {
+                    "activo": boolean,"created_at": string,"id": string,"nombre": string,"ruc": string | null,"telefono": string | null,"updated_at": string
+                  }
+                  Insert: {
+                    "activo"?: boolean,"created_at"?: string,"id"?: string,"nombre": string,"ruc"?: string | null,"telefono"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "activo"?: boolean,"created_at"?: string,"id"?: string,"nombre"?: string,"ruc"?: string | null,"telefono"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     

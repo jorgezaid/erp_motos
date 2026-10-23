@@ -6,7 +6,7 @@ import { COLUMNAS_CSV, consultarLotes } from '../datos';
 
 export async function GET(request: NextRequest) {
   await exigirRol('admin');
-  const params = leerParams(Object.fromEntries(request.nextUrl.searchParams));
-  const { filas } = await consultarLotes(params, { todas: true });
+  const sp = Object.fromEntries(request.nextUrl.searchParams);
+  const { filas } = await consultarLotes({ ...leerParams(sp), proveedor: sp.proveedor }, { todas: true });
   return respuestaCsv(aCsv(filas, COLUMNAS_CSV), `lotes-${hoyLima()}.csv`);
 }

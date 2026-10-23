@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Tags,
+  Truck,
   Users,
   Warehouse,
   Wrench,
@@ -39,6 +40,7 @@ const ICONOS: Record<string, LucideIcon> = {
   '/admin/usuarios': Users,
   '/admin/modelos': Boxes,
   '/admin/ubicaciones': MapPin,
+  '/admin/proveedores': Truck,
 };
 
 type Props = { modulos: Modulo[]; nombre: string; rol: string };

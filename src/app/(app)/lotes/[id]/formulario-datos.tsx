@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { CampoSelect } from '@/components/formulario/campo-select';
@@ -8,12 +9,23 @@ import { CampoArea, CampoTexto } from '@/components/formulario/campo';
 import { Button } from '@/components/ui/button';
 import { ESTADO_LOTE } from '@/lib/etiquetas';
 import { ESTADOS_LOTE_EDITABLES, esquemaDatosLote, type EntradaDatosLote } from '@/lib/esquemas/lote';
+import type { OpcionProveedor } from '@/lib/consultas/proveedores';
 import { avisar } from '@/lib/toast';
 import { guardarDatosLote } from './acciones';
 
 const OPCIONES_ESTADO = ESTADOS_LOTE_EDITABLES.map((e) => ({ valor: e, etiqueta: ESTADO_LOTE[e] }));
 
-export function FormularioDatos({ id, inicial, liquidado }: { id: string; inicial: EntradaDatosLote; liquidado: boolean }) {
+export function FormularioDatos({
+  id,
+  inicial,
+  liquidado,
+  proveedores,
+}: {
+  id: string;
+  inicial: EntradaDatosLote;
+  liquidado: boolean;
+  proveedores: OpcionProveedor[];
+}) {
   const [pendiente, startTransition] = useTransition();
   const {
     register,
@@ -39,7 +51,20 @@ export function FormularioDatos({ id, inicial, liquidado }: { id: string; inicia
       <div className="grid gap-4 sm:grid-cols-2">
         <CampoTexto etiqueta="Código de embarque" registro={register('codigo_embarque')} error={errors.codigo_embarque?.message} disabled={liquidado} />
         <CampoTexto etiqueta="N.º de DAM" registro={register('nro_dam')} error={errors.nro_dam?.message} disabled={liquidado} placeholder="118-2026-10-361056-01-0-00" />
-        <CampoTexto etiqueta="Proveedor" registro={register('proveedor')} error={errors.proveedor?.message} disabled={liquidado} />
+        {/* D41: también en un lote liquidado (no es un costo) */}
+        <CampoSelect
+          control={control}
+          nombre="proveedor_id"
+          etiqueta="Proveedor"
+          opciones={proveedores}
+          error={errors.proveedor_id?.message}
+          placeholder="Sin proveedor"
+          ayuda={
+            <Link href="/admin/proveedores" className="underline">
+              Administrar proveedores
+            </Link>
+          }
+        />
         {liquidado ? (
           <CampoTexto etiqueta="Estado" registro={register('estado')} disabled />
         ) : (
@@ -48,10 +73,10 @@ export function FormularioDatos({ id, inicial, liquidado }: { id: string; inicia
         <CampoTexto etiqueta="Fecha de embarque" type="date" registro={register('fecha_embarque')} error={errors.fecha_embarque?.message} disabled={liquidado} />
         <CampoTexto etiqueta="Fecha de llegada" type="date" registro={register('fecha_llegada')} error={errors.fecha_llegada?.message} disabled={liquidado} />
       </div>
-      <CampoArea etiqueta="Notas" registro={register('notas')} error={errors.notas?.message} ayuda={liquidado ? 'En un lote liquidado solo se pueden editar las notas (RN-08).' : undefined} />
+      <CampoArea etiqueta="Notas" registro={register('notas')} error={errors.notas?.message} ayuda={liquidado ? 'En un lote liquidado solo se pueden editar las notas y el proveedor (RN-08).' : undefined} />
       <div>
         <Button type="submit" disabled={pendiente}>
-          {pendiente ? 'Guardando…' : liquidado ? 'Guardar notas' : 'Guardar datos'}
+          {pendiente ? 'Guardando…' : liquidado ? 'Guardar notas y proveedor' : 'Guardar datos'}
         </Button>
       </div>
     </form>

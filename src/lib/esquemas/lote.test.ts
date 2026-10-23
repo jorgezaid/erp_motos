@@ -4,7 +4,7 @@ import { esquemaCostosLote, esquemaDatosLote, esquemaLineaPacking } from './lote
 const datos = {
   codigo_embarque: ' 117gzh2606089 ',
   nro_dam: '118-2026-10-361056-01-0-00',
-  proveedor: '',
+  proveedor_id: '',
   fecha_embarque: '2026-09-01',
   fecha_llegada: '2026-10-01',
   estado: 'en_aduanas',
@@ -15,7 +15,7 @@ describe('esquemaDatosLote (SPEC M3 · Datos)', () => {
   it('normaliza el código de embarque y valida la DAM', () => {
     const r = esquemaDatosLote.parse(datos);
     expect(r.codigo_embarque).toBe('117GZH2606089');
-    expect(r.proveedor).toBeNull();
+    expect(r.proveedor_id).toBeNull();
     expect(esquemaDatosLote.safeParse({ ...datos, nro_dam: '118-2026' }).success).toBe(false);
     expect(esquemaDatosLote.safeParse({ ...datos, nro_dam: '' }).success).toBe(true);
   });

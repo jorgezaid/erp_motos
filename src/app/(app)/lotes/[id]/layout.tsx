@@ -34,7 +34,7 @@ export default async function LayoutLote({
         descripcion={
           lote.estado === 'liquidado'
             ? `Liquidado el ${formatFechaHora(lote.liquidado_at)}: costos congelados (RN-08).`
-            : [lote.proveedor, lote.nro_dam && `DAM ${lote.nro_dam}`].filter(Boolean).join(' · ') || undefined
+            : [lote.proveedores?.nombre, lote.nro_dam && `DAM ${lote.nro_dam}`].filter(Boolean).join(' · ') || undefined
         }
       />
       <PestanasLote id={lote.id} />

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { CampoTexto } from '@/components/formulario/campo';
+import { CampoSelect } from '@/components/formulario/campo-select';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,20 +16,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import type { OpcionProveedor } from '@/lib/consultas/proveedores';
 import { esquemaNuevoLote } from '@/lib/esquemas/lote';
 import { avisar } from '@/lib/toast';
 import { crearLote } from './acciones';
 
-export function DialogoNuevoLote() {
+export function DialogoNuevoLote({ proveedores }: { proveedores: OpcionProveedor[] }) {
   const router = useRouter();
   const [abierto, setAbierto] = useState(false);
   const [pendiente, startTransition] = useTransition();
   const {
     register,
+    control,
     handleSubmit,
     getValues,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(esquemaNuevoLote), defaultValues: { codigo_embarque: '', proveedor: '' } });
+  } = useForm({ resolver: zodResolver(esquemaNuevoLote), defaultValues: { codigo_embarque: '', proveedor_id: '' } });
 
   const enviar = handleSubmit(() => {
     const valores = getValues();
@@ -58,7 +61,14 @@ export function DialogoNuevoLote() {
             error={errors.codigo_embarque?.message}
             placeholder="117GZH2606089"
           />
-          <CampoTexto etiqueta="Proveedor" registro={register('proveedor')} error={errors.proveedor?.message} />
+          <CampoSelect
+            control={control}
+            nombre="proveedor_id"
+            etiqueta="Proveedor"
+            opciones={proveedores}
+            error={errors.proveedor_id?.message}
+            placeholder="Sin proveedor"
+          />
           <DialogFooter>
             <Button type="submit" disabled={pendiente}>
               {pendiente ? 'Creando…' : 'Crear lote'}

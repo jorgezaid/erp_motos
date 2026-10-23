@@ -1,6 +1,7 @@
 /** Lotes de importación (SPEC M3). Solo admin. */
 import { z } from 'zod';
 import { decimal, decimalOpcional, fechaOpcional, textoOpcional, textoRequerido } from './comunes';
+import { proveedorDelLote } from './proveedor';
 
 /** DAM de SUNAT, p. ej. 118-2026-10-361056-01-0-00 (se valida el formato general, no el dígito). */
 const PATRON_DAM = /^\d{3}-\d{4}-\d{2}-\d{6}-\d{2}-\d-\d{2}$/;
@@ -14,7 +15,7 @@ export const esquemaDatosLote = z
       (v) => v === null || PATRON_DAM.test(v),
       'N.º de DAM: formato 118-2026-10-361056-01-0-00.',
     ),
-    proveedor: textoOpcional('Proveedor', 120),
+    proveedor_id: proveedorDelLote,
     fecha_embarque: fechaOpcional('Fecha de embarque'),
     fecha_llegada: fechaOpcional('Fecha de llegada'),
     estado: z.enum(ESTADOS_LOTE_EDITABLES, 'Elige el estado del lote.'),
@@ -30,7 +31,7 @@ export type EntradaDatosLote = z.input<typeof esquemaDatosLote>;
 /** Para crear un lote basta el código; el resto se completa en las pestañas. */
 export const esquemaNuevoLote = z.object({
   codigo_embarque: textoRequerido('Código de embarque', 40).transform((v) => v.toUpperCase()),
-  proveedor: textoOpcional('Proveedor', 120),
+  proveedor_id: proveedorDelLote,
 });
 
 export type EntradaNuevoLote = z.input<typeof esquemaNuevoLote>;

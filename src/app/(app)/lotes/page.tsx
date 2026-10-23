@@ -3,6 +3,7 @@ import { Encabezado } from '@/components/encabezado';
 import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
 import { exigirRol } from '@/lib/auth';
+import { opcionesProveedores } from '@/lib/consultas/proveedores';
 import { ESTADO_LOTE, opciones } from '@/lib/etiquetas';
 import { leerParams } from '@/lib/tabla';
 import { consultarLotes } from './datos';
@@ -17,16 +18,18 @@ export default async function PaginaLotes({ searchParams }: { searchParams: Prom
   await exigirRol('admin');
   const sp = await searchParams;
   const params = leerParams(sp);
-  const { filas, total } = await consultarLotes(params);
+  const proveedor = typeof sp.proveedor === 'string' ? sp.proveedor : '';
+  const [{ filas, total }, proveedores] = await Promise.all([consultarLotes({ ...params, proveedor }), opcionesProveedores()]);
 
   return (
     <>
       <Encabezado titulo="Lotes de importación" descripcion="Cada contenedor con sus costos, packing list, costeo y unidades.">
-        <DialogoNuevoLote />
+        <DialogoNuevoLote proveedores={proveedores} />
       </Encabezado>
       <BarraFiltros
         placeholder="Buscar por código, DAM o proveedor"
         estados={opciones(ESTADO_LOTE)}
+        extras={[{ param: 'proveedor', etiqueta: 'Proveedor', opciones: proveedores }]}
         csvHref="/lotes/csv"
       />
       <TablaLotes filas={filas} />

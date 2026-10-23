@@ -16,6 +16,7 @@ export const MODULOS: readonly Modulo[] = [
   { href: '/admin/usuarios', etiqueta: 'Usuarios', grupo: 'administracion' },
   { href: '/admin/modelos', etiqueta: 'Modelos', grupo: 'administracion' },
   { href: '/admin/ubicaciones', etiqueta: 'Ubicaciones', grupo: 'administracion' },
+  { href: '/admin/proveedores', etiqueta: 'Proveedores', grupo: 'administracion' },
   { href: '/admin/importar', etiqueta: 'Importar Excel', grupo: 'administracion' },
 ];
 

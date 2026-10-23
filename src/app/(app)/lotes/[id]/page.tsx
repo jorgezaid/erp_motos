@@ -1,3 +1,4 @@
+import { opcionesProveedores } from '@/lib/consultas/proveedores';
 import type { EntradaDatosLote } from '@/lib/esquemas/lote';
 import { ESTADO_LOTE } from '@/lib/etiquetas';
 import { obtenerLote } from './datos';
@@ -12,7 +13,7 @@ export default async function DatosLote({ params }: { params: Promise<{ id: stri
   const inicial: EntradaDatosLote = {
     codigo_embarque: lote.codigo_embarque,
     nro_dam: lote.nro_dam ?? '',
-    proveedor: lote.proveedor ?? '',
+    proveedor_id: lote.proveedor_id ?? '',
     fecha_embarque: lote.fecha_embarque ?? '',
     fecha_llegada: lote.fecha_llegada ?? '',
     // En liquidado el campo es solo informativo (no se envía)
@@ -20,5 +21,6 @@ export default async function DatosLote({ params }: { params: Promise<{ id: stri
     notas: lote.notas ?? '',
   };
 
-  return <FormularioDatos id={lote.id} inicial={inicial} liquidado={liquidado} />;
+  const proveedores = await opcionesProveedores(lote.proveedor_id);
+  return <FormularioDatos id={lote.id} inicial={inicial} liquidado={liquidado} proveedores={proveedores} />;
 }

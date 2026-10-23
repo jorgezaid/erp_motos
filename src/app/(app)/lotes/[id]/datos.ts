@@ -14,7 +14,7 @@ export const obtenerLote = cache(async (id: string) => {
   await exigirRol('admin');
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();
-  const { data, error } = await supabase.from('import_batches').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('import_batches').select('*, proveedores(nombre)').eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) notFound();
   return data;
