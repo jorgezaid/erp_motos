@@ -24,6 +24,12 @@ export const CATEGORIA: Record<Enums['vehicle_category'], string> = {
   trimoto_carga: 'Trimoto de carga',
 };
 
+/** D41: origen del lote (todos los roles ven solo esto, nunca el proveedor). */
+export const TIPO_LOTE: Record<Enums['tipo_lote'], string> = {
+  importacion: 'Importación',
+  compra_local: 'Compra local',
+};
+
 /** D41: tipo de batería del modelo. */
 export const TIPO_BATERIA: Record<Enums['tipo_bateria'], string> = {
   plomo_12v: 'Plomo 12V (según el voltaje)',

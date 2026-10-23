@@ -13,13 +13,16 @@ const PESTANAS = [
   { ruta: '/auditoria', etiqueta: 'Auditoría' },
 ];
 
-/** Pestañas de /lotes/[id] (SPEC M3) como enlaces: cada una es una ruta renderizada en el servidor. */
-export function PestanasLote({ id }: { id: string }) {
+/**
+ * Pestañas de /lotes/[id] (SPEC M3) como enlaces: cada una es una ruta renderizada en el servidor.
+ * En una compra local (D41) el packing list se llama «Ítems» (misma ruta).
+ */
+export function PestanasLote({ id, compraLocal }: { id: string; compraLocal: boolean }) {
   const pathname = usePathname();
   const base = `/lotes/${id}`;
   return (
     <nav aria-label="Secciones del lote" className="mb-6 flex gap-1 overflow-x-auto border-b">
-      {PESTANAS.map((p) => {
+      {PESTANAS.map((p) => ({ ...p, etiqueta: compraLocal && p.ruta === '/packing' ? 'Ítems' : p.etiqueta })).map((p) => {
         const href = `${base}${p.ruta}`;
         const activa = pathname === href;
         return (

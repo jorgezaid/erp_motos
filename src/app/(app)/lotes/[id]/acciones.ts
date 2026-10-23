@@ -20,6 +20,14 @@ import {
   type EntradaDatosLote,
   type EntradaLineaPacking,
 } from '@/lib/esquemas/lote';
+import {
+  esquemaCostosCompraLocal,
+  esquemaDatosCompraLocal,
+  esquemaItemCompraLocal,
+  type EntradaCostosCompraLocal,
+  type EntradaDatosCompraLocal,
+  type EntradaItemCompraLocal,
+} from '@/lib/esquemas/compra-local';
 import { proveedorDelLote } from '@/lib/esquemas/proveedor';
 import { createClient } from '@/lib/supabase/server';
 import { costeoDelLote } from './costeo/calculo';
@@ -37,12 +45,12 @@ function revalidarLote(id: string) {
  * Pestaña Datos. Si el lote está liquidado solo se guardan las notas y el proveedor (RN-08, D41); el resto lo
  * rechazaría la BD de todos modos.
  */
-export async function guardarDatosLote(id: string, entrada: EntradaDatosLote): Promise<Resultado> {
+export async function guardarDatosLote(id: string, entrada: EntradaDatosLote | EntradaDatosCompraLocal): Promise<Resultado> {
   await exigirRol('admin');
   if (!idValido(id)) return fallo('Lote no válido.');
   const supabase = await createClient();
 
-  const { data: actual } = await supabase.from('import_batches').select('estado').eq('id', id).maybeSingle();
+  const { data: actual } = await supabase.from('import_batches').select('estado, tipo_lote').eq('id', id).maybeSingle();
   if (!actual) return fallo(MENSAJE_SIN_FILAS);
 
   let cambios;
@@ -54,7 +62,8 @@ export async function guardarDatosLote(id: string, entrada: EntradaDatosLote): P
     if (!proveedor.success) return fallo('Elige un proveedor.');
     cambios = { notas: notas.data || null, proveedor_id: proveedor.data };
   } else {
-    const d = esquemaDatosLote.safeParse(entrada);
+    // El tipo de lote lo decide la BD, no el formulario (D41)
+    const d = (actual.tipo_lote === 'compra_local' ? esquemaDatosCompraLocal : esquemaDatosLote).safeParse(entrada);
     if (!d.success) return falloValidacion(d.error);
     cambios = d.data;
   }
@@ -94,6 +103,35 @@ export async function guardarCostosLote(id: string, entrada: EntradaCostosLote):
 
   const supabase = await createClient();
   const { data, error } = await supabase.from('import_batches').update(cambios).eq('id', id).select('id');
+  if (error) return fallo(mensajeDeError(error));
+  if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidarLote(id);
+  return exito(null);
+}
+
+/** Pestaña Costos de una compra local (D41). Como en la importación, cambiar un monto borra el costeo (D21). */
+export async function guardarCostosCompraLocal(id: string, entrada: EntradaCostosCompraLocal): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(id)) return fallo('Lote no válido.');
+  const d = esquemaCostosCompraLocal.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+
+  const c = d.data;
+  const cambios = {
+    precio_incluye_igv: c.precio_incluye_igv,
+    impuestos_recuperables_al_costo: c.impuestos_recuperables_al_costo,
+    flete_nacional_pen: Number(c.flete_nacional_pen),
+    otros_gastos_pen: Number(c.otros_gastos_pen),
+    costo_armado_unitario_pen: Number(c.costo_armado_unitario_pen),
+  };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('import_batches')
+    .update(cambios)
+    .eq('id', id)
+    .eq('tipo_lote', 'compra_local')
+    .select('id');
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
   revalidarLote(id);
@@ -216,6 +254,45 @@ export async function actualizarLinea(batchId: string, itemId: string, entrada: 
     .select('id');
   if (error) return fallo(mensajeDeError(error));
   if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  revalidarLote(batchId);
+  return exito(null);
+}
+
+/**
+ * Ítem de una compra local (D41): modelo, cantidad y precio unitario en soles. Sin `itemId` lo
+ * agrega; con `itemId`, actualiza cantidad y precio. La BD exige el precio (guard_linea_lote).
+ */
+export async function guardarItemCompraLocal(
+  batchId: string,
+  itemId: string | null,
+  entrada: EntradaItemCompraLocal,
+): Promise<Resultado> {
+  await exigirRol('admin');
+  if (!idValido(batchId) || (itemId !== null && !idValido(itemId))) return fallo('Ítem no válido.');
+  const d = esquemaItemCompraLocal.safeParse(entrada);
+  if (!d.success) return falloValidacion(d.error);
+  const fila = {
+    cantidad_packing_list: d.data.cantidad_packing_list,
+    precio_compra_unitario_pen: Number(d.data.precio_compra_unitario_pen),
+  };
+
+  const supabase = await createClient();
+  if (itemId === null) {
+    const { error } = await supabase.from('batch_items').insert({ batch_id: batchId, model_id: d.data.model_id, ...fila });
+    if (error) {
+      if (error.code === '23505') return fallo('Ese modelo ya está en la compra: edita su ítem.');
+      return fallo(mensajeDeError(error));
+    }
+  } else {
+    const { data, error } = await supabase
+      .from('batch_items')
+      .update(fila)
+      .eq('id', itemId)
+      .eq('batch_id', batchId)
+      .select('id');
+    if (error) return fallo(mensajeDeError(error));
+    if (sinFilasAfectadas(data)) return fallo(MENSAJE_SIN_FILAS);
+  }
   revalidarLote(batchId);
   return exito(null);
 }

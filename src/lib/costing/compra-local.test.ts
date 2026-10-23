@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Decimal } from '@/lib/decimal';
-import { calcularCosteoCompraLocal, type LineaCompraLocal, type LoteCompraLocal } from './compra-local';
+import { calcularCosteoCompraLocal, totalesCompra, type LineaCompraLocal, type LoteCompraLocal } from './compra-local';
 import {
   calcularCostoTotalPen,
   calcularCostoUnitarioPen,
@@ -219,5 +219,12 @@ describe('importación sin cambios (D41)', () => {
     );
     expect(filas.every((f) => !('compra_asignada_pen' in f) && !('otros_gastos_asignado_pen' in f))).toBe(true);
     expect(filas.map(calcularCostoUnitarioPen)).toEqual(['3193.24', '8958.29']);
+  });
+});
+
+describe('totalesCompra (D41)', () => {
+  it('suma unidades y lo pagado por la factura', () => {
+    expect(totalesCompra(lineasLuna)).toEqual({ unidades: 6, total: '37760.00' });
+    expect(totalesCompra([])).toEqual({ unidades: 0, total: '0.00' });
   });
 });

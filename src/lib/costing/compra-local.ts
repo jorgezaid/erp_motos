@@ -150,3 +150,14 @@ export function calcularCosteoCompraLocal(lote: LoteCompraLocal, lineas: readonl
     };
   });
 }
+
+/** Totales de la pestaña Ítems: Σ unidades y Σ (cantidad × precio unitario), como se pagó. */
+export function totalesCompra(lineas: readonly Pick<LineaCompraLocal, 'cantidad_packing_list' | 'precio_compra_unitario_pen'>[]) {
+  let total = new Decimal(0);
+  let unidades = 0;
+  for (const l of lineas) {
+    total = total.plus(new Decimal(l.precio_compra_unitario_pen ?? 0).times(l.cantidad_packing_list));
+    unidades += l.cantidad_packing_list;
+  }
+  return { unidades, total: total.toFixed(2) };
+}

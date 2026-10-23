@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { calcularCosteoCompraLocal } from './compra-local';
 import { estadoCosteo, type FilaGuardada } from './estado-costeo';
 import { calcularProrrateo, type FilaCosteo } from './prorrateo';
 
@@ -38,5 +39,20 @@ describe('estadoCosteo (RN-07: liquidar exige costeo vigente)', () => {
     expect(estadoCosteo(comoGuardadas(calculadas), otro)).toBe('desactualizado');
     expect(estadoCosteo(comoGuardadas(calculadas), calculadas.slice(0, 1))).toBe('desactualizado');
     expect(estadoCosteo(comoGuardadas(calculadas), null)).toBe('desactualizado');
+  });
+
+  it('D41: una importación guardada (compra y otros gastos en 0 en la BD) sigue vigente', () => {
+    const guardadas = comoGuardadas(calculadas).map((g) => ({ ...g, compra_asignada_pen: 0, otros_gastos_asignado_pen: 0 }));
+    expect(estadoCosteo(guardadas, calculadas)).toBe('vigente');
+  });
+
+  it('D41: compra local desactualizada si cambia el precio de compra o los otros gastos', () => {
+    const compra = { precio_incluye_igv: true, igv_al_costo: true, flete_nacional_pen: '1000', otros_gastos_pen: '100', costo_armado_unitario_pen: '50' };
+    const items = [{ model_id: 'a', codigo_modelo: 'LUNA-T', cantidad_packing_list: 4, precio_compra_unitario_pen: '5900' }];
+    const guardadas = comoGuardadas(calcularCosteoCompraLocal(compra, items));
+    expect(estadoCosteo(guardadas, calcularCosteoCompraLocal(compra, items))).toBe('vigente');
+    const otroPrecio = [{ ...items[0], precio_compra_unitario_pen: '5800' }] as typeof items;
+    expect(estadoCosteo(guardadas, calcularCosteoCompraLocal(compra, otroPrecio))).toBe('desactualizado');
+    expect(estadoCosteo(guardadas, calcularCosteoCompraLocal({ ...compra, otros_gastos_pen: '0' }, items))).toBe('desactualizado');
   });
 });

@@ -22,6 +22,9 @@ const COLUMNAS = [
   'sueldos_asignado_pen',
   'publicidad_asignada_pen',
   'armado_pen',
+  // Compra local (D41); 0 en importación
+  'compra_asignada_pen',
+  'otros_gastos_asignado_pen',
 ] as const satisfies readonly (keyof FilaCosteo)[];
 
 export function estadoCosteo(guardadas: readonly FilaGuardada[], calculadas: readonly FilaCosteo[] | null): EstadoCosteo {
@@ -32,7 +35,7 @@ export function estadoCosteo(guardadas: readonly FilaGuardada[], calculadas: rea
     const g = porModelo.get(c.model_id);
     if (!g || g.cantidad !== c.cantidad) return 'desactualizado';
     for (const col of COLUMNAS) {
-      if (!new Decimal(g[col]).equals(c[col])) return 'desactualizado';
+      if (!new Decimal(g[col] ?? 0).equals(c[col] ?? 0)) return 'desactualizado';
     }
   }
   return 'vigente';

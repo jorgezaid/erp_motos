@@ -20,6 +20,8 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
   if (error) throw new Error(error.message);
   const data = filas.map((f) => ({ ...f, motos_sin_serial_real: sinSerial.get(claveLoteModelo(f.batch_id, f.codigo_modelo)) ?? 0 }));
   const conAlertas = data.filter(tieneAlertas).length;
+  // Una compra local (D41) no tiene DAM
+  const conDam = lote.tipo_lote !== 'compra_local';
 
   return (
     <div className="grid gap-4">
@@ -31,7 +33,7 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
           </Alert>
         ) : (
           <p className="text-sm text-muted-foreground">
-            {data.length === 0 ? 'El lote no tiene packing list.' : 'Sin diferencias entre packing list, DAM y unidades.'}
+            {data.length === 0 ? 'El lote no tiene packing list.' : conDam ? 'Sin diferencias entre packing list, DAM y unidades.' : 'Sin diferencias entre los ítems y las unidades.'}
           </p>
         )}
         <Button variant="outline" asChild>
@@ -46,7 +48,7 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
             <TableRow>
               <TableHead>Modelo</TableHead>
               <TableHead className="text-right">Packing list</TableHead>
-              <TableHead className="text-right">DAM</TableHead>
+              {conDam && <TableHead className="text-right">DAM</TableHead>}
               <TableHead className="text-right">Registradas</TableHead>
               <TableHead className="text-right">Baterías completas</TableHead>
               <TableHead className="text-right">Inspección aprobada</TableHead>
@@ -67,7 +69,7 @@ export default async function AuditoriaLote({ params }: { params: Promise<{ id: 
                     {f.codigo_modelo} <span className="text-muted-foreground">({f.voltaje_sistema}V)</span>
                   </TableCell>
                   <TableCell className="text-right">{f.cantidad_packing_list}</TableCell>
-                  <TableCell className="text-right">{f.cantidad_dam ?? '—'}</TableCell>
+                  {conDam && <TableCell className="text-right">{f.cantidad_dam ?? '—'}</TableCell>}
                   <TableCell className="text-right">{f.unidades_registradas}</TableCell>
                   <TableCell className="text-right">{f.unidades_baterias_completas}</TableCell>
                   <TableCell className="text-right">{f.unidades_inspeccion_aprobada}</TableCell>

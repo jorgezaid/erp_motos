@@ -4,9 +4,10 @@ import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
 import { exigirRol } from '@/lib/auth';
 import { opcionesProveedores } from '@/lib/consultas/proveedores';
-import { ESTADO_LOTE, opciones } from '@/lib/etiquetas';
+import { ESTADO_LOTE, opciones, TIPO_LOTE } from '@/lib/etiquetas';
 import { leerParams } from '@/lib/tabla';
 import { consultarLotes } from './datos';
+import { DialogoCompraLocal } from './dialogo-compra-local';
 import { DialogoNuevoLote } from './dialogo-nuevo-lote';
 import { TablaLotes } from './tabla-lotes';
 
@@ -19,17 +20,28 @@ export default async function PaginaLotes({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const params = leerParams(sp);
   const proveedor = typeof sp.proveedor === 'string' ? sp.proveedor : '';
-  const [{ filas, total }, proveedores] = await Promise.all([consultarLotes({ ...params, proveedor }), opcionesProveedores()]);
+  const origen = typeof sp.origen === 'string' ? sp.origen : '';
+  const [{ filas, total }, proveedores] = await Promise.all([
+    consultarLotes({ ...params, proveedor, origen }),
+    opcionesProveedores(),
+  ]);
 
   return (
     <>
-      <Encabezado titulo="Lotes de importación" descripcion="Cada contenedor con sus costos, packing list, costeo y unidades.">
+      <Encabezado
+        titulo="Lotes"
+        descripcion="Importaciones (cada contenedor) y compras locales, con sus costos, costeo y unidades."
+      >
+        <DialogoCompraLocal proveedores={proveedores} />
         <DialogoNuevoLote proveedores={proveedores} />
       </Encabezado>
       <BarraFiltros
-        placeholder="Buscar por código, DAM o proveedor"
+        placeholder="Buscar por código, DAM, factura o proveedor"
         estados={opciones(ESTADO_LOTE)}
-        extras={[{ param: 'proveedor', etiqueta: 'Proveedor', opciones: proveedores }]}
+        extras={[
+          { param: 'origen', etiqueta: 'Origen', opciones: opciones(TIPO_LOTE) },
+          { param: 'proveedor', etiqueta: 'Proveedor', opciones: proveedores },
+        ]}
         csvHref="/lotes/csv"
       />
       <TablaLotes filas={filas} />

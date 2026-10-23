@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Decimal } from '@/lib/decimal';
 import { estadoCosteo } from '@/lib/costing/estado-costeo';
-import { calcularCostoTotalPen, calcularCostoUnitarioPen } from '@/lib/costing/prorrateo';
+import { calcularCostoTotalPen, calcularCostoUnitarioPen, type FilaCosteo } from '@/lib/costing/prorrateo';
 import { formatNumero, formatPEN, formatUSD } from '@/lib/format';
 import { calcularMatrizPrecios, type TipoVenta } from '@/lib/pricing/precios';
 import { createClient } from '@/lib/supabase/server';
@@ -11,7 +11,31 @@ import { obtenerLote, obtenerPacking } from '../datos';
 import { BotonGuardarCosteo, BotonLiquidar, BotonReabrir } from './acciones-costeo';
 import { costeoDelLote } from './calculo';
 
-const n4 = (v: string) => formatNumero(v, 4);
+const n4 = (v: string | undefined) => formatNumero(v ?? '0', 4);
+
+type Columna = { titulo: string; valor: (f: FilaCosteo) => string | undefined };
+
+/** Columnas del prorrateo de una importación (tabla de SPEC §7). */
+const COLUMNAS_IMPORTACION: Columna[] = [
+  { titulo: 'FOB (US$)', valor: (f) => f.fob_asignado_usd },
+  { titulo: 'Impuestos (S/)', valor: (f) => f.impuestos_asignados_pen },
+  { titulo: 'Flete int. (US$)', valor: (f) => f.flete_internacional_asignado_usd },
+  { titulo: 'Agente (US$)', valor: (f) => f.gastos_agente_asignado_usd },
+  { titulo: 'Flete nac. (S/)', valor: (f) => f.flete_nacional_asignado_pen },
+  { titulo: 'Alquiler (S/)', valor: (f) => f.alquiler_asignado_pen },
+  { titulo: 'Sueldos (S/)', valor: (f) => f.sueldos_asignado_pen },
+  { titulo: 'Publicidad (S/)', valor: (f) => f.publicidad_asignada_pen },
+  { titulo: 'Armado (S/)', valor: (f) => f.armado_pen },
+];
+
+/** Columnas del costeo de una compra local (D41): todo en soles. */
+const COLUMNAS_COMPRA_LOCAL: Columna[] = [
+  { titulo: 'Compra (S/)', valor: (f) => f.compra_asignada_pen },
+  { titulo: 'IGV al costo (S/)', valor: (f) => f.impuestos_asignados_pen },
+  { titulo: 'Flete Lima → Arequipa (S/)', valor: (f) => f.flete_nacional_asignado_pen },
+  { titulo: 'Otros gastos (S/)', valor: (f) => f.otros_gastos_asignado_pen },
+  { titulo: 'Armado (S/)', valor: (f) => f.armado_pen },
+];
 
 /**
  * Pestaña Costeo (SPEC M3): vista previa del prorrateo (tabla de SPEC §7), costo unitario y
@@ -21,6 +45,8 @@ export default async function CosteoLote({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const lote = await obtenerLote(id);
   const liquidado = lote.estado === 'liquidado';
+  const compraLocal = lote.tipo_lote === 'compra_local';
+  const columnas = compraLocal ? COLUMNAS_COMPRA_LOCAL : COLUMNAS_IMPORTACION;
   const supabase = await createClient();
 
   const [items, { data: guardadas }, { data: margenes }, { data: precios }] = await Promise.all([
@@ -90,22 +116,18 @@ export default async function CosteoLote({ params }: { params: Promise<{ id: str
       {costeo.ok && (
         <>
           <section className="grid gap-2">
-            <h2 className="font-semibold">Prorrateo por modelo (SPEC §7)</h2>
+            <h2 className="font-semibold">{compraLocal ? 'Costeo por modelo (compra local)' : 'Prorrateo por modelo (SPEC §7)'}</h2>
             <div className="overflow-x-auto rounded-md border">
               <Table data-testid="tabla-costeo">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Modelo</TableHead>
                     <TableHead className="text-right">q</TableHead>
-                    <TableHead className="text-right">FOB (US$)</TableHead>
-                    <TableHead className="text-right">Impuestos (S/)</TableHead>
-                    <TableHead className="text-right">Flete int. (US$)</TableHead>
-                    <TableHead className="text-right">Agente (US$)</TableHead>
-                    <TableHead className="text-right">Flete nac. (S/)</TableHead>
-                    <TableHead className="text-right">Alquiler (S/)</TableHead>
-                    <TableHead className="text-right">Sueldos (S/)</TableHead>
-                    <TableHead className="text-right">Publicidad (S/)</TableHead>
-                    <TableHead className="text-right">Armado (S/)</TableHead>
+                    {columnas.map((c) => (
+                      <TableHead key={c.titulo} className="text-right">
+                        {c.titulo}
+                      </TableHead>
+                    ))}
                     <TableHead className="text-right">Costo total</TableHead>
                     <TableHead className="text-right">Unitario</TableHead>
                   </TableRow>
@@ -115,15 +137,11 @@ export default async function CosteoLote({ params }: { params: Promise<{ id: str
                     <TableRow key={f.model_id}>
                       <TableCell className="font-medium">{f.codigo_modelo}</TableCell>
                       <TableCell className="text-right">{f.cantidad}</TableCell>
-                      <TableCell className="text-right">{n4(f.fob_asignado_usd)}</TableCell>
-                      <TableCell className="text-right">{n4(f.impuestos_asignados_pen)}</TableCell>
-                      <TableCell className="text-right">{n4(f.flete_internacional_asignado_usd)}</TableCell>
-                      <TableCell className="text-right">{n4(f.gastos_agente_asignado_usd)}</TableCell>
-                      <TableCell className="text-right">{n4(f.flete_nacional_asignado_pen)}</TableCell>
-                      <TableCell className="text-right">{n4(f.alquiler_asignado_pen)}</TableCell>
-                      <TableCell className="text-right">{n4(f.sueldos_asignado_pen)}</TableCell>
-                      <TableCell className="text-right">{n4(f.publicidad_asignada_pen)}</TableCell>
-                      <TableCell className="text-right">{n4(f.armado_pen)}</TableCell>
+                      {columnas.map((c) => (
+                        <TableCell key={c.titulo} className="text-right">
+                          {n4(c.valor(f))}
+                        </TableCell>
+                      ))}
                       <TableCell className="text-right">{formatPEN(calcularCostoTotalPen(f))}</TableCell>
                       <TableCell className="text-right font-semibold" data-testid={`unitario-${f.codigo_modelo}`}>
                         {formatPEN(calcularCostoUnitarioPen(f))}
@@ -133,8 +151,10 @@ export default async function CosteoLote({ params }: { params: Promise<{ id: str
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={11}>
-                      Costo total del lote (TC {formatNumero(lote.tipo_cambio, 4)} · FOB {formatUSD(lote.fob_total_usd)})
+                    <TableCell colSpan={columnas.length + 2}>
+                      {compraLocal
+                        ? `Costo total de la compra (precios ${lote.precio_incluye_igv ? 'con' : 'sin'} IGV · IGV ${lote.impuestos_recuperables_al_costo ? 'al costo' : 'como crédito fiscal'})`
+                        : `Costo total del lote (TC ${formatNumero(lote.tipo_cambio, 4)} · FOB ${formatUSD(lote.fob_total_usd)})`}
                     </TableCell>
                     <TableCell className="text-right font-semibold" data-testid="costo-total-lote">
                       {formatPEN(totalLote)}

@@ -1,9 +1,11 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { EntradaCostosCompraLocal } from '@/lib/esquemas/compra-local';
 import type { EntradaCostosLote } from '@/lib/esquemas/lote';
 import { createClient } from '@/lib/supabase/server';
 import { BotonReabrir } from '../costeo/acciones-costeo';
 import { obtenerLote } from '../datos';
 import { FormularioCostos } from './formulario-costos';
+import { FormularioCostosCompraLocal } from './formulario-costos-compra-local';
 
 const texto = (v: number | null) => (v === null ? '' : String(v));
 
@@ -18,6 +20,31 @@ export default async function CostosLote({ params }: { params: Promise<{ id: str
     .from('batch_model_costs')
     .select('model_id', { count: 'exact', head: true })
     .eq('batch_id', lote.id);
+
+  const avisoLiquidado = liquidado && (
+    <Alert className="mb-6 max-w-4xl">
+      <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+        <span>El lote está liquidado: sus costos están congelados (RN-08). Reábrelo para editarlos.</span>
+        <BotonReabrir batchId={lote.id} codigo={lote.codigo_embarque} />
+      </AlertDescription>
+    </Alert>
+  );
+
+  if (lote.tipo_lote === 'compra_local') {
+    const inicial: EntradaCostosCompraLocal = {
+      precio_incluye_igv: lote.precio_incluye_igv,
+      impuestos_recuperables_al_costo: lote.impuestos_recuperables_al_costo,
+      flete_nacional_pen: texto(lote.flete_nacional_pen),
+      otros_gastos_pen: texto(lote.otros_gastos_pen),
+      costo_armado_unitario_pen: texto(lote.costo_armado_unitario_pen),
+    };
+    return (
+      <>
+        {avisoLiquidado}
+        <FormularioCostosCompraLocal id={lote.id} inicial={inicial} liquidado={liquidado} hayCosteo={(count ?? 0) > 0} />
+      </>
+    );
+  }
 
   const inicial: EntradaCostosLote = {
     tipo_cambio: texto(lote.tipo_cambio),
@@ -38,14 +65,7 @@ export default async function CostosLote({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      {liquidado && (
-        <Alert className="mb-6 max-w-4xl">
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-            <span>El lote está liquidado: sus costos están congelados (RN-08). Reábrelo para editarlos.</span>
-            <BotonReabrir batchId={lote.id} codigo={lote.codigo_embarque} />
-          </AlertDescription>
-        </Alert>
-      )}
+      {avisoLiquidado}
       <FormularioCostos id={lote.id} inicial={inicial} liquidado={liquidado} hayCosteo={(count ?? 0) > 0} />
     </>
   );

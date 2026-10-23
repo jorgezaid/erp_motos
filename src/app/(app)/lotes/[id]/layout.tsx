@@ -16,6 +16,8 @@ export default async function LayoutLote({
   await exigirRol('admin');
   const { id } = await params;
   const lote = await obtenerLote(id);
+  const compraLocal = lote.tipo_lote === 'compra_local';
+  const documento = compraLocal ? lote.nro_factura && `Factura ${lote.nro_factura}` : lote.nro_dam && `DAM ${lote.nro_dam}`;
 
   return (
     <>
@@ -28,16 +30,16 @@ export default async function LayoutLote({
       <Encabezado
         titulo={
           <span className="flex flex-wrap items-center gap-3">
-            Lote {lote.codigo_embarque} <EstadoLote estado={lote.estado} />
+            {compraLocal ? 'Compra local' : 'Lote'} {lote.codigo_embarque} <EstadoLote estado={lote.estado} />
           </span>
         }
         descripcion={
           lote.estado === 'liquidado'
             ? `Liquidado el ${formatFechaHora(lote.liquidado_at)}: costos congelados (RN-08).`
-            : [lote.proveedores?.nombre, lote.nro_dam && `DAM ${lote.nro_dam}`].filter(Boolean).join(' · ') || undefined
+            : [lote.proveedores?.nombre, documento].filter(Boolean).join(' · ') || undefined
         }
       />
-      <PestanasLote id={lote.id} />
+      <PestanasLote id={lote.id} compraLocal={compraLocal} />
       {children}
     </>
   );
