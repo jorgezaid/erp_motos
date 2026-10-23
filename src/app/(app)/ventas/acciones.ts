@@ -15,7 +15,8 @@ import {
 import { createClient } from '@/lib/supabase/server';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import type { DatosModelo } from '@/lib/modelos';
-import { MAX_FILAS_CSV } from '@/lib/tabla';
+import { MAX_FILAS_CSV, valorPermitido } from '@/lib/tabla';
+import { TIPO_LOTE, type TipoLote } from '@/lib/etiquetas';
 import {
   analizarCliente,
   documentoValido,
@@ -321,6 +322,8 @@ export type UnidadDisponible = {
   colores: string;
   ubicacion: string;
   precio: number | null;
+  /** D41: solo el origen; el proveedor nunca llega al vendedor */
+  tipo_lote: TipoLote | null;
 };
 
 export type BusquedaUnidades = {
@@ -335,19 +338,21 @@ const MAX_RESULTADOS = 30;
  * Búsqueda de unidades para la orden (SPEC M6): por VIN, o por modelo y color, sin distinguir
  * mayúsculas ni tildes (se filtra aquí: `ilike` sí distingue tildes). Solo unidades listas en
  * tienda con precio (lotes liquidados, RN-12), con el precio de la escala de la orden.
+ * `origen` (D41): '' = todos, o solo importación o compra local.
  */
-export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resultado<BusquedaUnidades>> {
+export async function buscarUnidades(q: string, tipoVenta: string, origen = ''): Promise<Resultado<BusquedaUnidades>> {
   await exigirRol('admin', 'vendedor');
   const tipo = esquemaTipo.safeParse(tipoVenta);
   if (!tipo.success) return fallo('Tipo de venta no válido.');
   const columna = ({ unidad_x1: 'precio_x1', mayorista_x3: 'precio_x3', distribuidor_x6: 'precio_x6' } as const)[tipo.data];
+  const filtroOrigen = valorPermitido(origen, Object.keys(TIPO_LOTE) as TipoLote[]);
 
   const supabase = await createClient();
   const [{ data, error }, modelos] = await Promise.all([
     supabase
       .from('v_stock')
       .select(
-        'vehicle_id, vin_chasis, codigo_modelo, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6',
+        'vehicle_id, vin_chasis, codigo_modelo, categoria, voltaje_sistema, cantidad_baterias_12v, potencia_motor_watts, color_primario, color_secundario, ubicacion, precio_x1, precio_x3, precio_x6, tipo_lote',
       )
       .eq('estado', 'listo_en_tienda')
       .order('codigo_modelo')
@@ -356,7 +361,8 @@ export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resu
     leerIdentidadModelos(),
   ]);
   if (error) return fallo(mensajeDeError(error));
-  const conPrecio = data.filter((u) => u[columna] !== null);
+  // El origen se filtra aquí para que `hayEnTienda` siga contando todas las motos en tienda
+  const conPrecio = data.filter((u) => u[columna] !== null && (!filtroOrigen || u.tipo_lote === filtroOrigen));
   const encontradas = filtrarUnidades(conPrecio, q.slice(0, 60)).slice(0, MAX_RESULTADOS);
   return exito({
     hayEnTienda: data.length > 0,
@@ -368,6 +374,7 @@ export async function buscarUnidades(q: string, tipoVenta: string): Promise<Resu
       colores: [u.color_primario, u.color_secundario].filter(Boolean).join(' / ') || '—',
       ubicacion: u.ubicacion ?? '—',
       precio: u[columna],
+      tipo_lote: u.tipo_lote,
     })),
   });
 }

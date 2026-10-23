@@ -1,13 +1,24 @@
 import 'server-only';
+import type { Rol } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 
 type SP = Record<string, string | string[] | undefined>;
 
 const texto = (v: string | string[] | undefined) => (typeof v === 'string' ? v.trim().slice(0, 60) : '');
 
-/** Filtros extra de /inventario (SPEC M4): modelo, ubicación, color y baterías sin serial real (D37). */
-export function leerFiltrosInventario(sp: SP) {
-  return { modelo: texto(sp.modelo), ubicacion: texto(sp.ubicacion), color: texto(sp.color), baterias: texto(sp.baterias) };
+/**
+ * Filtros extra de /inventario (SPEC M4): modelo, ubicación, color, baterías sin serial real (D37)
+ * y origen (D41). El proveedor solo se lee para el admin (D41: el vendedor y el técnico no lo ven).
+ */
+export function leerFiltrosInventario(sp: SP, rol: Rol) {
+  return {
+    modelo: texto(sp.modelo),
+    ubicacion: texto(sp.ubicacion),
+    color: texto(sp.color),
+    baterias: texto(sp.baterias),
+    origen: texto(sp.origen),
+    proveedor: rol === 'admin' ? texto(sp.proveedor) : '',
+  };
 }
 
 /** Colores ya usados (primario o secundario), ordenados: filtro y sugerencias del editor (D39). */

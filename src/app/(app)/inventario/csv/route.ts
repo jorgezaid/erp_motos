@@ -16,7 +16,7 @@ const PRECIOS: ColumnaCsv<Fila>[] = [
 export async function GET(request: NextRequest) {
   const sesion = await exigirRol();
   const sp = Object.fromEntries(request.nextUrl.searchParams);
-  const { filas } = await consultarStock({ ...leerParams(sp), ...leerFiltrosInventario(sp) }, { todas: true });
+  const { filas } = await consultarStock({ ...leerParams(sp), ...leerFiltrosInventario(sp, sesion.rol) }, { todas: true });
   const columnas = sesion.rol === 'tecnico' ? COLUMNAS_CSV_STOCK : [...COLUMNAS_CSV_STOCK, ...PRECIOS];
   return respuestaCsv(aCsv(filas, columnas), `inventario-${hoyLima()}.csv`);
 }

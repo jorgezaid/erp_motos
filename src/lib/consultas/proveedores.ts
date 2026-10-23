@@ -1,4 +1,5 @@
 import 'server-only';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 
 export type OpcionProveedor = { valor: string; etiqueta: string };
@@ -10,7 +11,8 @@ export type OpcionProveedor = { valor: string; etiqueta: string };
 export async function opcionesProveedores(actual?: string | null): Promise<OpcionProveedor[]> {
   const supabase = await createClient();
   let consulta = supabase.from('proveedores').select('id, nombre, ruc').order('nombre');
-  consulta = actual ? consulta.or(`activo.eq.true,id.eq.${actual}`) : consulta.eq('activo', true);
+  // Solo un uuid entra al filtro (puede venir de la URL)
+  consulta = actual && z.uuid().safeParse(actual).success ? consulta.or(`activo.eq.true,id.eq.${actual}`) : consulta.eq('activo', true);
   const { data, error } = await consulta;
   if (error) throw new Error(error.message);
   return data.map((p) => ({ valor: p.id, etiqueta: p.ruc ? `${p.nombre} · RUC ${p.ruc}` : p.nombre }));

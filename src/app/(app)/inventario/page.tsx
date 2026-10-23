@@ -6,7 +6,8 @@ import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { exigirRol } from '@/lib/auth';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
-import { consultarStock, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
+import { opcionesProveedores } from '@/lib/consultas/proveedores';
+import { consultarStock, OPCION_FILTRO_BATERIAS, OPCION_FILTRO_ORIGEN, textoInspeccion } from '@/lib/consultas/stock';
 import { puedeEditarColor } from '@/lib/esquemas/color';
 import { puedeMoverUnidad } from '@/lib/esquemas/mover';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
@@ -24,13 +25,16 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
   const sesion = await exigirRol();
   const sp = await searchParams;
   const params = leerParams(sp);
-  const extra = leerFiltrosInventario(sp);
+  const extra = leerFiltrosInventario(sp, sesion.rol);
   const moverMotos = sesion.rol === 'admin' || sesion.rol === 'tecnico';
-  const [{ filas, total }, op, modelos, ubicaciones] = await Promise.all([
+  const admin = sesion.rol === 'admin';
+  const [{ filas, total }, op, modelos, ubicaciones, proveedores] = await Promise.all([
     consultarStock({ ...params, ...extra }),
     opcionesFiltroInventario(),
     leerIdentidadModelos(),
     moverMotos ? ubicacionesActivas() : null,
+    // D41: el filtro por proveedor solo existe para el admin (ni la consulta se hace para otro rol)
+    admin ? opcionesProveedores() : null,
   ]);
 
   const unidades: FilaInventario[] = filas.map((f) => ({
@@ -72,6 +76,8 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
           { param: 'ubicacion', etiqueta: 'Ubicación', opciones: op.ubicaciones },
           { param: 'color', etiqueta: 'Color', opciones: op.colores },
           OPCION_FILTRO_BATERIAS,
+          OPCION_FILTRO_ORIGEN,
+          ...(proveedores ? [{ param: 'proveedor', etiqueta: 'Proveedor', opciones: proveedores }] : []),
         ]}
         csvHref="/inventario/csv"
       />

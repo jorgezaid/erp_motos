@@ -1,5 +1,6 @@
 import 'server-only';
-import { CATEGORIA, ESTADO_UNIDAD } from '@/lib/etiquetas';
+import { z } from 'zod';
+import { CATEGORIA, ESTADO_UNIDAD, opciones, TIPO_LOTE, type TipoLote } from '@/lib/etiquetas';
 import type { Categoria } from '@/lib/modelos';
 import { createClient } from '@/lib/supabase/server';
 import { PREFIJO_PROVISIONAL } from '@/lib/taller';
@@ -28,7 +29,14 @@ export type FiltrosStock = ParamsTabla & {
   estados?: Estado[];
   /** D37: `provisionales` = solo «Baterías sin serial real» */
   baterias?: string;
+  /** D41: importación o compra local (todos los roles) */
+  origen?: string;
+  /** D41: id del proveedor. Solo para el admin: el RLS de import_batches no deja resolverlo a otro rol */
+  proveedor?: string;
 };
+
+/** D41: filtro por origen del lote (el proveedor nunca se ofrece al vendedor ni al técnico). */
+export const OPCION_FILTRO_ORIGEN = { param: 'origen', etiqueta: 'Origen', opciones: opciones(TIPO_LOTE) };
 
 /** D37: valor del filtro `?baterias=` para las motos con seriales PROV-. */
 export const FILTRO_SIN_SERIAL_REAL = 'provisionales';
@@ -65,6 +73,13 @@ export async function consultarStock(f: FiltrosStock, { todas = false }: { todas
   const categoria = valorPermitido(f.categoria ?? '', Object.keys(CATEGORIA) as Categoria[]);
   if (categoria) consulta = consulta.eq('categoria', categoria);
   if (f.ubicacion) consulta = consulta.eq('ubicacion', f.ubicacion);
+  const origen = valorPermitido(f.origen ?? '', Object.keys(TIPO_LOTE) as TipoLote[]);
+  if (origen) consulta = consulta.eq('tipo_lote', origen);
+  if (f.proveedor && z.uuid().safeParse(f.proveedor).success) {
+    const { data: lotes, error } = await supabase.from('import_batches').select('id').eq('proveedor_id', f.proveedor);
+    if (error) throw new Error(error.message);
+    consulta = consulta.in('batch_id', lotes.map((l) => l.id));
+  }
   if (f.baterias === FILTRO_SIN_SERIAL_REAL) {
     consulta = consulta.in('vehicle_id', [...(await contarProvisionales(supabase)).keys()]);
   }
@@ -90,6 +105,7 @@ export const COLUMNAS_CSV_STOCK: ColumnaCsv<FilaStock>[] = [
   { encabezado: 'VIN', valor: (s) => s.vin_chasis },
   { encabezado: 'Motor', valor: (s) => s.nro_motor },
   { encabezado: 'Modelo', valor: (s) => s.codigo_modelo },
+  { encabezado: 'Origen', valor: (s) => (s.tipo_lote ? TIPO_LOTE[s.tipo_lote] : '') },
   { encabezado: 'Voltaje (V)', valor: (s) => s.voltaje_sistema },
   { encabezado: 'Color 1', valor: (s) => s.color_primario },
   { encabezado: 'Color 2', valor: (s) => s.color_secundario },

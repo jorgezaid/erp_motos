@@ -675,14 +675,20 @@ isOneToOne: false
                   ]
                 },"v_sales_margin": {
                   Row: {
-                    "cliente_nombre": string | null,"codigo_modelo": string | null,"confirmada_at": string | null,"costo_landing_unitario_pen": number | null,"margen_real": number | null,"numero": number | null,"order_id": string | null,"precio_unitario_pen": number | null,"tipo_venta": Database["public"]['Enums']["sale_type"] | null,"utilidad_pen": number | null,"vin_chasis": string | null
+                    "cliente_nombre": string | null,"codigo_modelo": string | null,"confirmada_at": string | null,"costo_landing_unitario_pen": number | null,"margen_real": number | null,"numero": number | null,"order_id": string | null,"precio_unitario_pen": number | null,"proveedor": string | null,"proveedor_id": string | null,"tipo_lote": Database["public"]['Enums']["tipo_lote"] | null,"tipo_venta": Database["public"]['Enums']["sale_type"] | null,"utilidad_pen": number | null,"vin_chasis": string | null
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "import_batches_proveedor_id_fkey"
+      columns: ["proveedor_id"]
+isOneToOne: false
+      referencedRelation: "proveedores"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"v_stock": {
                   Row: {
-                    "amperaje_bateria_ah": number | null,"batch_id": string | null,"baterias_registradas": number | null,"cantidad_baterias_12v": number | null,"categoria": Database["public"]['Enums']["vehicle_category"] | null,"codigo_modelo": string | null,"color_primario": string | null,"color_secundario": string | null,"estado": Database["public"]['Enums']["vehicle_status"] | null,"location_id": string | null,"model_id": string | null,"nro_motor": string | null,"potencia_motor_watts": number | null,"precio_x1": number | null,"precio_x3": number | null,"precio_x6": number | null,"ubicacion": string | null,"ultima_inspeccion_aprobada": boolean | null,"vehicle_id": string | null,"vin_chasis": string | null,"voltaje_sistema": number | null
+                    "amperaje_bateria_ah": number | null,"batch_id": string | null,"baterias_registradas": number | null,"cantidad_baterias_12v": number | null,"categoria": Database["public"]['Enums']["vehicle_category"] | null,"codigo_modelo": string | null,"color_primario": string | null,"color_secundario": string | null,"estado": Database["public"]['Enums']["vehicle_status"] | null,"location_id": string | null,"model_id": string | null,"nro_motor": string | null,"potencia_motor_watts": number | null,"precio_x1": number | null,"precio_x3": number | null,"precio_x6": number | null,"tipo_lote": Database["public"]['Enums']["tipo_lote"] | null,"ubicacion": string | null,"ultima_inspeccion_aprobada": boolean | null,"vehicle_id": string | null,"vin_chasis": string | null,"voltaje_sistema": number | null
                   }
                   Relationships: [
                     {
@@ -720,10 +726,16 @@ isOneToOne: false
                   ]
                 },"v_vehicle_costs": {
                   Row: {
-                    "codigo_embarque": string | null,"codigo_modelo": string | null,"costo_landing_calculado_pen": number | null,"estado": Database["public"]['Enums']["vehicle_status"] | null,"nro_motor": string | null,"vehicle_id": string | null,"vin_chasis": string | null
+                    "codigo_embarque": string | null,"codigo_modelo": string | null,"costo_landing_calculado_pen": number | null,"estado": Database["public"]['Enums']["vehicle_status"] | null,"nro_motor": string | null,"proveedor": string | null,"proveedor_id": string | null,"tipo_lote": Database["public"]['Enums']["tipo_lote"] | null,"vehicle_id": string | null,"vin_chasis": string | null
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "import_batches_proveedor_id_fkey"
+      columns: ["proveedor_id"]
+isOneToOne: false
+      referencedRelation: "proveedores"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"v_warranties": {
                   Row: {
@@ -842,6 +854,9 @@ isOneToOne: false
                            },
 "normalizar_color":
 { Args: { "p": string }; Returns: string
+                           },
+"origen_lote":
+{ Args: { "p_batch_id": string }; Returns: Database["public"]['Enums']["tipo_lote"]
                            },
 "pendientes_de_registro":
 { Args: Record<PropertyKey, never>; Returns: {

@@ -4,7 +4,8 @@ import { Encabezado } from '@/components/encabezado';
 import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { exigirRol } from '@/lib/auth';
-import { TIPO_VENTA_CORTO } from '@/lib/etiquetas';
+import { opcionesProveedores } from '@/lib/consultas/proveedores';
+import { opciones, TIPO_LOTE, TIPO_VENTA_CORTO } from '@/lib/etiquetas';
 import { formatFechaHora, formatPEN, formatPorcentaje } from '@/lib/format';
 import { margenPorModelo, margenPorVenta, totalMargen, type Agregado } from '@/lib/margenes';
 import { cn } from '@/lib/utils';
@@ -103,7 +104,7 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
       </>
     );
   } else {
-    const filas = await consultarMargenes(f);
+    const [filas, proveedores] = await Promise.all([consultarMargenes(f), opcionesProveedores(f.proveedor || null)]);
     const total = totalMargen(filas);
     const encabezados = (
       <>
@@ -116,7 +117,14 @@ export default async function PaginaAuditoria({ searchParams }: { searchParams: 
     );
     contenido = (
       <>
-        <BarraFiltros placeholder={f.vista === 'ventas' ? 'Buscar por cliente o modelo' : 'Buscar por modelo'} csvHref={csv} />
+        <BarraFiltros
+          placeholder={f.vista === 'ventas' ? 'Buscar por cliente o modelo' : 'Buscar por modelo'}
+          extras={[
+            { param: 'origen', etiqueta: 'Origen', opciones: opciones(TIPO_LOTE) },
+            { param: 'proveedor', etiqueta: 'Proveedor', opciones: proveedores },
+          ]}
+          csvHref={csv}
+        />
         <FiltroFechas />
         <div className="overflow-x-auto rounded-md border">
           {f.vista === 'ventas' ? (

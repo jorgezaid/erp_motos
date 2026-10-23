@@ -24,8 +24,10 @@ export const CATEGORIA: Record<Enums['vehicle_category'], string> = {
   trimoto_carga: 'Trimoto de carga',
 };
 
+export type TipoLote = Enums['tipo_lote'];
+
 /** D41: origen del lote (todos los roles ven solo esto, nunca el proveedor). */
-export const TIPO_LOTE: Record<Enums['tipo_lote'], string> = {
+export const TIPO_LOTE: Record<TipoLote, string> = {
   importacion: 'Importación',
   compra_local: 'Compra local',
 };

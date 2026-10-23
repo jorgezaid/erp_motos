@@ -8,6 +8,7 @@ import { BotonConfirmar } from '@/components/confirmar';
 import { IdentidadModelo } from '@/components/identidad-modelo';
 import { RadioOpciones } from '@/components/formulario/radio-opciones';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { Decimal } from '@/lib/decimal';
 import type { Resultado } from '@/lib/errores';
 import { mostrarSelectorEscala } from '@/lib/escalas';
-import { METODO_PAGO, TIPO_VENTA } from '@/lib/etiquetas';
+import { METODO_PAGO, opciones, TIPO_LOTE, TIPO_VENTA, type TipoLote } from '@/lib/etiquetas';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -89,6 +90,7 @@ export function EditorOrden({
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
   const [busqueda, setBusqueda] = useState('');
+  const [origen, setOrigen] = useState<TipoLote | 'todos'>('todos');
   const [resultados, setResultados] = useState<BusquedaUnidades | null>(null);
   const [pago, setPago] = useState<{ metodo: MetodoPago; monto: string; referencia: string }>({
     metodo: 'efectivo',
@@ -118,7 +120,7 @@ export function EditorOrden({
 
   function buscar() {
     startTransition(async () => {
-      const r = await buscarUnidades(busqueda, tipo);
+      const r = await buscarUnidades(busqueda, tipo, origen === 'todos' ? '' : origen);
       if (avisar(r)) setResultados(r.datos);
     });
   }
@@ -182,6 +184,20 @@ export function EditorOrden({
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
+              {/* D41: solo el origen (nunca el proveedor) */}
+              <Select value={origen} onValueChange={(v) => setOrigen(v as TipoLote | 'todos')}>
+                <SelectTrigger className="w-40 shrink-0" aria-label="Origen">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todo origen</SelectItem>
+                  {opciones(TIPO_LOTE).map((o) => (
+                    <SelectItem key={o.valor} value={o.valor}>
+                      {o.etiqueta}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button type="submit" variant="outline" disabled={pendiente}>
                 <Search className="size-4" aria-hidden /> Buscar
               </Button>
@@ -223,6 +239,11 @@ export function EditorOrden({
                         <TableCell className="font-mono">{u.vin_chasis}</TableCell>
                         <TableCell>
                           <IdentidadModelo modelo={u.modelo} className="min-w-52" />
+                          {u.tipo_lote === 'compra_local' && (
+                            <Badge variant="secondary" className="mt-1">
+                              {TIPO_LOTE.compra_local}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>{u.colores}</TableCell>
                         <TableCell>{u.ubicacion}</TableCell>
