@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import {
   exito,
   fallo,
@@ -46,7 +47,7 @@ const esquemaBaterias = z.object({
 
 /** RN-02: la BD impide registrar más seriales que los que exige el voltaje; RN-03: únicos. */
 export async function guardarBaterias(entrada: z.input<typeof esquemaBaterias>): Promise<Resultado<{ guardadas: number }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquemaBaterias.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
   const repetido = d.data.seriales.find((s, i) => d.data.seriales.findIndex((x) => x.serial === s.serial) !== i);
@@ -67,7 +68,7 @@ export async function guardarBaterias(entrada: z.input<typeof esquemaBaterias>):
 
 /** Corrige un serial mal escaneado. */
 export async function quitarBateria(vehicleId: string, bateriaId: string): Promise<Resultado> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   if (!uuid.safeParse(vehicleId).success || !uuid.safeParse(bateriaId).success) return fallo('Batería no válida.');
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -87,7 +88,7 @@ export async function quitarBateria(vehicleId: string, bateriaId: string): Promi
  * cambia baterías provisionales; la BD valida RN-03 (serial único) y lo normaliza.
  */
 export async function reemplazarSerialProvisional(vehicleId: string, bateriaId: string, serial: string): Promise<Resultado> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   if (!uuid.safeParse(vehicleId).success || !uuid.safeParse(bateriaId).success) return fallo('Batería no válida.');
   const s = serialReal.safeParse(serial);
   if (!s.success) return falloValidacion(s.error);
@@ -133,7 +134,7 @@ export type EntradaInspeccion = z.input<typeof esquemaInspeccion>;
  * `baterias_esperadas` la fija el sistema. Las inspecciones no se editan: se registra otra.
  */
 export async function registrarInspeccion(entrada: EntradaInspeccion): Promise<Resultado<{ aprobada: boolean }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquemaInspeccion.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
   const i = d.data;
@@ -160,7 +161,7 @@ export async function registrarInspeccion(entrada: EntradaInspeccion): Promise<R
 
 /** RN-10: en_ensamble → listo_en_tienda con su ubicación; la BD valida baterías, inspección y ubicación. */
 export async function pasarATienda(vehicleId: string, locationId: string): Promise<Resultado> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   if (!uuid.safeParse(vehicleId).success) return fallo('Unidad no válida.');
   if (!uuid.safeParse(locationId).success) return fallo('Elige la ubicación en tienda.');
   const supabase = await createClient();

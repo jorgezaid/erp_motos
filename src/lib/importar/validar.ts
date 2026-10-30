@@ -16,7 +16,7 @@ type Enums = Database['public']['Enums'];
 export const TIPOS_UBICACION: readonly Enums['location_type'][] = ['almacen', 'showroom', 'taller'];
 export const CATEGORIAS: readonly Enums['vehicle_category'][] = ['bicimoto', 'trimoto_pasajeros', 'trimoto_carga'];
 export const VOLTAJES = [48, 60, 72] as const;
-const ROLES = ['admin', 'tecnico', 'vendedor'];
+const ROLES = ['admin', 'tecnico', 'vendedor', 'vendedor_tecnico'];
 const MAX_COLOR = 40;
 const MAX_TEXTO = 500;
 

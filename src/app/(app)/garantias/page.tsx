@@ -4,6 +4,7 @@ import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
 import { exigirRol } from '@/lib/auth';
 import { ESTADO_RECLAMO, opciones } from '@/lib/etiquetas';
+import { puedeTaller } from '@/lib/roles';
 import { leerParams } from '@/lib/tabla';
 import { consultarGarantias, consultarReclamos, ESTADOS_GARANTIA } from './datos';
 import { TablaGarantias, TablaReclamos } from './tablas';
@@ -40,7 +41,7 @@ export default async function PaginaGarantias({ searchParams }: { searchParams: 
           extras={[{ param: 'reclamo', etiqueta: 'Estado del reclamo', opciones: opciones(ESTADO_RECLAMO) }]}
           csvHref="/garantias/csv?tipo=reclamos"
         />
-        <TablaReclamos filas={reclamos} puedeAtender={sesion.rol !== 'vendedor'} />
+        <TablaReclamos filas={reclamos} puedeAtender={puedeTaller(sesion.rol)} />
       </section>
     </>
   );

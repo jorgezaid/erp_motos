@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { esquemaColor, type EntradaColor } from '@/lib/esquemas/color';
 import { esquemaMover, type EntradaMover } from '@/lib/esquemas/mover';
 import { exito, fallo, falloValidacion, mensajeDeError, type Resultado } from '@/lib/errores';
@@ -16,7 +17,7 @@ export async function editarColor(
   vehicleId: string,
   entrada: EntradaColor,
 ): Promise<Resultado<{ primario: string; secundario: string | null }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   if (!z.uuid().safeParse(vehicleId).success) return fallo('Unidad no válida.');
   const d = esquemaColor.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
@@ -40,7 +41,7 @@ export async function editarColor(
  * técnico; todas o ninguna; una vendida no se mueve). Devuelve cuántas cambiaron.
  */
 export async function moverUnidades(entrada: EntradaMover): Promise<Resultado<{ movidas: number }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquemaMover.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
 

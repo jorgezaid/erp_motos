@@ -3,7 +3,7 @@
  * (todas o ninguna; una moto vendida no se mueve).
  */
 import { z } from 'zod';
-import type { Rol } from '@/lib/roles';
+import { puedeTaller, type Rol } from '@/lib/roles';
 import type { Database } from '@/types/database';
 
 /** Igual que el tope de la RPC. */
@@ -20,9 +20,9 @@ export const esquemaMover = z.object({
 
 export type EntradaMover = z.input<typeof esquemaMover>;
 
-/** Admin y técnico, salvo una moto vendida (la BD lo impone igual). */
+/** Admin y taller (técnico, vendedor + técnico), salvo una moto vendida (la BD lo impone igual). */
 export function puedeMoverUnidad(rol: Rol, estado: Database['public']['Enums']['vehicle_status']): boolean {
-  return (rol === 'admin' || rol === 'tecnico') && estado !== 'vendido';
+  return puedeTaller(rol) && estado !== 'vendido';
 }
 
 /** «1 moto movida a Showroom» / «3 motos movidas a …» / «Ya estaban en …». */

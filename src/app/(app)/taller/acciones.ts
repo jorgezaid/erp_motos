@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { exito, fallo, falloValidacion, mensajeDeError, sinFilasAfectadas, type Resultado } from '@/lib/errores';
 import { normalizarSerial } from '@/lib/registro';
 import { createClient } from '@/lib/supabase/server';
@@ -10,7 +11,7 @@ import { esSerialProvisional } from '@/lib/taller';
 
 /** Saca la unidad de la caja: en_caja → en_ensamble (SPEC §9). */
 export async function iniciarEnsamble(vehicleId: string): Promise<Resultado> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   if (!z.uuid().safeParse(vehicleId).success) return fallo('Unidad no válida.');
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -58,7 +59,7 @@ export type EntradaListoRapido = z.input<typeof esquemaListoRapido>;
 export async function listoRapido(
   entrada: EntradaListoRapido,
 ): Promise<Resultado<{ unidades: number; provisionales: number }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquemaListoRapido.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
 

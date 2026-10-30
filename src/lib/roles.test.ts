@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decidirRuta, destinoSeguro, puedeVer } from './roles';
+import { decidirRuta, destinoSeguro, ETIQUETA_ROL, puedeTaller, puedeVender, puedeVer, ROLES } from './roles';
 
 describe('decidirRuta (SPEC M1)', () => {
   it('M1: sin sesión redirige a /login conservando la ruta pedida', () => {
@@ -60,12 +60,36 @@ describe('puedeVer (SPEC §3)', () => {
     expect(puedeVer('/ventas/5', 'vendedor')).toBe(true);
   });
 
+  it('D42: vendedor + técnico ve lo del técnico y lo del vendedor, nunca costos ni administración', () => {
+    for (const ruta of ['/inventario', '/inventario/registro', '/taller/abc', '/precios', '/ventas/nueva', '/garantias']) {
+      expect(puedeVer(ruta, 'vendedor_tecnico')).toBe(true);
+    }
+    for (const ruta of ['/lotes', '/auditoria', '/gastos', '/admin/usuarios', '/admin/proveedores']) {
+      expect(puedeVer(ruta, 'vendedor_tecnico')).toBe(false);
+    }
+  });
+
   it('el prefijo coincide por segmento completo (/lotesx no es /lotes)', () => {
     expect(puedeVer('/lotesx', 'vendedor')).toBe(true);
   });
 
   it('sin rol no ve nada', () => {
     expect(puedeVer('/', null)).toBe(false);
+  });
+});
+
+describe('puedeVender y puedeTaller (D42, como public.puede_vender/puede_taller)', () => {
+  it('D42: admin pasa las dos; vendedor + técnico también; cada rol simple, solo la suya', () => {
+    expect([puedeVender('admin'), puedeTaller('admin')]).toEqual([true, true]);
+    expect([puedeVender('vendedor_tecnico'), puedeTaller('vendedor_tecnico')]).toEqual([true, true]);
+    expect([puedeVender('vendedor'), puedeTaller('vendedor')]).toEqual([true, false]);
+    expect([puedeVender('tecnico'), puedeTaller('tecnico')]).toEqual([false, true]);
+    expect([puedeVender(null), puedeTaller(null)]).toEqual([false, false]);
+  });
+
+  it('D42: el selector de /admin/usuarios lo muestra como "Vendedor + Técnico"', () => {
+    expect(ROLES).toContain('vendedor_tecnico');
+    expect(ETIQUETA_ROL.vendedor_tecnico).toBe('Vendedor + Técnico');
   });
 });
 

@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { exigirRol } from '@/lib/auth';
 import { COLUMNAS_CSV_STOCK, consultarStock } from '@/lib/consultas/stock';
 import { hoyLima } from '@/lib/format';
+import { puedeVender } from '@/lib/roles';
 import { aCsv, leerParams, respuestaCsv, type ColumnaCsv } from '@/lib/tabla';
 import { leerFiltrosInventario } from '../datos';
 
@@ -17,6 +18,6 @@ export async function GET(request: NextRequest) {
   const sesion = await exigirRol();
   const sp = Object.fromEntries(request.nextUrl.searchParams);
   const { filas } = await consultarStock({ ...leerParams(sp), ...leerFiltrosInventario(sp, sesion.rol) }, { todas: true });
-  const columnas = sesion.rol === 'tecnico' ? COLUMNAS_CSV_STOCK : [...COLUMNAS_CSV_STOCK, ...PRECIOS];
+  const columnas = puedeVender(sesion.rol) ? [...COLUMNAS_CSV_STOCK, ...PRECIOS] : COLUMNAS_CSV_STOCK;
   return respuestaCsv(aCsv(filas, columnas), `inventario-${hoyLima()}.csv`);
 }

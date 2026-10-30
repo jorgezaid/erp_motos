@@ -9,6 +9,7 @@ import { IdentidadModelo } from '@/components/identidad-modelo';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { puedeEditarColor, textoColores } from '@/lib/esquemas/color';
 import { formatFechaHora } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
@@ -21,7 +22,7 @@ import { PasarATienda } from './pasar-tienda';
 
 /** /taller/[id] (SPEC M4): baterías, inspección y "Pasar a tienda". Diseño móvil primero. */
 export default async function UnidadTaller({ params }: { params: Promise<{ id: string }> }) {
-  const sesion = await exigirRol('admin', 'tecnico');
+  const sesion = await exigirRol(...ROLES_TALLER);
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const supabase = await createClient();

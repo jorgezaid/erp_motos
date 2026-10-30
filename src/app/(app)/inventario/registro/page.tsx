@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Encabezado } from '@/components/encabezado';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { leerIdentidadModelos } from '@/lib/consultas/modelos';
 import { createClient } from '@/lib/supabase/server';
 import { RegistroMasivo, type Pendiente } from './registro-masivo';
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: 'Registro de unidades · ERP Vehícul
  * RPC `pendientes_de_registro()`, que solo devuelve códigos y cantidades.
  */
 export default async function PaginaRegistro() {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const supabase = await createClient();
   const [{ data: pendientes, error }, { data: ubicaciones }, modelos] = await Promise.all([
     supabase.rpc('pendientes_de_registro'),

@@ -3,7 +3,7 @@
  * `public.normalizar_color` en la BD, que vuelve a validar todo en `editar_color_unidad`.
  */
 import { z } from 'zod';
-import type { Rol } from '@/lib/roles';
+import { puedeTaller, type Rol } from '@/lib/roles';
 import type { Database } from '@/types/database';
 
 export const MAX_COLOR = 30;
@@ -31,9 +31,9 @@ export const esquemaColor = z
 
 export type EntradaColor = z.input<typeof esquemaColor>;
 
-/** Admin y técnico; una moto vendida solo la corrige el admin (la BD lo impone igual). */
+/** Admin y taller (técnico, vendedor + técnico); una moto vendida solo la corrige el admin (la BD lo impone igual). */
 export function puedeEditarColor(rol: Rol, estado: Database['public']['Enums']['vehicle_status']): boolean {
-  return rol === 'admin' || (rol === 'tecnico' && estado !== 'vendido');
+  return rol === 'admin' || (puedeTaller(rol) && estado !== 'vendido');
 }
 
 /** 'ROJO / NEGRO', 'ROJO' o 'sin color'. */

@@ -11,7 +11,7 @@ import { formatPEN, formatPorcentaje, hoyLima } from '@/lib/format';
 import { etiquetaMes } from '@/lib/gastos';
 import { cn } from '@/lib/utils';
 import { rangoLima, totalMargen } from '@/lib/margenes';
-import { ETIQUETA_ROL } from '@/lib/roles';
+import { ETIQUETA_ROL, puedeVender } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
 import { avisoBorradores } from '@/lib/ventas';
@@ -42,7 +42,7 @@ export default async function Inicio() {
   const sesion = await exigirRol();
   const supabase = await createClient();
   const esAdmin = sesion.rol === 'admin';
-  const veVentas = sesion.rol !== 'tecnico';
+  const veVentas = puedeVender(sesion.rol);
   const dia = rangoLima(hoyLima(), null).desde ?? '';
   const inicioMes = inicioMesLima();
   const mes = rangoLima(inicioMes, null).desde ?? '';

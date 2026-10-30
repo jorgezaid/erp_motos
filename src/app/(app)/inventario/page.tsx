@@ -11,7 +11,7 @@ import { consultarStock, OPCION_FILTRO_BATERIAS, OPCION_FILTRO_ORIGEN, textoInsp
 import { puedeEditarColor } from '@/lib/esquemas/color';
 import { puedeMoverUnidad } from '@/lib/esquemas/mover';
 import { ESTADO_UNIDAD, opciones } from '@/lib/etiquetas';
-import { puedeVer } from '@/lib/roles';
+import { puedeTaller, puedeVender, puedeVer } from '@/lib/roles';
 import { leerParams } from '@/lib/tabla';
 import { leerFiltrosInventario, opcionesFiltroInventario, ubicacionesActivas } from './datos';
 import { TablaInventario, type FilaInventario } from './tabla-inventario';
@@ -26,7 +26,7 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
   const sp = await searchParams;
   const params = leerParams(sp);
   const extra = leerFiltrosInventario(sp, sesion.rol);
-  const moverMotos = sesion.rol === 'admin' || sesion.rol === 'tecnico';
+  const moverMotos = puedeTaller(sesion.rol);
   const admin = sesion.rol === 'admin';
   const [{ filas, total }, op, modelos, ubicaciones, proveedores] = await Promise.all([
     consultarStock({ ...params, ...extra }),
@@ -83,7 +83,7 @@ export default async function PaginaInventario({ searchParams }: { searchParams:
       />
       <TablaInventario
         filas={unidades}
-        verPrecios={sesion.rol !== 'tecnico'}
+        verPrecios={puedeVender(sesion.rol)}
         enlaceTaller={puedeVer('/taller', sesion.rol)}
         coloresExistentes={op.colores.map((c) => c.valor)}
         ubicaciones={ubicaciones}

@@ -12,11 +12,12 @@ import {
   sinFilasAfectadas,
   type Resultado,
 } from '@/lib/errores';
+import { ROLES } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 
 const esquemaRol = z.object({
   id: z.uuid(),
-  rol: z.enum(['admin', 'tecnico', 'vendedor']).nullable(),
+  rol: z.enum(ROLES).nullable(),
 });
 
 const esquemaActivo = z.object({ id: z.uuid(), activo: z.boolean() });

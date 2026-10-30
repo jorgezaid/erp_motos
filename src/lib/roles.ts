@@ -6,13 +6,27 @@ import type { Database } from '@/types/database';
 
 export type Rol = Database['public']['Enums']['app_role'];
 
-export const ROLES: readonly Rol[] = ['admin', 'tecnico', 'vendedor'];
+export const ROLES = ['admin', 'tecnico', 'vendedor', 'vendedor_tecnico'] as const satisfies readonly Rol[];
 
 export const ETIQUETA_ROL: Record<Rol, string> = {
   admin: 'Administrador',
   tecnico: 'Técnico',
   vendedor: 'Vendedor',
+  vendedor_tecnico: 'Vendedor + Técnico',
 };
+
+/** Precios y ventas (como public.puede_vender()). */
+export const ROLES_VENTA: readonly Rol[] = ['admin', 'vendedor', 'vendedor_tecnico'];
+/** Registro de unidades, taller, color y ubicación (como public.puede_taller()). */
+export const ROLES_TALLER: readonly Rol[] = ['admin', 'tecnico', 'vendedor_tecnico'];
+
+export function puedeVender(rol: Rol | null | undefined): boolean {
+  return !!rol && ROLES_VENTA.includes(rol);
+}
+
+export function puedeTaller(rol: Rol | null | undefined): boolean {
+  return !!rol && ROLES_TALLER.includes(rol);
+}
 
 const TODOS: readonly Rol[] = ROLES;
 
@@ -21,10 +35,10 @@ const ACCESO: ReadonlyArray<readonly [string, readonly Rol[]]> = [
   ['/', TODOS],
   ['/lotes', ['admin']],
   ['/inventario', TODOS],
-  ['/inventario/registro', ['admin', 'tecnico']],
-  ['/taller', ['admin', 'tecnico']],
-  ['/precios', ['admin', 'vendedor']],
-  ['/ventas', ['admin', 'vendedor']],
+  ['/inventario/registro', ROLES_TALLER],
+  ['/taller', ROLES_TALLER],
+  ['/precios', ROLES_VENTA],
+  ['/ventas', ROLES_VENTA],
   ['/garantias', TODOS],
   ['/auditoria', ['admin']],
   ['/gastos', ['admin']],

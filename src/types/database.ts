@@ -866,12 +866,18 @@ isOneToOne: false
 "precio_unidad":
 { Args: { "p_tipo": Database["public"]['Enums']["sale_type"],"p_vehicle_id": string }; Returns: number
                            },
+"puede_taller":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"puede_vender":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "recalcular_total_orden":
 { Args: { "p_order_id": string }; Returns: number
                            }
           }
           Enums: {
-            "app_role": "admin"|"tecnico"|"vendedor","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","tipo_bateria": "plomo_12v"|"litio","tipo_lote": "importacion"|"compra_local","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
+            "app_role": "admin"|"tecnico"|"vendedor"|"vendedor_tecnico","batch_status": "en_transito"|"en_aduanas"|"en_almacen"|"liquidado","categoria_gasto": "local_infraestructura"|"publicidad"|"servicios"|"transporte"|"sueldos"|"alquiler"|"otros","claim_status": "abierto"|"en_revision"|"aprobado"|"rechazado"|"cerrado","document_type": "DNI"|"RUC"|"CE","estado_gasto": "planificado"|"realizado","location_type": "almacen"|"showroom"|"taller","order_status": "borrador"|"confirmada"|"anulada","payment_method": "efectivo"|"transferencia"|"tarjeta"|"mixto","sale_type": "unidad_x1"|"mayorista_x3"|"distribuidor_x6","tipo_bateria": "plomo_12v"|"litio","tipo_lote": "importacion"|"compra_local","vehicle_category": "bicimoto"|"trimoto_pasajeros"|"trimoto_carga","vehicle_status": "en_caja"|"en_ensamble"|"listo_en_tienda"|"reservado"|"vendido","warranty_coverage": "general"|"baterias"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -991,7 +997,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "app_role": ["admin", "tecnico", "vendedor"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"tipo_bateria": ["plomo_12v", "litio"],"tipo_lote": ["importacion", "compra_local"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
+            "app_role": ["admin", "tecnico", "vendedor", "vendedor_tecnico"],"batch_status": ["en_transito", "en_aduanas", "en_almacen", "liquidado"],"categoria_gasto": ["local_infraestructura", "publicidad", "servicios", "transporte", "sueldos", "alquiler", "otros"],"claim_status": ["abierto", "en_revision", "aprobado", "rechazado", "cerrado"],"document_type": ["DNI", "RUC", "CE"],"estado_gasto": ["planificado", "realizado"],"location_type": ["almacen", "showroom", "taller"],"order_status": ["borrador", "confirmada", "anulada"],"payment_method": ["efectivo", "transferencia", "tarjeta", "mixto"],"sale_type": ["unidad_x1", "mayorista_x3", "distribuidor_x6"],"tipo_bateria": ["plomo_12v", "litio"],"tipo_lote": ["importacion", "compra_local"],"vehicle_category": ["bicimoto", "trimoto_pasajeros", "trimoto_carga"],"vehicle_status": ["en_caja", "en_ensamble", "listo_en_tienda", "reservado", "vendido"],"warranty_coverage": ["general", "baterias"]
           }
         }
 } as const

@@ -53,5 +53,7 @@ supabase gen types typescript --local > src/types/database.ts
 - Zona horaria del negocio: `America/Lima`. En SQL usa `public.fecha_lima()`.
 
 ## Roles (resumen)
-`admin`: todo · `tecnico`: inventario, baterías e inspecciones, sin costos ni precios · `vendedor`: stock, precios y sus propias órdenes, sin costos.
-Un usuario sin rol no ve nada. Matriz completa: encabezado de `supabase/migrations/20260925000300_seguridad_rls.sql`.
+`admin`: todo · `tecnico`: inventario, baterías e inspecciones, sin costos ni precios · `vendedor`: stock, precios y sus propias órdenes, sin costos ·
+`vendedor_tecnico` («Vendedor + Técnico», D42): la unión exacta de técnico y vendedor (taller, registro, color, ubicación, reclamos, precios y sus propias órdenes con el límite de descuento del vendedor), sin costos, márgenes, lotes, proveedores, gastos ni usuarios.
+Un usuario sin rol no ve nada. En SQL no repitas listas de roles: usa `public.puede_vender()` (admin, vendedor, vendedor_tecnico) y `public.puede_taller()` (admin, tecnico, vendedor_tecnico); en TypeScript, `ROLES_VENTA`/`ROLES_TALLER` y `puedeVender`/`puedeTaller` de `lib/roles.ts`.
+Matriz completa (vigente): encabezado de `supabase/migrations/20261030165636_rol_vendedor_tecnico.sql` (reemplaza la de `20260925000300_seguridad_rls.sql`).

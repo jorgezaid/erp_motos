@@ -25,6 +25,11 @@ describe('puedeMoverUnidad (D40)', () => {
     expect(puedeMoverUnidad('admin', 'vendido')).toBe(false);
     expect(puedeMoverUnidad('vendedor', 'en_caja')).toBe(false);
   });
+
+  it('D42: vendedor + técnico mueve como el técnico', () => {
+    expect(puedeMoverUnidad('vendedor_tecnico', 'listo_en_tienda')).toBe(true);
+    expect(puedeMoverUnidad('vendedor_tecnico', 'vendido')).toBe(false);
+  });
 });
 
 describe('textoMovidas', () => {

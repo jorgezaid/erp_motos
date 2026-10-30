@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import {
   exito,
   fallo,
@@ -50,7 +51,7 @@ const MENSAJE_ORDEN_AJENA = 'La orden no existe, ya no está en borrador o perte
  * sus datos. El vendedor lee todas las órdenes (RLS), pero solo continúa las suyas.
  */
 export async function buscarCliente(tipoDocumento: string, documento: string): Promise<Resultado<ClienteConocido>> {
-  const sesion = await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol(...ROLES_VENTA);
   const tipo = z.enum(['DNI', 'RUC', 'CE']).safeParse(tipoDocumento);
   const doc = normalizarDocumento(documento);
   if (!tipo.success || !documentoValido(tipo.data, doc)) return exito({ borrador: null, datos: null });
@@ -77,7 +78,7 @@ export async function buscarCliente(tipoDocumento: string, documento: string): P
 
 /** Paso 1: tipo de venta y cliente → orden en borrador (el vendedor lo fija la BD). */
 export async function crearOrden(entrada: { tipo_venta: string } & EntradaCliente): Promise<Resultado<{ id: string }>> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   const tipo = esquemaTipo.safeParse(entrada.tipo_venta);
   if (!tipo.success) return falloValidacion(tipo.error);
   const cliente = esquemaCliente.safeParse(entrada);
@@ -96,7 +97,7 @@ export async function crearOrden(entrada: { tipo_venta: string } & EntradaClient
 
 /** RN-13: si cambia el tipo de venta en borrador, la BD vuelve a cotizar todos los ítems. */
 export async function cambiarTipoVenta(orderId: string, tipoVenta: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   const tipo = esquemaTipo.safeParse(tipoVenta);
   if (!uuid.safeParse(orderId).success || !tipo.success) return fallo('Tipo de venta no válido.');
   const supabase = await createClient();
@@ -114,7 +115,7 @@ export async function cambiarTipoVenta(orderId: string, tipoVenta: string): Prom
 
 /** Datos del cliente: en borrador todos; en una orden confirmada solo teléfono y email (RN-17). */
 export async function actualizarCliente(orderId: string, entrada: EntradaCliente): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
   const d = esquemaCliente.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
@@ -135,7 +136,7 @@ export async function actualizarCliente(orderId: string, entrada: EntradaCliente
  * Si otra pestaña ya la reservó, la BD responde "La unidad … no está disponible".
  */
 export async function agregarUnidad(orderId: string, vehicleId: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success || !uuid.safeParse(vehicleId).success) return fallo('Unidad no válida.');
   const supabase = await createClient();
   const { error } = await supabase.from('order_items').insert({ order_id: orderId, vehicle_id: vehicleId });
@@ -150,7 +151,7 @@ export async function agregarUnidad(orderId: string, vehicleId: string): Promise
 
 /** Quitar la unidad la devuelve a tienda (solo en borrador). */
 export async function quitarUnidad(orderId: string, itemId: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success || !uuid.safeParse(itemId).success) return fallo('Unidad no válida.');
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -167,7 +168,7 @@ export async function quitarUnidad(orderId: string, itemId: string): Promise<Res
 
 /** Paso 4: un pago (efectivo, transferencia o tarjeta). Varios métodos = pago mixto (RN-15). */
 export async function registrarPago(orderId: string, entrada: EntradaPago): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
   const d = esquemaPago.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
@@ -184,7 +185,7 @@ export async function registrarPago(orderId: string, entrada: EntradaPago): Prom
 }
 
 export async function eliminarPago(orderId: string, pagoId: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success || !uuid.safeParse(pagoId).success) return fallo('Pago no válido.');
   const supabase = await createClient();
   const { data, error } = await supabase.from('payments').delete().eq('id', pagoId).eq('order_id', orderId).select('id');
@@ -199,7 +200,7 @@ export async function eliminarPago(orderId: string, pagoId: string): Promise<Res
  * baja, límite % del vendedor) y nunca devuelve el costo al vendedor.
  */
 export async function ajustarPrecio(orderId: string, itemId: string, entrada: EntradaAjustePrecio): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success || !uuid.safeParse(itemId).success) return fallo('Unidad no válida.');
   const d = esquemaAjustePrecio.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
@@ -223,7 +224,7 @@ const esquemaMotivoDescuento = z.string().trim().min(5, 'Motivo del descuento: m
  * mostró el navegador; la RPC aplica los límites (lista, costo landing y % del vendedor).
  */
 export async function cuadrarConPagado(orderId: string, motivo: string): Promise<Resultado<{ descuento: string }>> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
   const m = esquemaMotivoDescuento.safeParse(motivo);
   if (!m.success) return falloValidacion(m.error);
@@ -257,7 +258,7 @@ export async function cuadrarConPagado(orderId: string, motivo: string): Promise
 
 /** Paso 5: RN-14 (mínimo de la escala y pagos exactos), RN-15 y RN-16 los aplica la BD. */
 export async function confirmarOrden(orderId: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -299,7 +300,7 @@ export async function anularOrden(entrada: z.input<typeof esquemaAnulacion>): Pr
 
 /** RN-18: solo se eliminan borradores (sus unidades vuelven a tienda). */
 export async function eliminarOrden(orderId: string): Promise<Resultado> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -341,7 +342,7 @@ const MAX_RESULTADOS = 30;
  * `origen` (D41): '' = todos, o solo importación o compra local.
  */
 export async function buscarUnidades(q: string, tipoVenta: string, origen = ''): Promise<Resultado<BusquedaUnidades>> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   const tipo = esquemaTipo.safeParse(tipoVenta);
   if (!tipo.success) return fallo('Tipo de venta no válido.');
   const columna = ({ unidad_x1: 'precio_x1', mayorista_x3: 'precio_x3', distribuidor_x6: 'precio_x6' } as const)[tipo.data];

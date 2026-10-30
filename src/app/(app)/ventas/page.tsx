@@ -5,6 +5,7 @@ import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { ESTADO_ORDEN, opciones, TIPO_VENTA } from '@/lib/etiquetas';
 import { leerParams } from '@/lib/tabla';
 import { consultarVentas } from './datos';
@@ -16,7 +17,7 @@ type SP = Record<string, string | string[] | undefined>;
 
 /** /ventas (SPEC M6): órdenes con búsqueda por número, cliente o documento. */
 export default async function PaginaVentas({ searchParams }: { searchParams: Promise<SP> }) {
-  const sesion = await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol(...ROLES_VENTA);
   const sp = await searchParams;
   const params = leerParams(sp);
   const tipo = typeof sp.tipo === 'string' ? sp.tipo : '';

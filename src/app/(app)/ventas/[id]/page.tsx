@@ -3,6 +3,7 @@ import { Encabezado } from '@/components/encabezado';
 import { EstadoOrden } from '@/components/estado-badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { TIPO_VENTA } from '@/lib/etiquetas';
 import { createClient } from '@/lib/supabase/server';
 import type { TipoVenta } from '@/lib/ventas';
@@ -13,7 +14,7 @@ import { NotaVenta } from './nota-venta';
 
 /** /ventas/[id] (SPEC M6): POS de la orden en borrador; nota de venta y anulación de la confirmada. */
 export default async function PaginaOrden({ params }: { params: Promise<{ id: string }> }) {
-  const sesion = await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol(...ROLES_VENTA);
   const { id } = await params;
   const datos = await obtenerOrden(id);
   const { orden, items, pagos, minimos, activas, vendedor } = datos;

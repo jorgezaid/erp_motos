@@ -10,6 +10,7 @@ import { Paginacion } from '@/components/tabla/paginacion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { leerIdentidadModelos, modeloDeFila } from '@/lib/consultas/modelos';
 import { contarMotosSinSerialReal } from '@/lib/consultas/provisionales';
 import { consultarStock, FILTRO_SIN_SERIAL_REAL, OPCION_FILTRO_BATERIAS, textoInspeccion } from '@/lib/consultas/stock';
@@ -34,7 +35,7 @@ type SP = Record<string, string | string[] | undefined>;
  * Filtros rápidos por modelo y categoría. Diseño móvil primero.
  */
 export default async function PaginaTaller({ searchParams }: { searchParams: Promise<SP> }) {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const sp = await searchParams;
   const params = leerParams(sp);
   const modelo = typeof sp.modelo === 'string' ? sp.modelo : '';

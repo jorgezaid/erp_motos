@@ -32,6 +32,10 @@ describe('modulosPara (SPEC M1: sidebar según el rol)', () => {
   it('vendedor: inventario, precios, ventas y garantías; sin costos', () => {
     expect(hrefs('vendedor')).toEqual(['/', '/inventario', '/precios', '/ventas', '/garantias']);
   });
+
+  it('D42: vendedor + técnico ve la unión de los dos menús; sin costos ni administración', () => {
+    expect(hrefs('vendedor_tecnico')).toEqual(['/', '/inventario', '/taller', '/precios', '/ventas', '/garantias']);
+  });
 });
 
 describe('moduloActivo', () => {

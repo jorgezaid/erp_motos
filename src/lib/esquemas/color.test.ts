@@ -29,6 +29,11 @@ describe('puedeEditarColor (D39)', () => {
     expect(puedeEditarColor('tecnico', 'vendido')).toBe(false);
     expect(puedeEditarColor('vendedor', 'en_caja')).toBe(false);
   });
+
+  it('D42: vendedor + técnico edita como el técnico (una vendida, no)', () => {
+    expect(puedeEditarColor('vendedor_tecnico', 'reservado')).toBe(true);
+    expect(puedeEditarColor('vendedor_tecnico', 'vendido')).toBe(false);
+  });
 });
 
 describe('textoColores', () => {

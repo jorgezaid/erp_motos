@@ -1,5 +1,6 @@
 import 'server-only';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { ordenarEscalas } from '@/lib/escalas';
 import { createClient } from '@/lib/supabase/server';
 import { MAX_FILAS_CSV } from '@/lib/tabla';
@@ -42,7 +43,7 @@ export type FilaPrecioVendedor = {
  * price_list y v_stock: ninguna tabla ni vista de costos (M5 ✅: no aparecen en la red).
  */
 export async function preciosVendedor(q: string): Promise<FilaPrecioVendedor[]> {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   const supabase = await createClient();
   const [{ data, error }, stock] = await Promise.all([
     supabase

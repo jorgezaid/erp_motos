@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import {
   exito,
   fallo,
@@ -53,7 +54,7 @@ export type EntradaAtencion = z.input<typeof esquemaAtencion>;
 
 /** Seguimiento (admin y técnico): la BD valida las transiciones y exige diagnóstico (D27). */
 export async function atenderReclamo(entrada: EntradaAtencion): Promise<Resultado> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquemaAtencion.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
   const supabase = await createClient();

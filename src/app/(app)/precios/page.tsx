@@ -3,6 +3,7 @@ import { Encabezado } from '@/components/encabezado';
 import { BarraFiltros } from '@/components/tabla/barra-filtros';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { leerEscalas } from '@/lib/consultas/escalas';
 import { tiposActivos } from '@/lib/escalas';
 import { aPorcentaje } from '@/lib/esquemas/precios';
@@ -24,7 +25,7 @@ type SP = Record<string, string | string[] | undefined>;
  * consulta ni se serializa ningún costo.
  */
 export default async function PaginaPrecios({ searchParams }: { searchParams: Promise<SP> }) {
-  const sesion = await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol(...ROLES_VENTA);
   const { q } = leerParams(await searchParams);
 
   if (sesion.rol !== 'admin') {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Encabezado } from '@/components/encabezado';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { leerEscalas } from '@/lib/consultas/escalas';
 import { minimosPorTipo, tiposActivos } from '@/lib/escalas';
 import { FormularioNuevaVenta } from './formulario-nueva';
@@ -9,7 +10,7 @@ export const metadata: Metadata = { title: 'Nueva venta · ERP Vehículos Eléct
 
 /** /ventas/nueva (SPEC M6): tipo de venta y cliente → orden en borrador (D26). Solo escalas activas (D31). */
 export default async function NuevaVenta() {
-  await exigirRol('admin', 'vendedor');
+  await exigirRol(...ROLES_VENTA);
   const escalas = await leerEscalas();
   return (
     <>

@@ -172,7 +172,7 @@ export function Importador() {
                           <TableCell className="tabular-nums">{u.fila}</TableCell>
                           <TableCell>{u.nombre || '—'}</TableCell>
                           <TableCell>{u.email || '—'}</TableCell>
-                          <TableCell>{u.rolValido ? u.rol : `${u.rol || '—'} (rol no válido: admin, tecnico o vendedor)`}</TableCell>
+                          <TableCell>{u.rolValido ? u.rol : `${u.rol || '—'} (rol no válido: admin, tecnico, vendedor o vendedor_tecnico)`}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

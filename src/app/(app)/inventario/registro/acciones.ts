@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_TALLER } from '@/lib/roles';
 import { exito, fallo, falloValidacion, mensajeDeError, type Resultado } from '@/lib/errores';
 import { MAX_FILAS_REGISTRO, normalizarSerial, validarFilas } from '@/lib/registro';
 import { createClient } from '@/lib/supabase/server';
@@ -36,7 +37,7 @@ const esquema = z.object({
  * mayúsculas) y RN-04 (no más que el packing list); sus mensajes se muestran tal cual.
  */
 export async function registrarUnidades(entrada: z.input<typeof esquema>): Promise<Resultado<{ registradas: number }>> {
-  await exigirRol('admin', 'tecnico');
+  await exigirRol(...ROLES_TALLER);
   const d = esquema.safeParse(entrada);
   if (!d.success) return falloValidacion(d.error);
   const errores = validarFilas(d.data.filas);

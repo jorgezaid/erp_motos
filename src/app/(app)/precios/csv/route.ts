@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { exigirRol } from '@/lib/auth';
+import { ROLES_VENTA } from '@/lib/roles';
 import { leerEscalas } from '@/lib/consultas/escalas';
 import { tiposActivos } from '@/lib/escalas';
 import { hoyLima } from '@/lib/format';
@@ -8,7 +9,7 @@ import type { TipoVenta } from '@/lib/ventas';
 import { preciosAdmin, preciosVendedor, type FilaPrecioVendedor } from '../datos';
 
 export async function GET(request: NextRequest) {
-  const sesion = await exigirRol('admin', 'vendedor');
+  const sesion = await exigirRol(...ROLES_VENTA);
   const { q } = leerParams(Object.fromEntries(request.nextUrl.searchParams));
   const nombre = `precios-${hoyLima()}.csv`;
 
