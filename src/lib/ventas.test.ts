@@ -8,7 +8,10 @@ import {
   fraccionDescuento,
   margenResultante,
   precioMinimoVendedor,
-  repartirDescuento,
+  fraccionSobreLista,
+  formatAjuste,
+  precioMaximoSobreLista,
+  repartirAjuste,
   analizarCliente,
   antiguedad,
   avisoBorradores,
@@ -270,23 +273,27 @@ describe('RN-25: descuentos', () => {
     expect(formatPorcentaje('0.40315')).toBe('40.3 %');
   });
 
-  it('RN-25: repartirDescuento es proporcional al precio y suma exactamente lo pagado', () => {
-    const r = repartirDescuento(
+  it('RN-25: repartirAjuste es proporcional al precio y suma exactamente lo pagado', () => {
+    const r = repartirAjuste(
       [
         { id: 'a', precio: 2000 },
         { id: 'b', precio: 1000 },
       ],
       2700,
     );
-    expect(r).toEqual([
-      { id: 'a', precio: '1800.00', descuento: '200.00' },
-      { id: 'b', precio: '900.00', descuento: '100.00' },
-    ]);
+    expect(r).toEqual({
+      tipo: 'descuento',
+      monto: '300.00',
+      filas: [
+        { id: 'a', precio: '1800.00', ajuste: '200.00' },
+        { id: 'b', precio: '900.00', ajuste: '100.00' },
+      ],
+    });
   });
 
-  it('RN-25: repartirDescuento manda el residuo de céntimos a la moto más cara', () => {
+  it('RN-25: repartirAjuste manda el residuo de céntimos a la moto más cara', () => {
     // descuento 100 entre 3 motos iguales: 33.33 × 3 = 99.99 → el residuo 0.01 va a la primera
-    const iguales = repartirDescuento(
+    const iguales = repartirAjuste(
       [
         { id: 'a', precio: '1000.00' },
         { id: 'b', precio: '1000.00' },
@@ -294,10 +301,10 @@ describe('RN-25: descuentos', () => {
       ],
       '2900.00',
     );
-    expect(iguales?.map((x) => x.descuento)).toEqual(['33.34', '33.33', '33.33']);
-    expect(sumar((iguales ?? []).map((x) => x.precio))).toBe('2900.00');
+    expect(iguales?.filas.map((x) => x.ajuste)).toEqual(['33.34', '33.33', '33.33']);
+    expect(sumar((iguales?.filas ?? []).map((x) => x.precio))).toBe('2900.00');
 
-    const distintas = repartirDescuento(
+    const distintas = repartirAjuste(
       [
         { id: 'a', precio: 1855.64 },
         { id: 'b', precio: 2061.82 },
@@ -305,18 +312,79 @@ describe('RN-25: descuentos', () => {
       ],
       4500.01,
     );
-    expect(sumar((distintas ?? []).map((x) => x.precio))).toBe('4500.01');
-    expect(sumar((distintas ?? []).map((x) => x.descuento))).toBe('417.44');
+    expect(sumar((distintas?.filas ?? []).map((x) => x.precio))).toBe('4500.01');
+    expect(distintas?.monto).toBe('417.44');
+    expect(sumar((distintas?.filas ?? []).map((x) => x.ajuste))).toBe('417.44');
     // 417.44 × 1855.64 / 4917.45 = 157.524… → 157.52 (sin residuo: no es la más cara)
-    expect(distintas?.[0]?.descuento).toBe('157.52');
+    expect(distintas?.filas[0]?.ajuste).toBe('157.52');
   });
 
-  it('RN-25: repartirDescuento con una sola moto o sin nada que repartir', () => {
-    expect(repartirDescuento([{ id: 'a', precio: 2061.82 }], 1900)).toEqual([{ id: 'a', precio: '1900.00', descuento: '161.82' }]);
-    expect(repartirDescuento([], 100)).toBeNull();
-    expect(repartirDescuento([{ id: 'a', precio: 100 }], 0)).toBeNull();
-    expect(repartirDescuento([{ id: 'a', precio: 100 }], 100)).toBeNull();
-    expect(repartirDescuento([{ id: 'a', precio: 100 }], 150)).toBeNull();
+  it('RN-25: repartirAjuste con una sola moto o sin nada que repartir', () => {
+    expect(repartirAjuste([{ id: 'a', precio: 2061.82 }], 1900)?.filas).toEqual([{ id: 'a', precio: '1900.00', ajuste: '161.82' }]);
+    expect(repartirAjuste([], 100)).toBeNull();
+    expect(repartirAjuste([{ id: 'a', precio: 100 }], 0)).toBeNull();
+    expect(repartirAjuste([{ id: 'a', precio: 100 }], 100)).toBeNull();
+    expect(repartirAjuste([{ id: 'a', precio: 100 }], '100.00')).toBeNull();
+  });
+});
+
+describe('D43: precio sobre la lista', () => {
+  it('D43: repartirAjuste sube el precio cuando lo pagado es mayor (caso real S/ 2 333.89 → S/ 2 600.00)', () => {
+    expect(repartirAjuste([{ id: 'a', precio: 2333.89 }], 2600)).toEqual({
+      tipo: 'aumento',
+      monto: '266.11',
+      filas: [{ id: 'a', precio: '2600.00', ajuste: '266.11' }],
+    });
+  });
+
+  it('D43: repartirAjuste reparte el aumento proporcional y los céntimos van a la moto más cara', () => {
+    // aumento 100 entre 3 motos iguales: 33.33 × 3 = 99.99 → el residuo 0.01 va a la primera
+    const iguales = repartirAjuste(
+      [
+        { id: 'a', precio: '1000.00' },
+        { id: 'b', precio: '1000.00' },
+        { id: 'c', precio: '1000.00' },
+      ],
+      '3100.00',
+    );
+    expect(iguales?.tipo).toBe('aumento');
+    expect(iguales?.filas.map((x) => x.precio)).toEqual(['1033.34', '1033.33', '1033.33']);
+
+    // aumento 0.05 sobre 4367.78: 0.0233… → 0.02 y 0.0267… → 0.03; Σ 0.05 exacto, sin residuo
+    const distintas = repartirAjuste(
+      [
+        { id: 'barata', precio: 2033.89 },
+        { id: 'cara', precio: 2333.89 },
+      ],
+      4367.83,
+    );
+    expect(distintas?.filas).toEqual([
+      { id: 'barata', precio: '2033.91', ajuste: '0.02' },
+      { id: 'cara', precio: '2333.92', ajuste: '0.03' },
+    ]);
+    expect(sumar((distintas?.filas ?? []).map((x) => x.precio))).toBe('4367.83');
+
+    // 0.01 entre 3 iguales: 0.00 cada una y el céntimo de residuo a la primera (empate)
+    const residuo = repartirAjuste(
+      [
+        { id: 'a', precio: 500 },
+        { id: 'b', precio: 500 },
+        { id: 'c', precio: 500 },
+      ],
+      1500.01,
+    );
+    expect(residuo?.filas.map((x) => x.ajuste)).toEqual(['0.01', '0.00', '0.00']);
+    expect(sumar((residuo?.filas ?? []).map((x) => x.precio))).toBe('1500.01');
+  });
+
+  it('D43: precio máximo redondeado hacia abajo (como el tope de la BD), fracción y formato del ajuste', () => {
+    // 2061.82 × 1.30 = 2680.366 → 2680.36 (2680.37 superaría el 30 %)
+    expect(precioMaximoSobreLista(2061.82, 0.3)).toBe('2680.36');
+    expect(precioMaximoSobreLista('2000.00', '0.30')).toBe('2600.00');
+    expect(formatPorcentaje(fraccionSobreLista(2333.89, 2600))).toBe('11.4 %');
+    expect(formatAjuste(2333.89, 2600)).toBe('+S/ 266.11');
+    expect(formatAjuste(2061.82, 1900)).toBe('−S/ 161.82');
+    expect(formatAjuste(2000, 2000)).toBe('');
   });
 
   it('RN-25: esquemaAjustePrecio normaliza el precio y exige 5 caracteres de motivo si se escribe', () => {

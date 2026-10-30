@@ -20,7 +20,7 @@ export const obtenerOrden = cache(async (id: string) => {
       .order('created_at'),
     supabase.from('payments').select('id, metodo, monto_pen, referencia, created_at').eq('order_id', id).order('created_at'),
     supabase.from('price_margins').select('tipo_venta, cantidad_minima, activo'),
-    supabase.from('configuracion_ventas').select('descuento_max_vendedor').maybeSingle(),
+    supabase.from('configuracion_ventas').select('descuento_max_vendedor, aumento_max_lista').maybeSingle(),
   ]);
   if (error) throw new Error(error.message);
   if (!orden) notFound();
@@ -38,6 +38,8 @@ export const obtenerOrden = cache(async (id: string) => {
     activas: tiposActivos(margenes ?? []),
     /** RN-25: descuento máximo del vendedor por moto (fracción; 0 si no se pudo leer). */
     descuentoMaxVendedor: config?.descuento_max_vendedor ?? 0,
+    /** D43: tope del precio final sobre la lista (fracción, todos los roles; 0 si no se pudo leer). */
+    aumentoMaxLista: config?.aumento_max_lista ?? 0,
     vendedor: vendedor?.nombre ?? '—',
   };
 });

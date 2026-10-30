@@ -18,17 +18,30 @@ export const esquemaMargenes = z.object({
 
 export type EntradaMargenes = z.input<typeof esquemaMargenes>;
 
-/** RN-25: descuento máximo del vendedor por moto, "10" (%) → "0.1000" (configuracion_ventas). */
-export const esquemaDescuentoMaximo = z.object({
+/**
+ * Ajustes de precio en ventas (configuracion_ventas), en % → fracción de 4 decimales:
+ * RN-25, descuento máximo del vendedor por moto ("10" → "0.1000", de 0 a 99.99);
+ * D43, tope del precio final sobre la lista para todos los roles ("30" → "0.3000", de 0.01 a 100).
+ */
+export const esquemaAjustesVenta = z.object({
   porcentaje: z
     .string()
     .trim()
     .transform((v) => v.replace(',', '.'))
     .refine((v) => /^\d{1,2}(\.\d{1,2})?$/.test(v), 'Descuento máximo: porcentaje entre 0 y 99.99, con hasta 2 decimales.')
     .transform((v) => new Decimal(v).div(100).toFixed(4)),
+  aumento: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(',', '.'))
+    .refine(
+      (v) => /^\d{1,3}(\.\d{1,2})?$/.test(v) && new Decimal(v).gt(0) && new Decimal(v).lte(100),
+      'Aumento máximo: porcentaje entre 0.01 y 100, con hasta 2 decimales.',
+    )
+    .transform((v) => new Decimal(v).div(100).toFixed(4)),
 });
 
-export type EntradaDescuentoMaximo = z.input<typeof esquemaDescuentoMaximo>;
+export type EntradaAjustesVenta = z.input<typeof esquemaAjustesVenta>;
 
 /** Precio manual: vacío = volver al sugerido. */
 export const precioManual = z

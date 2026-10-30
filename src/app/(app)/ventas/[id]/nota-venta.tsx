@@ -84,6 +84,7 @@ export function NotaVenta({ datos, garantias }: { datos: OrdenCompleta; garantia
                 </TableCell>
                 <TableCell className="text-right">
                   {formatPEN(i.precio_unitario_pen)}
+                  {/* D43: sobre la lista solo se ve el precio final (el cliente no ve un «recargo») */}
                   {i.precio_unitario_pen < i.precio_lista_pen && (
                     <span className="block text-xs text-muted-foreground">
                       Lista {formatPEN(i.precio_lista_pen)} · desc.{' '}

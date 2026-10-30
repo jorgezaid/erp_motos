@@ -26,9 +26,10 @@ import {
   esquemaPago,
   filtrarUnidades,
   normalizarDocumento,
-  repartirDescuento,
+  repartirAjuste,
   sumar,
   type ClienteConocido,
+  type RepartoAjuste,
   type EntradaAjustePrecio,
   type EntradaCliente,
   type EntradaPago,
@@ -215,18 +216,22 @@ export async function ajustarPrecio(orderId: string, itemId: string, entrada: En
   return exito(null);
 }
 
-const esquemaMotivoDescuento = z.string().trim().min(5, 'Motivo del descuento: mínimo 5 caracteres.').max(300);
+const esquemaMotivoAjuste = z.string().trim().min(5, 'Motivo del ajuste: mínimo 5 caracteres.').max(300);
 
 /**
- * RN-25, atajo «cuadrar con lo pagado»: si los pagos suman menos que el total, reparte la
- * diferencia entre las motos (proporcional al precio) y la aplica con la misma RPC en UNA
- * llamada (todo o nada). El reparto se recalcula aquí con lo que hay en la BD, no con lo que
- * mostró el navegador; la RPC aplica los límites (lista, costo landing y % del vendedor).
+ * RN-25 y D43, atajo «cuadrar con lo pagado»: si los pagos suman menos que el total, reparte la
+ * diferencia como descuento; si suman más, como aumento. Se reparte entre las motos
+ * (proporcional al precio) y se aplica con la misma RPC en UNA llamada (todo o nada). El
+ * reparto se recalcula aquí con lo que hay en la BD, no con lo que mostró el navegador; la RPC
+ * aplica los límites (tope sobre la lista, costo landing y % del vendedor).
  */
-export async function cuadrarConPagado(orderId: string, motivo: string): Promise<Resultado<{ descuento: string }>> {
+export async function cuadrarConPagado(
+  orderId: string,
+  motivo: string,
+): Promise<Resultado<Pick<RepartoAjuste, 'tipo' | 'monto'>>> {
   await exigirRol(...ROLES_VENTA);
   if (!uuid.safeParse(orderId).success) return fallo('Orden no válida.');
-  const m = esquemaMotivoDescuento.safeParse(motivo);
+  const m = esquemaMotivoAjuste.safeParse(motivo);
   if (!m.success) return falloValidacion(m.error);
 
   const supabase = await createClient();
@@ -240,20 +245,20 @@ export async function cuadrarConPagado(orderId: string, motivo: string): Promise
   if (!orden || orden.estado !== 'borrador') return fallo(MENSAJE_ORDEN_AJENA);
 
   const pagado = sumar((pagos ?? []).map((p) => p.monto_pen));
-  const reparto = repartirDescuento(
+  const reparto = repartirAjuste(
     (items ?? []).map((i) => ({ id: i.id, precio: i.precio_unitario_pen })),
     pagado,
   );
-  if (!reparto) return fallo('No hay descuento que aplicar: registra un pago menor que el total.');
+  if (!reparto) return fallo('No hay nada que ajustar: lo pagado ya es igual al total.');
 
   const { error: errorRpc } = await supabase.rpc('ajustar_precio_item', {
     p_order_id: orderId,
-    p_ajustes: reparto.map((r) => ({ item_id: r.id, precio: r.precio })),
+    p_ajustes: reparto.filas.map((r) => ({ item_id: r.id, precio: r.precio })),
     p_motivo: m.data,
   });
   if (errorRpc) return fallo(mensajeDeError(errorRpc));
   revalidar(orderId);
-  return exito({ descuento: sumar(reparto.map((r) => r.descuento)) });
+  return exito({ tipo: reparto.tipo, monto: reparto.monto });
 }
 
 /** Paso 5: RN-14 (mínimo de la escala y pagos exactos), RN-15 y RN-16 los aplica la BD. */

@@ -12,14 +12,24 @@ import { Decimal } from '@/lib/decimal';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import { formatPorcentaje, fraccionDescuento, margenResultante, precioMinimoVendedor } from '@/lib/ventas';
+import {
+  formatAjuste,
+  formatPorcentaje,
+  fraccionDescuento,
+  fraccionSobreLista,
+  margenResultante,
+  precioMaximoSobreLista,
+  precioMinimoVendedor,
+} from '@/lib/ventas';
 import { ajustarPrecio } from '../acciones';
 
 /**
  * Lo que cada rol puede ver al ajustar (RN-25). El vendedor solo su límite %; el costo landing
- * solo llega aquí si la sesión es de admin.
+ * solo llega aquí si la sesión es de admin. El tope sobre la lista (D43) es igual para todos.
  */
-export type LimiteDescuento = { rol: 'vendedor'; descuentoMax: number } | { rol: 'admin'; costo: number | null };
+export type LimiteDescuento =
+  | { rol: 'vendedor'; descuentoMax: number; aumentoMax: number }
+  | { rol: 'admin'; costo: number | null; aumentoMax: number };
 
 /** Precio de la caja de texto como Decimal, o null si no es un monto válido. */
 function leerPrecio(texto: string): Decimal | null {
@@ -27,7 +37,7 @@ function leerPrecio(texto: string): Decimal | null {
   return /^\d{1,12}(\.\d{1,2})?$/.test(v) ? new Decimal(v) : null;
 }
 
-/** RN-25: precio final de una moto de la orden (solo baja; motivo si queda bajo la lista). */
+/** RN-25 y D43: precio final de una moto de la orden (baja o sube hasta el tope; motivo si difiere de la lista). */
 export function DialogoPrecioFinal({
   orderId,
   itemId,
@@ -55,7 +65,9 @@ export function DialogoPrecioFinal({
 
   const valor = leerPrecio(texto);
   const conDescuento = valor !== null && valor.lt(lista);
-  const supera = valor !== null && valor.gt(lista);
+  const sobreLista = valor !== null && valor.gt(lista);
+  const maximo = precioMaximoSobreLista(lista, limite.aumentoMax);
+  const supera = valor !== null && valor.gt(maximo);
   const minimoVendedor = limite.rol === 'vendedor' ? precioMinimoVendedor(lista, limite.descuentoMax) : null;
   const excedeLimite = minimoVendedor !== null && valor !== null && valor.lt(minimoVendedor);
   const bajoCosto = limite.rol === 'admin' && limite.costo !== null && valor !== null && valor.lt(limite.costo);
@@ -89,7 +101,8 @@ export function DialogoPrecioFinal({
         <DialogHeader>
           <DialogTitle>Precio final</DialogTitle>
           <DialogDescription>
-            <span className="font-mono">{vin}</span> · precio de lista {formatPEN(lista)}. Solo se puede bajar.
+            <span className="font-mono">{vin}</span> · precio de lista {formatPEN(lista)}. Se puede bajar o subir hasta{' '}
+            {formatPEN(maximo)} ({formatPorcentaje(limite.aumentoMax)} sobre la lista).
           </DialogDescription>
         </DialogHeader>
         <form
@@ -97,7 +110,7 @@ export function DialogoPrecioFinal({
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            guardar(texto, conDescuento ? razon : '');
+            guardar(texto, conDescuento || sobreLista ? razon : '');
           }}
         >
           <div className="grid gap-1.5">
@@ -116,8 +129,17 @@ export function DialogoPrecioFinal({
                   {formatPorcentaje(fraccionDescuento(lista, valor.toFixed(2)))})
                 </p>
               )}
-              {supera && <p className="text-destructive">No puede superar el precio de lista.</p>}
-              {limite.rol === 'vendedor' && (
+              {sobreLista && valor && !supera && (
+                <p>
+                  Sobre la lista: {formatAjuste(lista, valor.toFixed(2))} ({formatPorcentaje(fraccionSobreLista(lista, valor.toFixed(2)))})
+                </p>
+              )}
+              {supera && (
+                <p className="text-destructive">
+                  El precio supera en más de {formatPorcentaje(limite.aumentoMax)} el precio de lista. Revisa el monto.
+                </p>
+              )}
+              {limite.rol === 'vendedor' && !sobreLista && (
                 <p className={cn(excedeLimite ? 'text-destructive' : 'text-muted-foreground')}>
                   {excedeLimite
                     ? `Supera tu descuento máximo (${formatPorcentaje(limite.descuentoMax)}): necesita autorización del administrador.`
@@ -136,9 +158,11 @@ export function DialogoPrecioFinal({
                 ))}
             </div>
           </div>
-          {conDescuento && (
+          {(conDescuento || sobreLista) && (
             <div className="grid gap-1.5">
-              <Label htmlFor={`motivo-ajuste-${itemId}`}>Motivo del descuento (obligatorio)</Label>
+              <Label htmlFor={`motivo-ajuste-${itemId}`}>
+                {conDescuento ? 'Motivo del descuento (obligatorio)' : 'Motivo del precio sobre la lista (obligatorio)'}
+              </Label>
               <Textarea id={`motivo-ajuste-${itemId}`} value={razon} onChange={(e) => setRazon(e.target.value)} maxLength={300} />
             </div>
           )}

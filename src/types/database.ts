@@ -123,13 +123,13 @@ isOneToOne: false
                   ]
                 },"configuracion_ventas": {
                   Row: {
-                    "descuento_max_vendedor": number,"id": boolean,"updated_at": string
+                    "aumento_max_lista": number,"descuento_max_vendedor": number,"id": boolean,"updated_at": string
                   }
                   Insert: {
-                    "descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
+                    "aumento_max_lista"?: number,"descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
+                    "aumento_max_lista"?: number,"descuento_max_vendedor"?: number,"id"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
                     

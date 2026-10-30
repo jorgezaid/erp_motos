@@ -142,10 +142,10 @@ export async function margenesActuales() {
   return ordenarEscalas(data);
 }
 
-/** RN-25: descuento máximo por moto del vendedor (fracción). */
-export async function descuentoMaximoVendedor() {
+/** RN-25: descuento máximo por moto del vendedor y D43: tope sobre la lista (fracciones). */
+export async function ajustesVenta() {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('configuracion_ventas').select('descuento_max_vendedor').maybeSingle();
+  const { data, error } = await supabase.from('configuracion_ventas').select('descuento_max_vendedor, aumento_max_lista').maybeSingle();
   if (error) throw new Error(error.message);
-  return data?.descuento_max_vendedor ?? 0;
+  return { descuentoMax: data?.descuento_max_vendedor ?? 0, aumentoMax: data?.aumento_max_lista ?? 0 };
 }

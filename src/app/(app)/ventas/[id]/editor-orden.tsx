@@ -24,8 +24,10 @@ import { avisar } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import {
   faltanParaEscala,
+  formatAjuste,
   formatPorcentaje,
   fraccionDescuento,
+  fraccionSobreLista,
   metodoDerivado,
   motivosNoConfirmable,
   saldoPendiente,
@@ -53,7 +55,7 @@ export type ItemOrden = {
   modelo: string;
   colores: string;
   precio: number;
-  /** Precio de la lista (RN-13); `precio` es el final, igual o menor (RN-25). */
+  /** Precio de la lista (RN-13); `precio` es el final: menor (RN-25), igual o mayor (D43). */
   lista: number;
   motivo: string | null;
   /** Costo landing: solo en la sesión de admin (nunca se serializa para el vendedor). */
@@ -73,6 +75,7 @@ export function EditorOrden({
   activas,
   esAdmin,
   descuentoMax,
+  aumentoMax,
 }: {
   orderId: string;
   numero: number;
@@ -86,6 +89,8 @@ export function EditorOrden({
   esAdmin: boolean;
   /** RN-25: descuento máximo del vendedor por moto (fracción). */
   descuentoMax: number;
+  /** D43: tope del precio final sobre la lista (fracción, todos los roles). */
+  aumentoMax: number;
 }) {
   const router = useRouter();
   const [pendiente, startTransition] = useTransition();
@@ -297,10 +302,11 @@ export function EditorOrden({
                       <TableCell className="text-right text-muted-foreground">{formatPEN(i.lista)}</TableCell>
                       <TableCell className="text-right" data-testid={`precio-final-${i.vin}`}>
                         <span className="font-medium">{formatPEN(i.precio)}</span>
-                        {i.precio < i.lista && (
+                        {i.precio !== i.lista && (
                           <span className="block max-w-56 text-xs whitespace-normal text-muted-foreground">
-                            −{formatPEN(new Decimal(i.lista).minus(i.precio).toFixed(2))} (
-                            {formatPorcentaje(fraccionDescuento(i.lista, i.precio))}) · {i.motivo}
+                            {formatAjuste(i.lista, i.precio)} (
+                            {formatPorcentaje(i.precio > i.lista ? fraccionSobreLista(i.lista, i.precio) : fraccionDescuento(i.lista, i.precio))}) ·{' '}
+                            {i.motivo}
                           </span>
                         )}
                       </TableCell>
@@ -312,7 +318,7 @@ export function EditorOrden({
                           lista={i.lista}
                           precio={i.precio}
                           motivo={i.motivo}
-                          limite={esAdmin ? { rol: 'admin', costo: i.costo ?? null } : { rol: 'vendedor', descuentoMax }}
+                          limite={esAdmin ? { rol: 'admin', costo: i.costo ?? null, aumentoMax } : { rol: 'vendedor', descuentoMax, aumentoMax }}
                           deshabilitado={pendiente}
                         />
                         <Button
@@ -469,13 +475,14 @@ export function EditorOrden({
                 </dd>
               </div>
             </dl>
-            {saldoDecimal.gt(0) && pagos.length > 0 && (
+            {!saldoDecimal.isZero() && pagos.length > 0 && (
               <BotonCuadrarConPagado
                 orderId={orderId}
                 items={items}
                 pagado={pagado}
                 rol={esAdmin ? 'admin' : 'vendedor'}
                 descuentoMax={descuentoMax}
+                aumentoMax={aumentoMax}
               />
             )}
             {motivos.length > 0 && (

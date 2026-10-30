@@ -110,6 +110,7 @@ export default async function PaginaOrden({ params }: { params: Promise<{ id: st
           activas={activas}
           esAdmin={esAdmin}
           descuentoMax={datos.descuentoMaxVendedor}
+          aumentoMax={datos.aumentoMaxLista}
         />
       </>
     );

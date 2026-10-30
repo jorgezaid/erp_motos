@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aPorcentaje, esquemaDescuentoMaximo, esquemaMargenes, precioManual } from './precios';
+import { aPorcentaje, esquemaAjustesVenta, esquemaMargenes, precioManual } from './precios';
 
 describe('márgenes globales (SPEC §8, RN-09)', () => {
   it('porcentaje → fracción con 4 decimales', () => {
@@ -35,12 +35,20 @@ describe('precio manual (SPEC §8)', () => {
   });
 });
 
-describe('descuento máximo del vendedor (RN-25)', () => {
-  it('RN-25: porcentaje → fracción de configuracion_ventas', () => {
-    expect(esquemaDescuentoMaximo.parse({ porcentaje: '10' })).toEqual({ porcentaje: '0.1000' });
-    expect(esquemaDescuentoMaximo.parse({ porcentaje: '12,5' })).toEqual({ porcentaje: '0.1250' });
-    expect(esquemaDescuentoMaximo.parse({ porcentaje: '0' })).toEqual({ porcentaje: '0.0000' });
-    expect(esquemaDescuentoMaximo.safeParse({ porcentaje: '100' }).success).toBe(false);
-    expect(esquemaDescuentoMaximo.safeParse({ porcentaje: '' }).success).toBe(false);
+describe('ajustes de precio en ventas (RN-25, D43)', () => {
+  it('RN-25: descuento máximo del vendedor, porcentaje → fracción de configuracion_ventas', () => {
+    expect(esquemaAjustesVenta.parse({ porcentaje: '10', aumento: '30' })).toEqual({ porcentaje: '0.1000', aumento: '0.3000' });
+    expect(esquemaAjustesVenta.parse({ porcentaje: '12,5', aumento: '30' }).porcentaje).toBe('0.1250');
+    expect(esquemaAjustesVenta.parse({ porcentaje: '0', aumento: '30' }).porcentaje).toBe('0.0000');
+    expect(esquemaAjustesVenta.safeParse({ porcentaje: '100', aumento: '30' }).success).toBe(false);
+    expect(esquemaAjustesVenta.safeParse({ porcentaje: '', aumento: '30' }).success).toBe(false);
+  });
+
+  it('D43: aumento máximo sobre la lista entre 0.01 % y 100 %', () => {
+    expect(esquemaAjustesVenta.parse({ porcentaje: '10', aumento: '15,5' }).aumento).toBe('0.1550');
+    expect(esquemaAjustesVenta.parse({ porcentaje: '10', aumento: '100' }).aumento).toBe('1.0000');
+    expect(esquemaAjustesVenta.safeParse({ porcentaje: '10', aumento: '0' }).success).toBe(false);
+    expect(esquemaAjustesVenta.safeParse({ porcentaje: '10', aumento: '100.01' }).success).toBe(false);
+    expect(esquemaAjustesVenta.safeParse({ porcentaje: '10', aumento: '' }).success).toBe(false);
   });
 });

@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 import { Decimal } from '@/lib/decimal';
-import { hoyLima } from '@/lib/format';
+import { formatPEN, hoyLima } from '@/lib/format';
 import type { Valor } from '@/lib/costing/prorrateo';
 
 export type TipoVenta = 'unidad_x1' | 'mayorista_x3' | 'distribuidor_x6';
@@ -270,34 +270,71 @@ export function margenResultante(precio: Valor, costo: Valor): string {
   return p.minus(costo).div(p).toString();
 }
 
+/** Aumento sobre la lista como fracción (D43): (final − lista) / lista. */
+export function fraccionSobreLista(lista: Valor, final: Valor): string {
+  const l = new Decimal(lista);
+  if (l.lte(0)) return '0';
+  return new Decimal(final).minus(l).div(l).toString();
+}
+
 /**
- * Atajo «cuadrar con lo pagado» (RN-25): reparte el descuento (total − pagado) entre las motos
- * en proporción a su precio actual. Cada parte se redondea al céntimo (half-up) y el residuo va
- * a la moto más cara (la primera si empatan), así Σ precios nuevos = pagado exacto.
- * Devuelve null si no hay nada que repartir (sin motos, o pagado ≤ 0 o ≥ total).
+ * Precio más alto permitido (D43, todos los roles): lista × (1 + máximo), redondeado hacia
+ * abajo al céntimo, porque la BD exige final ≤ lista × (1 + máximo).
  */
-export function repartirDescuento<I extends { id: string; precio: Valor }>(
-  items: readonly I[],
-  pagado: Valor,
-): { id: string; precio: string; descuento: string }[] | null {
+export function precioMaximoSobreLista(lista: Valor, aumentoMax: Valor): string {
+  return new Decimal(lista).times(new Decimal(1).plus(aumentoMax)).toDecimalPlaces(2, Decimal.ROUND_DOWN).toFixed(2);
+}
+
+/** "+S/ 266.11" sobre la lista o "−S/ 161.82" bajo ella (vacío si son iguales). */
+export function formatAjuste(lista: Valor, final: Valor): string {
+  const diferencia = new Decimal(final).minus(lista);
+  if (diferencia.isZero()) return '';
+  return `${diferencia.gt(0) ? '+' : '−'}${formatPEN(diferencia.abs())}`;
+}
+
+export type RepartoAjuste = {
+  /** Descuento si lo pagado es menor que el total (RN-25); aumento si es mayor (D43). */
+  tipo: 'descuento' | 'aumento';
+  /** |pagado − total|, siempre positivo. */
+  monto: string;
+  filas: { id: string; precio: string; ajuste: string }[];
+};
+
+/**
+ * Atajo «cuadrar con lo pagado» (RN-25, D43): reparte la diferencia entre lo pagado y el total
+ * entre las motos en proporción a su precio actual, bajándolas (descuento) o subiéndolas
+ * (aumento). Cada parte (`ajuste`, positiva) se redondea al céntimo (half-up) y el residuo va a
+ * la moto más cara (la primera si empatan), así Σ precios nuevos = pagado exacto.
+ * Devuelve null si no hay nada que repartir (sin motos, pagado ≤ 0 o igual al total).
+ */
+export function repartirAjuste<I extends { id: string; precio: Valor }>(items: readonly I[], pagado: Valor): RepartoAjuste | null {
   const total = new Decimal(sumar(items.map((i) => i.precio)));
   const objetivo = new Decimal(pagado);
-  if (items.length === 0 || objetivo.lte(0) || objetivo.gte(total)) return null;
+  if (items.length === 0 || total.lte(0) || objetivo.lte(0) || objetivo.eq(total)) return null;
 
-  const descuento = total.minus(objetivo);
+  const tipo = objetivo.lt(total) ? 'descuento' : 'aumento';
+  const monto = objetivo.minus(total).abs();
   const partes = items.map((i) => ({
     id: i.id,
     precio: new Decimal(i.precio),
-    parte: descuento.times(i.precio).div(total).toDecimalPlaces(2),
+    parte: monto.times(i.precio).div(total).toDecimalPlaces(2),
   }));
-  const residuo = descuento.minus(partes.reduce((s, p) => s.plus(p.parte), new Decimal(0)));
+  const residuo = monto.minus(partes.reduce((s, p) => s.plus(p.parte), new Decimal(0)));
   const mayor = partes.reduce<(typeof partes)[number] | null>((m, p) => (m === null || p.precio.gt(m.precio) ? p : m), null);
   if (mayor) mayor.parte = mayor.parte.plus(residuo);
 
-  return partes.map((p) => ({ id: p.id, precio: p.precio.minus(p.parte).toFixed(2), descuento: p.parte.toFixed(2) }));
+  return {
+    tipo,
+    monto: monto.toFixed(2),
+    filas: partes.map((p) => ({
+      id: p.id,
+      precio: (tipo === 'descuento' ? p.precio.minus(p.parte) : p.precio.plus(p.parte)).toFixed(2),
+      ajuste: p.parte.toFixed(2),
+    })),
+  };
 }
 
-/** Precio final de una moto: monto con hasta 2 decimales y motivo (obligatorio si baja de la lista, lo valida la BD). */
+/** Precio final de una moto: monto con hasta 2 decimales y motivo (obligatorio si difiere de la lista, lo valida la BD). */
 export const esquemaAjustePrecio = z.object({
   precio: z
     .string()

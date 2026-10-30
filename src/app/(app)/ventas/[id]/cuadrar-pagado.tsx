@@ -9,15 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Decimal } from '@/lib/decimal';
 import { formatPEN } from '@/lib/format';
 import { avisar } from '@/lib/toast';
-import { formatPorcentaje, fraccionDescuento, repartirDescuento, sumar } from '@/lib/ventas';
+import { formatPorcentaje, fraccionDescuento, fraccionSobreLista, precioMaximoSobreLista, repartirAjuste } from '@/lib/ventas';
 import { cuadrarConPagado } from '../acciones';
 import type { ItemOrden } from './editor-orden';
 import type { LimiteDescuento } from './precio-final';
 
 /**
- * RN-25, atajo junto al saldo: si se cobró menos que el total, aplica la diferencia como
- * descuento repartido entre las motos (proporcional al precio) y deja el saldo en 0.
- * La vista previa es solo para la UX: el servidor recalcula el reparto y la BD aplica los límites.
+ * RN-25 y D43, atajo junto al saldo: si se cobró menos que el total, aplica la diferencia como
+ * descuento; si se cobró más, como aumento. Se reparte entre las motos (proporcional al precio)
+ * y deja el saldo en 0. La vista previa es solo para la UX: el servidor recalcula el reparto y
+ * la BD aplica los límites.
  */
 export function BotonCuadrarConPagado({
   orderId,
@@ -25,54 +26,67 @@ export function BotonCuadrarConPagado({
   pagado,
   rol,
   descuentoMax,
+  aumentoMax,
 }: {
   orderId: string;
   items: ItemOrden[];
   pagado: string;
   rol: LimiteDescuento['rol'];
   descuentoMax: number;
+  aumentoMax: number;
 }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState('');
-  const reparto = repartirDescuento(items, pagado);
+  const reparto = repartirAjuste(items, pagado);
   if (!reparto) return null;
+  const aumento = reparto.tipo === 'aumento';
 
-  // repartirDescuento conserva el orden de `items`
+  // repartirAjuste conserva el orden de `items`
   const filas = items.flatMap((item, k) => {
-    const r = reparto[k];
+    const r = reparto.filas[k];
     if (!r) return [];
-    const fraccion = fraccionDescuento(item.lista, r.precio);
+    const precio = new Decimal(r.precio);
     return [
       {
         ...r,
         item,
-        fraccion,
-        excede: rol === 'vendedor' && new Decimal(fraccion).gt(descuentoMax),
-        bajoCosto: rol === 'admin' && item.costo != null && new Decimal(r.precio).lt(item.costo),
+        // Respecto de la lista: un aumento puede dejar una moto con descuento previo aún bajo la lista
+        texto: precio.gt(item.lista)
+          ? `+${formatPorcentaje(fraccionSobreLista(item.lista, r.precio))} sobre la lista`
+          : `${formatPorcentaje(fraccionDescuento(item.lista, r.precio))} de la lista`,
+        excede: rol === 'vendedor' && new Decimal(fraccionDescuento(item.lista, r.precio)).gt(descuentoMax),
+        bajoCosto: rol === 'admin' && item.costo != null && precio.lt(item.costo),
+        sobreTope: precio.gt(precioMaximoSobreLista(item.lista, aumentoMax)),
       },
     ];
   });
-  const descuento = sumar(reparto.map((r) => r.descuento));
   const excede = filas.some((f) => f.excede);
   const bajoCosto = filas.some((f) => f.bajoCosto);
+  const sobreTope = filas.some((f) => f.sobreTope);
+  const monto = formatPEN(reparto.monto);
 
   return (
     <div className="grid gap-2">
       <BotonConfirmar
-        etiqueta={`Aplicar descuento de ${formatPEN(descuento)} y cuadrar con lo pagado`}
+        etiqueta={aumento ? `Ajustar precio a lo pagado (+${monto})` : `Aplicar descuento de ${monto} y cuadrar con lo pagado`}
         variante="outline"
-        deshabilitado={excede || bajoCosto}
-        titulo={`¿Aplicar un descuento de ${formatPEN(descuento)}?`}
+        deshabilitado={excede || bajoCosto || sobreTope}
+        titulo={aumento ? `¿Subir el precio en ${monto}?` : `¿Aplicar un descuento de ${monto}?`}
         descripcion={
           <p>
-            El descuento se reparte entre las {items.length} moto(s) en proporción a su precio, y el total queda en{' '}
-            {formatPEN(pagado)} (lo pagado). Luego podrás confirmar la venta.
+            {aumento ? 'El aumento' : 'El descuento'} se reparte entre las {items.length} moto(s) en proporción a su precio, y el
+            total queda en {formatPEN(pagado)} (lo pagado). Luego podrás confirmar la venta.
           </p>
         }
-        confirmar="Aplicar descuento"
+        confirmar={aumento ? 'Ajustar precio' : 'Aplicar descuento'}
         alConfirmar={async () => {
           const r = await cuadrarConPagado(orderId, motivo);
-          const ok = avisar(r, r.ok ? `Descuento de ${formatPEN(r.datos.descuento)} aplicado: saldo en S/ 0.00` : undefined);
+          const ok = avisar(
+            r,
+            r.ok
+              ? `${r.datos.tipo === 'aumento' ? 'Precio ajustado' : 'Descuento'} (${r.datos.tipo === 'aumento' ? '+' : '−'}${formatPEN(r.datos.monto)}): saldo en S/ 0.00`
+              : undefined,
+          );
           if (ok) {
             setMotivo('');
             router.refresh();
@@ -81,7 +95,7 @@ export function BotonCuadrarConPagado({
         }}
       >
         <div className="max-h-48 overflow-auto rounded-md border">
-          <Table aria-label="Reparto del descuento">
+          <Table aria-label={aumento ? 'Reparto del aumento' : 'Reparto del descuento'}>
             <TableHeader>
               <TableRow>
                 <TableHead>VIN</TableHead>
@@ -96,7 +110,7 @@ export function BotonCuadrarConPagado({
                   <TableCell className="text-right">{formatPEN(f.item.precio)}</TableCell>
                   <TableCell className="text-right">
                     {formatPEN(f.precio)}
-                    <span className="block text-xs text-muted-foreground">{formatPorcentaje(f.fraccion)} de la lista</span>
+                    <span className="block text-xs text-muted-foreground">{f.texto}</span>
                   </TableCell>
                 </TableRow>
               ))}
@@ -104,7 +118,7 @@ export function BotonCuadrarConPagado({
           </Table>
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="motivo-cuadrar">Motivo del descuento (obligatorio)</Label>
+          <Label htmlFor="motivo-cuadrar">{aumento ? 'Motivo del precio sobre la lista (obligatorio)' : 'Motivo del descuento (obligatorio)'}</Label>
           <Textarea id="motivo-cuadrar" value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={300} />
         </div>
       </BotonConfirmar>
@@ -116,6 +130,11 @@ export function BotonCuadrarConPagado({
       {bajoCosto && (
         <p className="text-sm text-destructive" data-testid="cuadrar-bajo-costo">
           Con lo pagado, alguna moto quedaría por debajo de su costo landing.
+        </p>
+      )}
+      {sobreTope && (
+        <p className="text-sm text-destructive" data-testid="cuadrar-sobre-tope">
+          Con lo pagado, alguna moto superaría en más de {formatPorcentaje(aumentoMax)} su precio de lista. Revisa los pagos.
         </p>
       )}
     </div>

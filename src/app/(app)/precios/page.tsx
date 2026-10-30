@@ -8,8 +8,8 @@ import { leerEscalas } from '@/lib/consultas/escalas';
 import { tiposActivos } from '@/lib/escalas';
 import { aPorcentaje } from '@/lib/esquemas/precios';
 import { leerParams } from '@/lib/tabla';
-import { descuentoMaximoVendedor, margenesActuales, preciosAdmin, preciosVendedor } from './datos';
-import { FormularioDescuento } from './formulario-descuento';
+import { ajustesVenta, margenesActuales, preciosAdmin, preciosVendedor } from './datos';
+import { FormularioAjustesVenta } from './formulario-ajustes-venta';
 import { FormularioMargenes } from './formulario-margenes';
 import { InterruptoresEscalas } from './interruptores-escalas';
 import { TablaPreciosAdmin } from './tabla-admin';
@@ -39,7 +39,7 @@ export default async function PaginaPrecios({ searchParams }: { searchParams: Pr
     );
   }
 
-  const [filas, margenes, descuentoMax] = await Promise.all([preciosAdmin(q), margenesActuales(), descuentoMaximoVendedor()]);
+  const [filas, margenes, ajustes] = await Promise.all([preciosAdmin(q), margenesActuales(), ajustesVenta()]);
   const margen = (t: string) => aPorcentaje(margenes.find((m) => m.tipo_venta === t)?.margen_objetivo ?? 0);
 
   return (
@@ -71,14 +71,16 @@ export default async function PaginaPrecios({ searchParams }: { searchParams: Pr
       </Card>
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Descuentos en ventas</CardTitle>
+          <CardTitle>Ajustes de precio en ventas</CardTitle>
           <CardDescription>
             Al vender, el precio final de cada moto puede bajar del de lista con un motivo y nunca por debajo de su costo
-            landing. El vendedor descuenta como máximo este porcentaje por moto; el admin, hasta el costo (RN-25).
+            landing: el vendedor descuenta como máximo este porcentaje por moto; el admin, hasta el costo (RN-25). También
+            puede subir sobre la lista con un motivo, hasta el aumento máximo, que aplica a todos (también al admin) para
+            evitar errores de tipeo.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FormularioDescuento inicial={{ porcentaje: aPorcentaje(descuentoMax) }} />
+          <FormularioAjustesVenta inicial={{ porcentaje: aPorcentaje(ajustes.descuentoMax), aumento: aPorcentaje(ajustes.aumentoMax) }} />
         </CardContent>
       </Card>
       <BarraFiltros placeholder="Buscar por modelo o lote" csvHref="/precios/csv" />

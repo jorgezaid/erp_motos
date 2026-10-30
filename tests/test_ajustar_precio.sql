@@ -93,8 +93,9 @@ end $$;
 \echo '✔ 2. al agregar una moto se guarda su precio de lista'
 
 -- ---------------------------------------------------------------- límites
-select test.expect_error($$select public.ajustar_precio_item(test.id('o1'), jsonb_build_array(jsonb_build_object('item_id', test.id('i1'), 'precio', 2100)), 'Cliente frecuente')$$,
-  'no puede superar el precio de lista');
+-- Sobre la lista (D43): ver test_precio_sobre_lista.sql
+select test.expect_error($$select public.ajustar_precio_item(test.id('o1'), jsonb_build_array(jsonb_build_object('item_id', test.id('i1'), 'precio', 2100)), '  ')$$,
+  'Indica el motivo del precio sobre la lista');
 select test.expect_error($$select public.ajustar_precio_item(test.id('o1'), jsonb_build_array(jsonb_build_object('item_id', test.id('i1'), 'precio', 2000)), '  ')$$,
   'Indica el motivo del descuento');
 select test.expect_error($$select public.ajustar_precio_item(test.id('o1'), jsonb_build_array(jsonb_build_object('item_id', test.id('i1'), 'precio', 1999.999)), 'Cliente frecuente')$$,
